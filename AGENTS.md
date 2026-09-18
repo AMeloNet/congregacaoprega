@@ -28,7 +28,8 @@ verificações planejadas como existentes ou executadas.
 A arquitetura de referência discutida é TypeScript, React, NestJS,
 PostgreSQL, Prisma, autenticação via OpenID Connect, Docker e PWA. A escolha
 definitiva e as versões devem ser registradas em decisões de arquitetura
-(ADRs) antes de configurar cada componente. A licença está pendente.
+(ADRs) antes de configurar cada componente. A licença escolhida é GNU AGPL
+versão 3 (`AGPL-3.0-only`), conforme o arquivo `LICENSE`.
 
 Preferências confirmadas pelo mantenedor:
 
