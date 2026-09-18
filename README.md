@@ -1,6 +1,6 @@
 # congregacaoprega
 
-Sistema web responsivo para organizar carrinhos, pontos, horários, participantes
+Sistema web responsivo para organizar equipamentos, pontos, horários, participantes
 e designações de pregação em múltiplas congregações, com isolamento dos dados
 de cada congregação.
 
@@ -15,8 +15,11 @@ de integração contínua (CI). Os cenários documentados ainda não foram execu
 - [Regras de colaboração e desenvolvimento](AGENTS.md).
 - [Escopo do MVP e próximos passos](docs/requisitos/MVP-001.md).
 - [Regras e critérios de aceitação das reservas](docs/requisitos/RES-001.md).
+- [Tipos de equipamento e capacidade dos locais](docs/requisitos/EQP-001.md).
+- [Programação mensal e relatório Testemunho Público](docs/requisitos/PRG-001.md).
 - [Proposta de arquitetura](docs/decisoes/0001-arquitetura-inicial.md).
 - [Estratégia e cenários de testes](docs/testes/estrategia.md).
+- [Cenários de horários, equipamentos e programação mensal](docs/testes/cenarios-programacao.md).
 - [Plano de controle das migrations](docs/banco/migrations.md).
 
 ## Como o desenvolvimento será feito

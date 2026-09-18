@@ -3,6 +3,8 @@
 Status: planejamento. Não há runner, suíte automatizada ou CI configurados.
 Todos os cenários abaixo estão **não executados**. Referências:
 [MVP-001](../requisitos/MVP-001.md) e [RES-001](../requisitos/RES-001.md).
+Os cenários adicionais de horários, alterações no grupo, equipamentos e
+programação mensal estão em [cenarios-programacao.md](cenarios-programacao.md).
 
 ## Implantação da base de testes
 
@@ -36,8 +38,8 @@ Cobertura numérica não substitui os cenários de concorrência e autorização
 | T-RES-02 | RES-01, RES-09 | Aceite concorrente com cancelamento não deixa participação ativa em reserva cancelada; convite cancelado não pode ser reutilizado | Integração |
 | T-RES-03 | RES-02 | Responsável e dois convites pendentes ocupam três posições; uma quarta pessoa não pode ingressar | Integração |
 | T-RES-04 | RES-03 | Publicador elegível ocupa vaga aberta; posição ocupada por convite pendente não pode ser tomada | Integração e navegador |
-| T-RES-05 | RES-04 | Convite enviado mais de 24 horas antes do início vence após 24 horas | Unitário e integração |
-| T-RES-06 | RES-04 | Convite enviado menos de 24 horas antes do início vence no início da designação | Unitário e integração |
+| T-RES-05 | RES-04 | Convite enviado mais de 24 horas antes do início vence após 24 horas e abre a posição | Unitário e integração |
+| T-RES-06 | RES-04 | Convite enviado menos de 24 horas antes do início vence no início da designação e abre a posição | Unitário e integração |
 | T-RES-07 | RES-04 | No instante da expiração e depois dele, rejeitar aceite e liberar posição; processamento periódico atrasado não mantém vaga bloqueada | Unitário e integração |
 | T-RES-08 | RES-05 | Com dois confirmados, o mínimo é atendido; havendo posição aberta, permitir terceiro sem permitir quarto | Integração |
 | T-RES-09 | RES-05 | No início, um confirmado e convites ainda não aceitos resultam em reserva mantida, recursos ocupados e alerta ao administrador | Integração |
@@ -51,16 +53,16 @@ Cobertura numérica não substitui os cenários de concorrência e autorização
 | T-RES-17 | RES-02, RES-03 | Dois ingressos simultâneos na última posição produzem apenas uma nova participação | Integração |
 | T-RES-18 | RES-01, RES-02 | Repetir criação, ingresso ou cancelamento não duplica reserva, participação nem evento lógico de cancelamento | Integração |
 | T-RES-19 | Permissões | Usuário de outra congregação não pode ler ou alterar reserva, entrar, ser convidado ou aceitar convite por identificador | Integração |
-| T-RES-20 | Permissões | Outro usuário não pode aceitar convite em nome do destinatário ou cancelar a reserva como se fosse o responsável | Integração |
+| T-RES-20 | Permissões, RES-18 | Outro publicador não pode aceitar convite em nome do destinatário ou cancelar a reserva como se fosse o responsável; o administrador autorizado pode cancelar conforme RES-18 | Integração |
 | T-RES-21 | RES-10 | Responsável bloqueia terceira posição vazia; ingresso espontâneo é recusado na interface e na API; grupo com dois confirmados continua atendendo ao mínimo | Integração e navegador |
 | T-RES-22 | RES-10 | Responsável reabre terceira posição vazia; um publicador elegível pode ingressar | Integração e navegador |
 | T-RES-23 | RES-10 | Outro publicador não pode mudar a escolha do responsável; bloqueio não remove participante ou convite existente | Integração |
 | T-RES-24 | RES-10 | Bloqueio e ingresso concorrentes não deixam um participante na posição marcada como vazia e bloqueada; somente uma transição compatível pode ocorrer | Integração |
 
-T-RES-10 usa o cenário de um grupo por ponto e um carrinho por grupo; outros
-arranjos dependem de P-03 de RES-001. T-RES-20 não define ainda os poderes de
-intervenção administrativa. Intervalos adjacentes, fuso, agenda bloqueada por
-convite pendente e comportamento após o início exigem as decisões pendentes.
+T-RES-10 usa o cenário de um grupo por ponto e um carrinho por grupo; capacidade
+maior e outros tipos estão nos cenários T-EQP. As ações de publicadores desta
+matriz pressupõem mês liberado para edição; T-PRG valida o bloqueio mensal,
+que prevalece mesmo em vaga aberta ou durante reabertura administrativa.
 
 ## Testes de migrations
 
