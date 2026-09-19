@@ -36,6 +36,9 @@ Preferências confirmadas pelo mantenedor:
 - Documentação, comunicação, Issues e descrições de Pull Requests em português.
   Código, identificadores de banco, nomes de migrations e commits em inglês.
   A interface inicial deve usar português do Brasil.
+- Avaliar hospedagem gerenciada. O acesso será por e-mail e senha, com ativação
+  e recuperação por e-mail. A primeira versão exige internet para consultar
+  e alterar dados; não terá consulta offline da programação.
 - O mantenedor revisa o escopo e os critérios de uma etapa. Dentro da etapa
   autorizada, implementar as funcionalidades seguindo documentação e TDD,
   sem solicitar nova aprovação para cada incremento.

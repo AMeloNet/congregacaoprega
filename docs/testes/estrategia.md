@@ -5,6 +5,9 @@ Todos os cenários abaixo estão **não executados**. Referências:
 [MVP-001](../requisitos/MVP-001.md) e [RES-001](../requisitos/RES-001.md).
 Os cenários adicionais de horários, alterações no grupo, equipamentos e
 programação mensal estão em [cenarios-programacao.md](cenarios-programacao.md).
+O contrato da primeira configuração e suas verificações V-TEC estão em
+[TEC-001](../requisitos/TEC-001.md). Vitest, Testing Library e Playwright estão
+propostos em [ADR-0001](../decisoes/0001-arquitetura-inicial.md), ainda sem instalação.
 
 ## Implantação da base de testes
 
