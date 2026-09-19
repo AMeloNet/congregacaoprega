@@ -21,15 +21,16 @@ Princípios obrigatórios definidos pelo mantenedor:
 
 ## 2. Estado inicial e decisões
 
-O projeto está na etapa de governança e documentação. Ainda não há aplicação,
-framework de testes, banco configurado ou automação de CI. Não apresentar
-verificações planejadas como existentes ou executadas.
+O projeto está na etapa da base técnica: há uma interface e API mínimas,
+Vitest, Playwright, Prisma sem modelos de negócio e workflow de CI. Não há
+autenticação, reservas, migration real ou implantação. Não apresentar
+verificações planejadas como existentes ou executadas; consultar o registro
+de evidências em `docs/testes/tec-001-evidencias.md`.
 
-A arquitetura de referência discutida é TypeScript, React, NestJS,
-PostgreSQL, Prisma, autenticação via OpenID Connect, Docker e PWA. A escolha
-definitiva e as versões devem ser registradas em decisões de arquitetura
-(ADRs) antes de configurar cada componente. A licença escolhida é GNU AGPL
-versão 3 (`AGPL-3.0-only`), conforme o arquivo `LICENSE`.
+A arquitetura inicial aprovada em ADR-0001 é TypeScript, React, NestJS,
+PostgreSQL, Prisma e Docker; identidade via OpenID Connect e eventual PWA
+dependem de etapas próprias. Versões usadas constam do registro arquitetural.
+A licença é GNU AGPL versão 3 (`AGPL-3.0-only`), conforme `LICENSE`.
 
 Preferências confirmadas pelo mantenedor:
 
@@ -264,8 +265,10 @@ Não inventar essas decisões no código.
 
 ## 10. Comandos e inicialização do projeto
 
-Não há comandos de instalação, build, testes ou migrations definidos nesta
-versão inicial. Não inventar comandos nem relatar execuções inexistentes.
+Os comandos reais da base técnica estão em [CONTRIBUTING.md](CONTRIBUTING.md).
+Verificar os resultados de cada execução; a presença do comando não constitui
+evidência de sucesso. Migrations reais só começarão com a primeira mudança de
+dados de uma funcionalidade aprovada.
 
 Ao configurar as ferramentas, registrar os comandos reais no guia de
 contribuição e referenciá-los aqui para:

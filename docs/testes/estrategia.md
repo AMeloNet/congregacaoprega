@@ -1,13 +1,14 @@
 # Estratégia e cenários de testes
 
-Status: planejamento. Não há runner, suíte automatizada ou CI configurados.
-Todos os cenários abaixo estão **não executados**. Referências:
+Status: a base Vitest/Playwright e o workflow da CI estão configurados na branch
+TEC-001. Os cenários de negócio abaixo ainda não foram implementados nem
+executados. Referências:
 [MVP-001](../requisitos/MVP-001.md) e [RES-001](../requisitos/RES-001.md).
 Os cenários adicionais de horários, alterações no grupo, equipamentos e
 programação mensal estão em [cenarios-programacao.md](cenarios-programacao.md).
 O contrato da primeira configuração e suas verificações V-TEC estão em
 [TEC-001](../requisitos/TEC-001.md). Vitest, Testing Library e Playwright estão
-propostos em [ADR-0001](../decisoes/0001-arquitetura-inicial.md), ainda sem instalação.
+adotados para esta etapa em [ADR-0001](../decisoes/0001-arquitetura-inicial.md).
 
 ## Implantação da base de testes
 

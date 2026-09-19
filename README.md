@@ -6,9 +6,10 @@ de cada congregação.
 
 ## Estado do projeto
 
-O projeto está na etapa de documentação e definição das regras de negócio.
-Ainda não há aplicação, banco configurado, testes automatizados ou pipeline
-de integração contínua (CI). Os cenários documentados ainda não foram executados.
+O projeto está na etapa da base técnica. A branch TEC-001 contém uma página de
+estado, API mínima, ferramentas de teste, estrutura Prisma e workflow de CI.
+Ainda não há autenticação, cadastros, reservas nem migration de negócio. Os
+cenários de negócio documentados ainda não foram executados.
 
 ## Documentação
 
@@ -24,6 +25,8 @@ de integração contínua (CI). Os cenários documentados ainda não foram execu
 - [Estratégia e cenários de testes](docs/testes/estrategia.md).
 - [Cenários de horários, equipamentos e programação mensal](docs/testes/cenarios-programacao.md).
 - [Plano de controle das migrations](docs/banco/migrations.md).
+- [Guia de instalação e testes](CONTRIBUTING.md).
+- [Evidências da base técnica](docs/testes/tec-001-evidencias.md).
 
 ## Como o desenvolvimento será feito
 
@@ -39,9 +42,9 @@ gratuitos. Ferramentas e fornecedores ainda estão em proposta para revisão.
 5. Enviamos documentação, código, migrations e evidências em um Pull Request.
 6. O mantenedor decide a incorporação à `main` e a liberação para produção.
 
-O primeiro desenvolvimento será precedido pela instalação e validação da
-infraestrutura de testes. Comandos de instalação, execução e atualização
-serão publicados quando as ferramentas estiverem configuradas.
+Os comandos de instalação, execução e atualização da base inicial estão em
+[CONTRIBUTING.md](CONTRIBUTING.md). As verificações que dependem de PostgreSQL
+real ou contêiner serão comprovadas pela CI antes da incorporação.
 
 ## Licença
 

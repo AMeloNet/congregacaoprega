@@ -1,7 +1,9 @@
 # Plano de controle das migrations
 
-Status: estratégia inicial. Não há banco, schema, ferramenta instalada ou
-migration executável. A política obrigatória está no [AGENTS.md](../../AGENTS.md).
+Status: Prisma Migrate 7.10.0 configurado. O schema da aplicação está vazio;
+não existe migration de negócio. O histórico fictício de
+`tests/migration-fixtures/` só pode ser aplicado a bancos descartáveis `_test`.
+A política obrigatória está no [AGENTS.md](../../AGENTS.md).
 
 ## Antes da primeira migration
 
@@ -13,10 +15,10 @@ migration executável. A política obrigatória está no [AGENTS.md](../../AGENT
 4. Preparar bancos descartáveis e dados fictícios para criação e atualização.
 5. Demonstrar que a validação detecta falhas e interrompe a promoção.
 
-Não há comandos executáveis configurados nesta etapa. A proposta é Prisma
-Migrate 7.10.0, ainda sujeita à aprovação de
-[ADR-0001](../decisoes/0001-arquitetura-inicial.md) e à prova de
-[TEC-001](../requisitos/TEC-001.md).
+Comandos executáveis estão em [CONTRIBUTING.md](../../CONTRIBUTING.md). Prisma
+Migrate 7.10.0 é a autoridade do histórico, com SQL em
+`packages/database/prisma/migrations/<timestamp>_<name>/migration.sql`.
+O histórico real começa na primeira funcionalidade que precise de banco.
 
 Para a versão 7 proposta, a geração local usa o fluxo `migrate dev`, que requer
 banco sombra descartável; aplicação em ambiente persistente usa `migrate deploy`.
@@ -51,8 +53,9 @@ novas migrations. Dados fictícios de demonstração ficam separados.
 | T-MIG-05 | Executar testes de integridade, isolamento e concorrência no banco atualizado | Nenhum acesso entre congregações ou violação das capacidades |
 | T-MIG-06 | Exercitar o procedimento de recuperação aplicável | Restauração ou correção validada, com limites e possíveis perdas documentados |
 
-Todos os itens estão **não executados**. A existência do plano não constitui
-evidência de um banco validado.
+As fixtures demonstram somente o aplicador; o histórico real exige essas provas
+na respectiva entrega. Resultados desta etapa estão no
+[registro TEC-001](../testes/tec-001-evidencias.md).
 
 ## Aplicação e recuperação
 

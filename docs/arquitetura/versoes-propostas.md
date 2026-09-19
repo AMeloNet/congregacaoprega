@@ -18,7 +18,7 @@ Consulta em 18/09/2026. Nada foi instalado ou testado nesta entrega.
 | Vitest | 5.0.1 | Unitários/integração; cobertura deverá usar pacote da mesma versão |
 | Playwright Test | 1.63.0 | Jornadas reais no navegador; instalar navegadores correspondentes à versão fixada |
 | Testing Library React | 16.3.3 | Cenários de interação por elementos acessíveis; declara suporte ao React 19 |
-| pnpm | 12.4.2 | Workspaces e instalação reproduzível pelo lockfile |
+| pnpm | 11.19.0 | Workspaces e instalação reproduzível pelo lockfile; versão efetivamente disponível no ambiente local |
 | ESLint | 10.11.0 | Análise estática |
 | typescript-eslint | 8.70.0 | Declara ESLint 10 e TypeScript >=4.8.4 e <6.1.0 |
 | Prettier | 3.9.8 | Formatação |
@@ -54,6 +54,12 @@ para selecionar ferramentas em um build publicado.
 
 Se a prova de instalação falhar, corrigir a composição documentada antes de
 prosseguir, sem declarar aprovado o conjunto apenas pelos metadados.
+
+Na implantação TEC-001, pnpm 12.4.2 não pôde iniciar no Windows deste ambiente:
+seu executável opcional não estava disponível. Fixamos pnpm 11.19.0, que já
+funciona no ambiente local, e o lockfile precisa ser validado por instalação
+congelada também no CI. O Node local é 24.19.0, compatível com a faixa exigida;
+o CI deve usar a versão-alvo 24.21.0.
 
 ## Fontes primárias
 
