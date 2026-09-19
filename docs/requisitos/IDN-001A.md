@@ -1,6 +1,6 @@
 # IDN-001A — Estrutura inicial de identidade e congregações
 
-Status: **modelo e migration implementados na branch; validação em andamento**.
+Status: **modelo e migration implementados; validação do CI aprovada no PR #7**.
 Relacionado a [IDN-001](IDN-001.md),
 [ADR-0002](../decisoes/0002-identidade-gerenciada.md) e ao
 [plano de migrations](../banco/migrations.md).

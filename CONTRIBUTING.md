@@ -64,10 +64,10 @@ em IDN-001A; aplique migrations em banco descartável antes de propor promoção
 para outro ambiente.
 
 ```sh
-pnpm --filter @congregacaoprega/database exec prisma migrate dev --name descriptive_change
-pnpm --filter @congregacaoprega/database exec prisma migrate status
-pnpm --filter @congregacaoprega/database exec prisma migrate deploy
-pnpm --filter @congregacaoprega/database exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+pnpm --filter @congregacaoprega/database db:migrate:dev --name descriptive_change
+pnpm --filter @congregacaoprega/database db:migrate:status
+pnpm --filter @congregacaoprega/database db:migrate:deploy
+pnpm --filter @congregacaoprega/database db:migrate:diff
 ```
 
 `migrate dev` destina-se apenas ao desenvolvimento descartável e precisa de
