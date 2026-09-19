@@ -21,8 +21,9 @@ Princípios obrigatórios definidos pelo mantenedor:
 
 ## 2. Estado inicial e decisões
 
-O projeto está na etapa da base técnica: há uma interface e API mínimas,
-Vitest, Playwright, Prisma sem modelos de negócio e workflow de CI. Não há
+O projeto concluiu a base técnica TEC-001 no PR #5: há uma interface e API
+mínimas, Vitest, Playwright, Prisma sem modelos de negócio e workflow de CI. A
+etapa de identidade IDN-001 está em proposta para revisão. Não há
 autenticação, reservas, migration real ou implantação. Não apresentar
 verificações planejadas como existentes ou executadas; consultar o registro
 de evidências em `docs/testes/tec-001-evidencias.md`.
