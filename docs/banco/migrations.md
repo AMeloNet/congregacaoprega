@@ -1,6 +1,6 @@
 # Plano de controle das migrations
 
-Status: estratégia inicial. Não há banco, schema, ferramenta escolhida ou
+Status: estratégia inicial. Não há banco, schema, ferramenta instalada ou
 migration executável. A política obrigatória está no [AGENTS.md](../../AGENTS.md).
 
 ## Antes da primeira migration
@@ -13,8 +13,21 @@ migration executável. A política obrigatória está no [AGENTS.md](../../AGENT
 4. Preparar bancos descartáveis e dados fictícios para criação e atualização.
 5. Demonstrar que a validação detecta falhas e interrompe a promoção.
 
-Não há comandos para publicar nesta etapa. A proposta de usar Prisma ainda
-precisa ser decidida em [ADR](../decisoes/0001-arquitetura-inicial.md).
+Não há comandos executáveis configurados nesta etapa. A proposta é Prisma
+Migrate 7.10.0, ainda sujeita à aprovação de
+[ADR-0001](../decisoes/0001-arquitetura-inicial.md) e à prova de
+[TEC-001](../requisitos/TEC-001.md).
+
+Para a versão 7 proposta, a geração local usa o fluxo `migrate dev`, que requer
+banco sombra descartável; aplicação em ambiente persistente usa `migrate deploy`.
+Esses são nomes de operações da ferramenta, não scripts já existentes no projeto.
+O cliente deve ser gerado explicitamente; não depender da geração automática
+de versões anteriores. [Referência da versão 7](https://www.prisma.io/docs/cli/v7/migrate/dev).
+
+`migrate diff` só compara recursos representáveis pelo Prisma; não comprova
+sozinho a ausência de alterações em triggers, views e outros objetos SQL.
+Complementar com verificações do catálogo e testes das restrições que usarmos.
+[Limitação documentada](https://www.prisma.io/docs/cli/v7/migrate/diff).
 
 ## Entrega de cada alteração
 

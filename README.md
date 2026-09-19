@@ -18,11 +18,19 @@ de integração contínua (CI). Os cenários documentados ainda não foram execu
 - [Tipos de equipamento e capacidade dos locais](docs/requisitos/EQP-001.md).
 - [Programação mensal e relatório Testemunho Público](docs/requisitos/PRG-001.md).
 - [Proposta de arquitetura](docs/decisoes/0001-arquitetura-inicial.md).
+- [Versões propostas](docs/arquitetura/versoes-propostas.md).
+- [Escopo da primeira etapa técnica](docs/requisitos/TEC-001.md).
+- [Hospedagem gerenciada e estimativa de custos](docs/operacao/hospedagem-proposta.md).
 - [Estratégia e cenários de testes](docs/testes/estrategia.md).
 - [Cenários de horários, equipamentos e programação mensal](docs/testes/cenarios-programacao.md).
 - [Plano de controle das migrations](docs/banco/migrations.md).
 
 ## Como o desenvolvimento será feito
+
+Preferências confirmadas: avaliar hospedagem gerenciada, login por e-mail e
+senha com ativação/recuperação por e-mail e conexão obrigatória na primeira
+versão. O piloto terá uma congregação e até 100 publicadores em serviços
+gratuitos. Ferramentas e fornecedores ainda estão em proposta para revisão.
 
 1. O mantenedor revisa o escopo e os critérios de cada etapa.
 2. Documentamos o comportamento e escrevemos os testes antes de implementá-lo.
