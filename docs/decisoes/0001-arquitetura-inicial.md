@@ -13,8 +13,9 @@ Ainda não existem código de aplicação ou ferramentas configuradas.
 
 O mantenedor confirmou: avaliar hospedagem gerenciada, entrar por e-mail e
 senha com ativação/recuperação por e-mail e exigir internet para consultar
-ou alterar na primeira versão. Essas preferências estão aprovadas; as escolhas
-de ferramentas e fornecedores abaixo continuam sendo propostas.
+ou alterar na primeira versão. O piloto começa sem custo de hospedagem, com
+uma congregação e até 100 publicadores. Essas preferências estão aprovadas;
+as escolhas de ferramentas e fornecedores abaixo continuam sendo propostas.
 
 ## Alternativas
 
@@ -118,6 +119,12 @@ atende navegador móvel; instalação como PWA pode ser avaliada em etapa própr
 Propor Docker para a aplicação e PostgreSQL descartável no desenvolvimento e
 nos testes. A produção usa PostgreSQL gerenciado, separado do contêiner da API.
 Fixar imagens por versão e digest na implementação, sem tags flutuantes.
+
+Para o piloto, avaliar serviço web gratuito no Render e PostgreSQL 18 gratuito
+no Neon. O serviço e o banco podem suspender computação por inatividade; isso
+precisa aparecer como limitação mensurável, sem alterar os contratos da
+aplicação ou o histórico de migrations. Não usar o PostgreSQL gratuito do
+Render como banco persistente do piloto, pois ele expira após 30 dias.
 
 Propor GitHub Actions com instalação reproduzível, documentação, formatação,
 análise estática, tipos, build, testes unitários, integração, migrations e

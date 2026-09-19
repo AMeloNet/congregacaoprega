@@ -9,29 +9,81 @@ Relacionada a [ADR-0001](../decisoes/0001-arquitetura-inicial.md).
 - Avaliar hospedagem gerenciada.
 - Login por e-mail e senha, com ativação e recuperação por e-mail.
 - Internet obrigatória para consultas e alterações na primeira versão.
+- Iniciar sem custo de hospedagem para validar o fluxo completo.
+- Piloto com uma congregação e até 100 publicadores.
 
-## Composição recomendada para avaliar
+## Composição proposta para o piloto gratuito
 
 | Serviço | Proposta | Responsabilidade |
 | --- | --- | --- |
-| Aplicação | Render, serviço web pago | Executar backend e servir interface compilada sob a mesma origem |
-| Banco | Render Postgres pago, versão principal 18 | Banco separado, acesso privado e recuperação gerenciada |
-| Identidade | Auth0, sujeito a validação dos limites do plano | Login hospedado, e-mail/senha e fluxo OIDC |
-| E-mail | Resend | Avisos da aplicação e integração de e-mail da identidade |
+| Aplicação | Render Free Web Service | Executar backend e servir interface compilada sob a mesma origem |
+| Banco | Neon Free, PostgreSQL 18 | Persistência externa compatível com Prisma e migrations SQL |
+| Identidade | Auth0 Free | Login hospedado, e-mail/senha e fluxo OIDC |
+| E-mail | Resend Free | Avisos da aplicação e integração de e-mail da identidade |
 
-Render oferece PostgreSQL 18 em novas instâncias. A escolha de região deve
-considerar latência e requisitos de dados; aplicação e banco devem compartilhar
-a região e usar conexão privada. Verificar limites antes de criar ambientes.
-[Fonte: criação do Render Postgres](https://render.com/docs/postgresql-creating-connecting).
+Essa composição tem custo-base de **US$ 0 por mês dentro das franquias**, sem
+incluir domínio. Não é uma promessa de disponibilidade, capacidade ou ausência
+de cobrança futura. Criar limites de gasto quando o serviço oferecer essa opção
+e não cadastrar pagamento automático sem decisão específica do mantenedor.
 
-Alternativa de hospedagem: Railway, com cobrança por consumo e mínimo publicado
-de US$ 5 no Hobby ou US$ 20 no Pro, abatidos no uso. Esses mínimos não são um
-orçamento completo de aplicação e banco; avaliar separadamente operação do
-banco, recuperação e limites. A composição Render é a candidata inicial pela
-separação explícita entre serviço web e PostgreSQL gerenciado.
-[Fonte: planos Railway](https://docs.railway.com/pricing/plans).
+O Render gratuito suspende o serviço após 15 minutos sem requisições e pode
+levar cerca de um minuto para reativá-lo. A franquia publicada é de 750 horas
+por workspace/mês, e o sistema de arquivos é efêmero. O piloto deve armazenar
+todos os dados persistentes no PostgreSQL e exibir o tempo de reativação sem
+informar que o sistema está disponível antes de a API responder.
+Como o banco Neon é externo ao Render, acompanhar também o tráfego de saída:
+o Render pode suspender serviço gratuito que gere volume externo incomum.
+[Fonte: limites gratuitos do Render](https://render.com/docs/free).
 
-## Estimativa preliminar
+Não usar Render Postgres Free para o piloto persistente: a instância expira
+após 30 dias e não possui backup. Neon é a alternativa proposta para manter o
+banco além desse prazo. A franquia gratuita consultada publica 0,5 GB por
+projeto, 50 CU-horas/mês, 5 GB de saída e restauração instantânea limitada a
+seis horas ou 1 GB de alterações. PostgreSQL 18 está disponível para novos
+projetos. Medir os limites no console e confirmar novamente na criação.
+[Fontes: plano gratuito do Neon](https://neon.com/blog/new-usage-based-pricing) e
+[PostgreSQL 18 no Neon](https://neon.com/blog/category/changelog).
+
+Uma congregação com 100 publicadores está muito abaixo do limite divulgado de
+25.000 usuários ativos mensais do Auth0 Free. Isso confirma apenas o número de
+usuários; recursos, taxa de requisições, ambientes e configuração de e-mail
+continuam sujeitos aos limites do plano.
+[Fonte: preços do Auth0](https://auth0.com/pricing).
+
+Resend Free publica 3.000 e-mails por mês e 100 por dia. Uma comunicação para
+todos os 100 publicadores já consome toda a franquia diária, sem espaço para
+ativação, recuperação, reenvios ou avisos do mesmo dia. O piloto deve medir o
+pico e não prometer o prazo de uma hora quando a cota tiver sido atingida.
+[Fonte: preços do Resend](https://resend.com/pricing).
+
+O processador da caixa de saída no mesmo serviço do Render deixa de trabalhar
+quando a aplicação suspende. No piloto, ele processa eventos enquanto o serviço
+estiver ativo e retoma pendências na próxima inicialização. Isso permite validar
+persistência, idempotência e retomada, mas não comprova entrega contínua nem o
+objetivo operacional de e-mail em até uma hora.
+
+## Critérios de validação e saída do gratuito
+
+Registrar durante o piloto, sem dados pessoais nos logs:
+
+- tempo de primeira resposta após inatividade e frequência de suspensão;
+- uso máximo e mensal de CPU da aplicação, conexões, armazenamento e tráfego;
+- quantidade diária/mensal de e-mails, pendências, retentativas e atrasos;
+- crescimento de auditoria, notificações, designações e convites no banco;
+- resultado de backup lógico e restauração em banco descartável;
+- concorrência nas reservas e erros observados com os 100 publicadores.
+
+Migrar a parte afetada para serviço pago antes de uso operacional quando houver
+qualquer uma destas condições: cota próxima do limite; interrupção que impeça
+o fluxo mensal; necessidade de processamento contínuo; prazo de e-mail não
+atendido; armazenamento sem margem; ou recuperação incompatível com os dados.
+O PR dessa mudança deve registrar evidências, custo e plano de recuperação.
+
+O piloto gratuito não substitui homologação nem produção. Ele serve para validar
+fluxos e dimensionamento com o grupo autorizado. Antes de cadastrar pessoas
+reais, definir retenção, acesso, exportação e resposta a incidentes.
+
+## Referência de evolução paga
 
 | Item | Referência de preço | Observação |
 | --- | --- | --- |
@@ -94,11 +146,10 @@ não deve ativar publicação automática irrestrita da `main`.
 
 ## Informações necessárias para fechar a escolha
 
-- Teto mensal de custo aceito e moeda de referência.
-- Quantidade inicial e estimada de congregações, publicadores e acessos simultâneos.
 - Volume de avisos no pico da preparação mensal.
 - Domínio disponível, acesso ao DNS e responsáveis pelas contas de serviços.
 - Região e necessidades de recuperação/retenção.
+- Limite de indisponibilidade e perda de dados aceito no piloto.
 
 Contratação e configuração de serviços só ocorrerão após avaliação concreta
 dessas informações. Não solicitar senhas ou tokens por mensagens; usar os

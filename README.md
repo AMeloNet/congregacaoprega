@@ -28,8 +28,9 @@ de integração contínua (CI). Os cenários documentados ainda não foram execu
 ## Como o desenvolvimento será feito
 
 Preferências confirmadas: avaliar hospedagem gerenciada, login por e-mail e
-senha com ativação/recuperação por e-mail e conexão obrigatória na primeira versão.
-Ferramentas e fornecedores ainda estão em proposta para revisão.
+senha com ativação/recuperação por e-mail e conexão obrigatória na primeira
+versão. O piloto terá uma congregação e até 100 publicadores em serviços
+gratuitos. Ferramentas e fornecedores ainda estão em proposta para revisão.
 
 1. O mantenedor revisa o escopo e os critérios de cada etapa.
 2. Documentamos o comportamento e escrevemos os testes antes de implementá-lo.
