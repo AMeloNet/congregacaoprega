@@ -1,0 +1,11 @@
+datasource db {
+  provider = "postgresql"
+}
+
+model Sample {
+  id    Int    @id
+  label String
+  note  String?
+
+  @@map("sample")
+}
