@@ -64,6 +64,12 @@ falhar. Testes capturam os envios localmente e não usam destinatários reais.
   e ausência de garantia de entrega. Antes de uso com pessoas reais, configurar
   provedor externo de e-mail e validar ativação/recuperação. O envio de avisos
   da aplicação também depende de um serviço externo a escolher e medir.
+- O mantenedor ainda não tem domínio para verificar o remetente. Resend Free
+  permanece candidato, mas sua integração com Auth0 exige um domínio
+  verificado. Até obtê-lo, a validação de e-mail é local ou limitada a
+  destinatários de teste; não convidar os 100 publicadores como se o fluxo
+  de entrega real estivesse pronto. O plano gratuito publicado informa
+  100 e-mails por dia, exigindo escalonar convites ou revisar o serviço.
 - O objetivo de e-mail em até uma hora não pode ser garantido por um servidor
   gratuito que suspende por inatividade. Medir atrasos no piloto e mudar a
   operação antes de uso que dependa desse prazo.
@@ -90,3 +96,6 @@ falhar. Testes capturam os envios localmente e não usam destinatários reais.
 - [Universal Login](https://auth0.com/docs/authenticate/login/auth0-universal-login).
 - [Verificação de e-mail](https://auth0.com/docs/manage-users/user-accounts/verify-emails).
 - [Uso e limites do provedor integrado de e-mail](https://support.auth0.com/center/s/article/Emails-to-Gmail-from-Auth0-never-arrive).
+- [Integração Auth0–Resend e domínio verificado](https://resend.com/changelog/auth0-integration).
+- [Franquia gratuita do Resend](https://resend.com/pricing), consultada em
+  19/09/2026.
