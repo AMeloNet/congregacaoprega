@@ -8,7 +8,8 @@ de cada congregação.
 
 A base técnica TEC-001 foi incorporada à `main` no PR #5. Ela contém uma página
 de estado, API mínima, ferramentas de teste, estrutura Prisma e workflow de CI.
-Ainda não há autenticação, cadastros, reservas nem migration de negócio. Os
+Ainda não há autenticação, cadastros nem reservas. A primeira migration de
+identidade e congregações está em desenvolvimento na branch IDN-001A. Os
 cenários de negócio documentados ainda não foram executados. O escopo da etapa
 seguinte, IDN-001, foi aprovado; a integração ainda não começou.
 

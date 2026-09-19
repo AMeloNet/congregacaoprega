@@ -1,6 +1,6 @@
 # IDN-001A — Estrutura inicial de identidade e congregações
 
-Status: **incremento dentro do escopo IDN-001 aprovado; ainda sem implementação**.
+Status: **modelo e migration implementados na branch; validação em andamento**.
 Relacionado a [IDN-001](IDN-001.md),
 [ADR-0002](../decisoes/0002-identidade-gerenciada.md) e ao
 [plano de migrations](../banco/migrations.md).
@@ -17,7 +17,7 @@ contas reais, login, convite, autorização HTTP ou envio de e-mail. Esses
 comportamentos seguem para os incrementos seguintes de IDN-001. A estrutura
 da migration deve permitir adicioná-los sem trocar identificadores existentes.
 
-## Modelo proposto
+## Modelo implementado
 
 | Entidade | Campos e invariantes |
 | --- | --- |
@@ -32,7 +32,7 @@ com cada congregação precisa de chaves estrangeiras e restrição de unicidade
 no banco, não apenas validação na aplicação. Nenhum dado real integra testes
 ou migration.
 
-## Critérios e provas antes da implementação
+## Critérios e provas
 
 | ID | Resultado e teste planejado |
 | --- | --- |
@@ -44,8 +44,8 @@ ou migration.
 | IDN-A06 | A versão anterior não tem tabelas de negócio: aplicar em banco vazio e reaplicar depois de inserir dados fictícios preserva os registros, não reexecuta a migration e detecta drift intencional |
 
 Escrever os testes automatizados antes do SQL e do schema. A execução inicial
-deve falhar por falta das tabelas, não por falha de ambiente. Depois de criar
-o modelo e a migration, executar novamente os testes afetados, o histórico
+falhou no CI por falta de `identity_account` (PostgreSQL `42P01`), não por falha
+de ambiente. Depois de criar o modelo e a migration, executar novamente os testes afetados, o histórico
 completo e os checks obrigatórios. Revisar o SQL gerado, as constraints que
 Prisma não representa e a estratégia de recuperação no PR. O banco de teste
 termina em `_test` e é descartado após cada caso.

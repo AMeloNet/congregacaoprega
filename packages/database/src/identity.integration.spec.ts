@@ -98,10 +98,74 @@ describe('IDN-001A identity schema', () => {
       ).rejects.toMatchObject({ code: '23503' });
       await expect(
         pool.query(
+          `INSERT INTO identity_account
+           (id, provider_issuer, provider_subject, email)
+           VALUES ($1, 'https://identity.example.test/', 'subject-1', 'other@example.test')`,
+          [randomUUID()],
+        ),
+      ).rejects.toMatchObject({ code: '23505' });
+      await expect(
+        pool.query(
+          `INSERT INTO membership (id, account_id, congregation_id, role)
+           VALUES ($1, $2, $3, 'UNKNOWN')`,
+          [randomUUID(), account, first],
+        ),
+      ).rejects.toMatchObject({ code: '22P02' });
+      await expect(
+        pool.query(
           "UPDATE membership SET status = 'REVOKED' WHERE account_id = $1 AND congregation_id = $2",
           [account, first],
         ),
       ).rejects.toMatchObject({ code: '23514' });
+      await expect(
+        pool.query(
+          'UPDATE membership SET revoked_at = now() WHERE account_id = $1 AND congregation_id = $2',
+          [account, first],
+        ),
+      ).rejects.toMatchObject({ code: '23514' });
+      await pool.query(
+        "UPDATE membership SET status = 'REVOKED', revoked_at = now() WHERE account_id = $1 AND congregation_id = $2",
+        [account, first],
+      );
+      await pool.query(
+        "UPDATE membership SET status = 'ACTIVE', revoked_at = NULL WHERE account_id = $1 AND congregation_id = $2",
+        [account, first],
+      );
+      const third = randomUUID();
+      await pool.query('INSERT INTO congregation (id, name) VALUES ($1, $2)', [
+        third,
+        'Congregação C',
+      ]);
+      const concurrent = await Promise.allSettled(
+        Array.from({ length: 2 }, () =>
+          pool.query(
+            `INSERT INTO membership (id, account_id, congregation_id)
+             VALUES ($1, $2, $3)`,
+            [randomUUID(), account, third],
+          ),
+        ),
+      );
+      expect(
+        concurrent.filter((result) => result.status === 'fulfilled'),
+      ).toHaveLength(1);
+      expect(
+        concurrent.find((result) => result.status === 'rejected'),
+      ).toMatchObject({ reason: { code: '23505' } });
+      const unlinked = randomUUID();
+      await pool.query(
+        `INSERT INTO identity_account
+         (id, provider_issuer, provider_subject, email, email_verified)
+         VALUES ($1, 'https://identity.example.test/', 'subject-unlinked', 'unlinked@example.test', true)`,
+        [unlinked],
+      );
+      expect(
+        (
+          await pool.query(
+            'SELECT count(*)::int AS total FROM membership WHERE account_id = $1',
+            [unlinked],
+          )
+        ).rows[0].total,
+      ).toBe(0);
       await pool.query('UPDATE identity_account SET email = $2 WHERE id = $1', [
         account,
         'changed@example.test',
@@ -123,7 +187,7 @@ describe('IDN-001A identity schema', () => {
             [account],
           )
         ).rows[0].total,
-      ).toBe(2);
+      ).toBe(3);
     });
   }, 120_000);
 

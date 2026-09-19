@@ -1,7 +1,8 @@
 # Plano de controle das migrations
 
-Status: Prisma Migrate 7.10.0 configurado. O schema da aplicação está vazio;
-não existe migration de negócio. O histórico fictício de
+Status: Prisma Migrate 7.10.0 configurado. A primeira migration real,
+`20260919223000_create_identity_core`, cria contas externas, congregações e
+vínculos locais conforme [IDN-001A](../requisitos/IDN-001A.md). O histórico fictício de
 `tests/migration-fixtures/` só pode ser aplicado a bancos descartáveis `_test`.
 A política obrigatória está no [AGENTS.md](../../AGENTS.md).
 
@@ -18,7 +19,8 @@ A política obrigatória está no [AGENTS.md](../../AGENTS.md).
 Comandos executáveis estão em [CONTRIBUTING.md](../../CONTRIBUTING.md). Prisma
 Migrate 7.10.0 é a autoridade do histórico, com SQL em
 `packages/database/prisma/migrations/<timestamp>_<name>/migration.sql`.
-O histórico real começa na primeira funcionalidade que precise de banco.
+O histórico real começa com IDN-001A. Não há dados reais a transformar na
+versão anterior, que possuía apenas um schema vazio.
 
 Para a versão 7 proposta, a geração local usa o fluxo `migrate dev`, que requer
 banco sombra descartável; aplicação em ambiente persistente usa `migrate deploy`.

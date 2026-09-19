@@ -6,3 +6,58 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum MembershipRole {
+  PUBLISHER
+  LOCAL_ADMIN
+
+  @@map("membership_role")
+}
+
+enum MembershipStatus {
+  ACTIVE
+  REVOKED
+
+  @@map("membership_status")
+}
+
+model IdentityAccount {
+  id              String       @id @default(uuid()) @db.Uuid
+  providerIssuer  String       @map("provider_issuer")
+  providerSubject String       @map("provider_subject")
+  email           String
+  emailVerified   Boolean      @default(false) @map("email_verified")
+  isMaster        Boolean      @default(false) @map("is_master")
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  memberships     Membership[]
+
+  @@unique([providerIssuer, providerSubject])
+  @@map("identity_account")
+}
+
+model Congregation {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String
+  timezone    String       @default("America/Sao_Paulo")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  memberships Membership[]
+
+  @@map("congregation")
+}
+
+model Membership {
+  id             String           @id @default(uuid()) @db.Uuid
+  accountId      String           @map("account_id") @db.Uuid
+  congregationId String           @map("congregation_id") @db.Uuid
+  role           MembershipRole   @default(PUBLISHER)
+  status         MembershipStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  revokedAt      DateTime?        @map("revoked_at") @db.Timestamptz(6)
+  account        IdentityAccount  @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  congregation   Congregation     @relation(fields: [congregationId], references: [id], onDelete: Restrict)
+
+  @@unique([accountId, congregationId])
+  @@index([congregationId, status])
+  @@map("membership")
+}
