@@ -1,0 +1,1 @@
+ALTER TABLE "sample" ADD COLUMN "note" TEXT;

@@ -1,6 +1,6 @@
 # ADR-0001 — Arquitetura inicial
 
-Status: **proposta, ainda não aprovada**.
+Status: **aprovada para TEC-001**. A integração de identidade e a publicação exigem etapas próprias.
 
 Relacionada a [MVP-001](../requisitos/MVP-001.md) e
 [TEC-001 — Base técnica](../requisitos/TEC-001.md).
@@ -144,8 +144,8 @@ promoção compatível. Produção tem liberação explícita do mantenedor.
 - Notificações exigem tratamento de falhas e retentativas sem duplicar efeitos.
 - Hospedagem e identidade gerenciadas reduzem tarefas de infraestrutura, mas
   introduzem custos, limites e dependência de fornecedores.
-- Nenhum pacote foi instalado; compatibilidade publicada não substitui a
-  prova de instalação, build e testes em TEC-001.
+- A prova de instalação, build e testes é registrada em TEC-001; a aprovação
+  desta ADR não afirma que cada integração foi validada.
 
 ## Condições para aprovação e implementação
 
