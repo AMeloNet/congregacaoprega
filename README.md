@@ -6,7 +6,7 @@ de cada congregação.
 
 ## Estado do projeto
 
-O projeto está na etapa da base técnica. A branch TEC-001 contém uma página de
+O projeto está na etapa da base técnica. A entrega TEC-001 contém uma página de
 estado, API mínima, ferramentas de teste, estrutura Prisma e workflow de CI.
 Ainda não há autenticação, cadastros, reservas nem migration de negócio. Os
 cenários de negócio documentados ainda não foram executados.
