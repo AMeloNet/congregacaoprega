@@ -30,10 +30,11 @@ será validada separadamente, sem enviar e-mail a pessoas reais.
 | T-IDN-21 | IDN-14 | Reenvio cria novo prazo, invalida o convite anterior e não duplica o vínculo; troca de e-mail exige novo convite | Integração |
 | T-IDN-22 | IDN-15 | Local revoga e reativa publicador da própria congregação; acesso muda na próxima requisição, histórico e aviso são gerados | Integração e navegador |
 | T-IDN-23 | IDN-15 | Local não revoga nem reativa publicador de outra congregação por ID | Integração |
+| T-IDN-24 | IDN-13 | Convite master expira em 24 horas; reemissão controlada invalida o anterior e nenhuma execução cria segundo master por acidente | Integração e operação |
+| T-IDN-25 | IDN-15 | Alteração de vínculo gera registro imediato e aviso por e-mail em até uma hora; falha de envio não restaura o acesso nem duplica o evento | Integração com relógio e envio controlados |
 
-Após definir o envio do aviso e o procedimento de inicialização master,
-acrescentar cenários de falha e repetição desses fluxos antes dos testes
-executáveis e do código.
+Detalhar o procedimento de inicialização master e o serviço de e-mail antes
+dos testes executáveis e do código; acrescentar os casos específicos de falha.
 Cada teste automatizado deve falhar pelo comportamento ausente antes da
 implementação e passar depois. A CI deve executar regressão e migrations
 reais antes de um PR funcional ser considerado pronto.

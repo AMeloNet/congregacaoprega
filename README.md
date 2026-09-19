@@ -9,8 +9,8 @@ de cada congregação.
 A base técnica TEC-001 foi incorporada à `main` no PR #5. Ela contém uma página
 de estado, API mínima, ferramentas de teste, estrutura Prisma e workflow de CI.
 Ainda não há autenticação, cadastros, reservas nem migration de negócio. Os
-cenários de negócio documentados ainda não foram executados. A etapa seguinte,
-IDN-001, está em proposta para revisão.
+cenários de negócio documentados ainda não foram executados. O escopo da etapa
+seguinte, IDN-001, foi aprovado; a integração ainda não começou.
 
 ## Documentação
 
@@ -23,6 +23,7 @@ IDN-001, está em proposta para revisão.
 - [Versões propostas](docs/arquitetura/versoes-propostas.md).
 - [Escopo da primeira etapa técnica](docs/requisitos/TEC-001.md).
 - [Proposta de identidade e associação à congregação](docs/requisitos/IDN-001.md).
+- [Decisão de identidade gerenciada para o piloto](docs/decisoes/0002-identidade-gerenciada.md).
 - [Cenários de testes de identidade](docs/testes/cenarios-identidade.md).
 - [Hospedagem gerenciada e estimativa de custos](docs/operacao/hospedagem-proposta.md).
 - [Estratégia e cenários de testes](docs/testes/estrategia.md).

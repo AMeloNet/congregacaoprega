@@ -23,7 +23,7 @@ Princípios obrigatórios definidos pelo mantenedor:
 
 O projeto concluiu a base técnica TEC-001 no PR #5: há uma interface e API
 mínimas, Vitest, Playwright, Prisma sem modelos de negócio e workflow de CI. A
-etapa de identidade IDN-001 está em proposta para revisão. Não há
+etapa de identidade IDN-001 teve seu escopo aprovado e ainda não começou. Não há
 autenticação, reservas, migration real ou implantação. Não apresentar
 verificações planejadas como existentes ou executadas; consultar o registro
 de evidências em `docs/testes/tec-001-evidencias.md`.
