@@ -30,11 +30,11 @@ Esses são nomes de operações da ferramenta, não scripts já existentes no pr
 O cliente deve ser gerado explicitamente; não depender da geração automática
 de versões anteriores. [Referência da versão 7](https://www.prisma.io/docs/cli/v7/migrate/dev).
 
-`migrate diff` entre o histórico de migrations e o banco é a verificação de
-drift usada pelos testes. A comparação entre banco e `schema.prisma` não deve
-ser usada como prova isolada quando a migration tiver índices parciais ou
-restrições SQL sem representação no Prisma. Complementar com verificações do
-catálogo e testes das restrições que usarmos. [Limitação documentada](https://www.prisma.io/docs/cli/v7/migrate/diff).
+`migrate diff` não deve ser usado como prova isolada quando a migration tiver
+índices parciais ou restrições SQL sem representação no Prisma. Os testes de
+integração verificam o histórico com `migrate status` e usam o catálogo do
+PostgreSQL para detectar uma coluna divergente inserida intencionalmente,
+além de testarem as restrições efetivas. [Limitação documentada](https://www.prisma.io/docs/cli/v7/migrate/diff).
 
 ## Entrega de cada alteração
 

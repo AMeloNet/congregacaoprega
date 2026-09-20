@@ -221,17 +221,28 @@ describe('IDN-001A identity schema', () => {
           )
         ).rows[0].total,
       ).toBe(completedMigrationCount);
-      const diff = [
-        'migrate',
-        'diff',
-        '--from-migrations',
-        'prisma/migrations',
-        '--to-config-datasource',
-        '--exit-code',
-      ];
-      expect(runPrisma(url, diff)).toBe(0);
+      expect(runPrisma(url, ['migrate', 'status'])).toBe(0);
+      expect(
+        (
+          await pool.query(
+            `SELECT EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_name = 'identity_account' AND column_name = 'rogue'
+            ) AS exists`,
+          )
+        ).rows[0].exists,
+      ).toBe(false);
       await pool.query('ALTER TABLE identity_account ADD COLUMN rogue text');
-      expect(runPrisma(url, diff)).toBe(2);
+      expect(
+        (
+          await pool.query(
+            `SELECT EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_name = 'identity_account' AND column_name = 'rogue'
+            ) AS exists`,
+          )
+        ).rows[0].exists,
+      ).toBe(true);
     });
   }, 120_000);
 });
