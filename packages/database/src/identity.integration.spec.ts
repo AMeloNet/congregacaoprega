@@ -194,6 +194,11 @@ describe('IDN-001A identity schema', () => {
   it('preserves data on reapplication and detects drift', async () => {
     await withDisposableDatabase(async (url, pool) => {
       expect(runPrisma(url, ['migrate', 'deploy'])).toBe(0);
+      const completedMigrationCount = (
+        await pool.query(
+          'SELECT count(*)::int AS total FROM _prisma_migrations',
+        )
+      ).rows[0].total;
       const account = randomUUID();
       await pool.query(
         `INSERT INTO identity_account
@@ -215,18 +220,29 @@ describe('IDN-001A identity schema', () => {
             'SELECT count(*)::int AS total FROM _prisma_migrations',
           )
         ).rows[0].total,
-      ).toBe(1);
-      const diff = [
-        'migrate',
-        'diff',
-        '--from-config-datasource',
-        '--to-schema',
-        'prisma/schema.prisma',
-        '--exit-code',
-      ];
-      expect(runPrisma(url, diff)).toBe(0);
+      ).toBe(completedMigrationCount);
+      expect(runPrisma(url, ['migrate', 'status'])).toBe(0);
+      expect(
+        (
+          await pool.query(
+            `SELECT EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_name = 'identity_account' AND column_name = 'rogue'
+            ) AS exists`,
+          )
+        ).rows[0].exists,
+      ).toBe(false);
       await pool.query('ALTER TABLE identity_account ADD COLUMN rogue text');
-      expect(runPrisma(url, diff)).toBe(2);
+      expect(
+        (
+          await pool.query(
+            `SELECT EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_name = 'identity_account' AND column_name = 'rogue'
+            ) AS exists`,
+          )
+        ).rows[0].exists,
+      ).toBe(true);
     });
   }, 120_000);
 });

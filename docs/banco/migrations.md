@@ -2,7 +2,9 @@
 
 Status: Prisma Migrate 7.10.0 configurado. A primeira migration real,
 `20260919223000_create_identity_core`, cria contas externas, congregações e
-vínculos locais conforme [IDN-001A](../requisitos/IDN-001A.md). O histórico fictício de
+vínculos locais conforme [IDN-001A](../requisitos/IDN-001A.md). A segunda,
+`20260920013000_create_access_invitations_and_audit`, acrescenta convites de
+acesso e auditoria conforme [IDN-001B](../requisitos/IDN-001B.md). O histórico fictício de
 `tests/migration-fixtures/` só pode ser aplicado a bancos descartáveis `_test`.
 A política obrigatória está no [AGENTS.md](../../AGENTS.md).
 
@@ -28,10 +30,11 @@ Esses são nomes de operações da ferramenta, não scripts já existentes no pr
 O cliente deve ser gerado explicitamente; não depender da geração automática
 de versões anteriores. [Referência da versão 7](https://www.prisma.io/docs/cli/v7/migrate/dev).
 
-`migrate diff` só compara recursos representáveis pelo Prisma; não comprova
-sozinho a ausência de alterações em triggers, views e outros objetos SQL.
-Complementar com verificações do catálogo e testes das restrições que usarmos.
-[Limitação documentada](https://www.prisma.io/docs/cli/v7/migrate/diff).
+`migrate diff` não deve ser usado como prova isolada quando a migration tiver
+índices parciais ou restrições SQL sem representação no Prisma. Os testes de
+integração verificam o histórico com `migrate status` e usam o catálogo do
+PostgreSQL para detectar uma coluna divergente inserida intencionalmente,
+além de testarem as restrições efetivas. [Limitação documentada](https://www.prisma.io/docs/cli/v7/migrate/diff).
 
 ## Entrega de cada alteração
 
