@@ -234,9 +234,9 @@ describe('IDN-001B invitation and audit schema', () => {
       const diff = [
         'migrate',
         'diff',
-        '--from-config-datasource',
-        '--to-schema',
-        'prisma/schema.prisma',
+        '--from-migrations',
+        'prisma/migrations',
+        '--to-config-datasource',
         '--exit-code',
       ];
       expect(runPrisma(url, diff)).toBe(0);

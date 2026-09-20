@@ -194,6 +194,11 @@ describe('IDN-001A identity schema', () => {
   it('preserves data on reapplication and detects drift', async () => {
     await withDisposableDatabase(async (url, pool) => {
       expect(runPrisma(url, ['migrate', 'deploy'])).toBe(0);
+      const completedMigrationCount = (
+        await pool.query(
+          'SELECT count(*)::int AS total FROM _prisma_migrations',
+        )
+      ).rows[0].total;
       const account = randomUUID();
       await pool.query(
         `INSERT INTO identity_account
@@ -215,13 +220,13 @@ describe('IDN-001A identity schema', () => {
             'SELECT count(*)::int AS total FROM _prisma_migrations',
           )
         ).rows[0].total,
-      ).toBe(1);
+      ).toBe(completedMigrationCount);
       const diff = [
         'migrate',
         'diff',
-        '--from-config-datasource',
-        '--to-schema',
-        'prisma/schema.prisma',
+        '--from-migrations',
+        'prisma/migrations',
+        '--to-config-datasource',
         '--exit-code',
       ];
       expect(runPrisma(url, diff)).toBe(0);
