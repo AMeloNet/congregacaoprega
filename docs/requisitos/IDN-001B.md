@@ -1,7 +1,7 @@
 # IDN-001B — Convites de acesso e trilha de auditoria
 
-Status: **incremento dentro do escopo IDN-001 aprovado; testes definidos antes
-da implementação**. Relacionado a [IDN-001](IDN-001.md),
+Status: **migration implementada após a falha TDD confirmada; aguardando
+validação final da CI**. Relacionado a [IDN-001](IDN-001.md),
 [IDN-001A](IDN-001A.md), [ADR-0002](../decisoes/0002-identidade-gerenciada.md)
 e aos cenários T-IDN-14, T-IDN-15, T-IDN-16, T-IDN-18, T-IDN-19, T-IDN-21,
 T-IDN-22, T-IDN-24 e T-IDN-25.
@@ -43,14 +43,16 @@ resultado, sem token, senha, URL de retorno ou conteúdo de e-mail.
 | IDN-B05 | Evento de auditoria referencia autor, pessoa afetada, congregação, convite e vínculo existentes, preservando o evento e sem campo para o token em texto aberto |
 | IDN-B06 | O histórico aplica em banco vazio e sobre IDN-001A com dados fictícios preservados; reaplicação não duplica migrations e drift intencional é detectado |
 
-Os testes de integração devem ser escritos e falhar inicialmente por falta de
-`access_invitation` e `identity_audit_event`, depois passar no PostgreSQL 18 da
-CI. O banco de teste termina em `_test` e é descartado em cada caso.
+Os testes de integração foram escritos antes da migration e falharam na CI com
+PostgreSQL 18 por falta de `access_invitation` (`42P01`). Com a migration
+aditiva, devem passar no mesmo ambiente. O banco de teste termina em `_test` e
+é descartado em cada caso.
 
 ## Migration e recuperação
 
-A migration só adicionará tabelas, enums, índices e restrições; não removerá ou
-transformará dados existentes. A versão anterior suportada é IDN-001A. Antes de
-ser incorporada, o rascunho pode ser ajustado e revalidado em banco descartável.
-Depois de incorporada ou aplicada em ambiente compartilhado, correções exigem
-nova migration. Não usar reset em banco persistente.
+A migration `20260920013000_create_access_invitations_and_audit` só adiciona
+tabelas, enums, índices e restrições; não remove ou transforma dados existentes.
+A versão anterior suportada é IDN-001A. Antes de ser incorporada, o rascunho
+pode ser ajustado e revalidado em banco descartável. Depois de incorporada ou
+aplicada em ambiente compartilhado, correções exigem nova migration. Não usar
+reset em banco persistente.

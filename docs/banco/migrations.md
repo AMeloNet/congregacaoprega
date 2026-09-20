@@ -2,7 +2,9 @@
 
 Status: Prisma Migrate 7.10.0 configurado. A primeira migration real,
 `20260919223000_create_identity_core`, cria contas externas, congregações e
-vínculos locais conforme [IDN-001A](../requisitos/IDN-001A.md). O histórico fictício de
+vínculos locais conforme [IDN-001A](../requisitos/IDN-001A.md). A segunda,
+`20260920013000_create_access_invitations_and_audit`, acrescenta convites de
+acesso e auditoria conforme [IDN-001B](../requisitos/IDN-001B.md). O histórico fictício de
 `tests/migration-fixtures/` só pode ser aplicado a bancos descartáveis `_test`.
 A política obrigatória está no [AGENTS.md](../../AGENTS.md).
 
