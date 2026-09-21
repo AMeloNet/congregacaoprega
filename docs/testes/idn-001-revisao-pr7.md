@@ -116,3 +116,14 @@ O commit `f5320d2` demonstrou a falha TDD no
 registrou `expected false to be true` em `closed`, com os outros nove testes de
 integração aprovados. Os três outros jobs passaram. A falha foi do comportamento
 ausente, não de indisponibilidade do ambiente.
+
+O commit `6c76918` substituiu a remoção forçada por uma espera limitada pelas
+sessões de cliente, seguida de `DROP DATABASE` normal. Os helpers de identidade,
+convites, migrations e verificação de schema usam a mesma rotina; o nome do
+banco é validado como descartável `_test`. A
+[CI 35551580293](https://github.com/AMeloNet/congregacaoprega/actions/runs/35551580293)
+aprovou os quatro jobs: dez testes de integração (seis arquivos), incluindo a
+reprodução corrigida, além das verificações estáticas/unitárias, Chromium e
+contêiner. Localmente passaram `pnpm docs:check`, `pnpm format`, `pnpm lint`,
+`pnpm typecheck` e `git diff --check`. PostgreSQL e Docker locais permanecem
+indisponíveis; a verificação desses componentes ocorreu na CI.
