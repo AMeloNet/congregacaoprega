@@ -1,7 +1,8 @@
 # IDN-001 — Correções da revisão do PR #7
 
-Status: **correções verificadas no commit `7a547ee`; aguardando revisão do
-mantenedor no PR #7 para `codex/identity-scope`**.
+Status: **correções verificadas no commit `7a547ee` e incorporadas a
+`codex/identity-scope` pelo PR #7**. Este registro acompanha o PR #6 para
+`main`.
 Escopo: IDN-A06, IDN-B02 e IDN-B06. Não altera regras de acesso,
 migrations já versionadas nem integra autenticação ou envio de e-mail.
 O modelo Prisma deve mapear os nomes físicos existentes, inclusive nomes
@@ -84,8 +85,9 @@ reexecutadas fora dele e passaram. Essa limitação de ambiente não é falha TD
 
 As duas migrations existentes foram preservadas byte a byte. O único ajuste
 no modelo é o mapeamento do nome físico do índice; não muda estruturas nem
-dados no PostgreSQL. Não houve novas dependências, envio de e-mail, dados reais,
-aplicação de migrations em ambiente persistente, merge ou implantação.
+dados no PostgreSQL. A verificação não usou novas dependências, e-mails,
+dados reais nem aplicação de migrations em ambiente persistente. Não houve
+implantação.
 
 O histórico real já é testado em banco vazio e atualizado. Os fluxos de
 autenticação/autorização e os testes T-IDN funcionais permanecem pendentes.

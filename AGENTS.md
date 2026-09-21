@@ -21,12 +21,15 @@ Princípios obrigatórios definidos pelo mantenedor:
 
 ## 2. Estado inicial e decisões
 
-O projeto concluiu a base técnica TEC-001 no PR #5: há uma interface e API
-mínimas, Vitest, Playwright, Prisma sem modelos de negócio e workflow de CI. A
-etapa de identidade IDN-001 teve seu escopo aprovado e ainda não começou. Não há
-autenticação, reservas, migration real ou implantação. Não apresentar
-verificações planejadas como existentes ou executadas; consultar o registro
-de evidências em `docs/testes/tec-001-evidencias.md`.
+O projeto concluiu a base técnica TEC-001 no PR #5: interface e API mínimas,
+Vitest, Playwright, Prisma e workflow de CI, ainda sem modelos de negócio naquela
+entrega. A etapa IDN-001 teve seu escopo aprovado; IDN-001A/B acrescentaram duas
+migrations reais e testes de integração para identidade, vínculos, convites de
+acesso e auditoria nos PRs #7 e #8, incorporados à branch de escopo pelo PR #7.
+O PR #6 reúne escopo e estrutura de dados para `main`. Não há autenticação,
+reservas ou implantação. Não apresentar verificações planejadas como executadas;
+consultar `docs/testes/tec-001-evidencias.md` e
+`docs/testes/idn-001-revisao-pr7.md`.
 
 A arquitetura inicial aprovada em ADR-0001 é TypeScript, React, NestJS,
 PostgreSQL, Prisma e Docker; identidade via OpenID Connect e eventual PWA
@@ -268,8 +271,7 @@ Não inventar essas decisões no código.
 
 Os comandos reais da base técnica estão em [CONTRIBUTING.md](CONTRIBUTING.md).
 Verificar os resultados de cada execução; a presença do comando não constitui
-evidência de sucesso. Migrations reais só começarão com a primeira mudança de
-dados de uma funcionalidade aprovada.
+evidência de sucesso. O histórico real de migrations começou em IDN-001A.
 
 Ao configurar as ferramentas, registrar os comandos reais no guia de
 contribuição e referenciá-los aqui para:

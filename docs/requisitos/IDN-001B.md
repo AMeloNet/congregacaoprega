@@ -56,7 +56,6 @@ em cada caso. Os fluxos funcionais T-IDN relacionados ainda não estão entregue
 
 A migration `20260920013000_create_access_invitations_and_audit` só adiciona
 tabelas, enums, índices e restrições; não remove ou transforma dados existentes.
-A versão anterior suportada é IDN-001A. Antes de ser incorporada, o rascunho
-pode ser ajustado e revalidado em banco descartável. Depois de incorporada ou
-aplicada em ambiente compartilhado, correções exigem nova migration. Não usar
-reset em banco persistente.
+A versão anterior suportada é IDN-001A. A migration foi incorporada à branch de
+escopo; correções posteriores devem usar nova migration, com validação em banco
+descartável. Não usar reset em banco persistente.

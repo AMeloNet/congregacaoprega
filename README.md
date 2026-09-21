@@ -8,13 +8,12 @@ de cada congregação.
 
 A base técnica TEC-001 foi incorporada à `main` no PR #5. Ela contém uma página
 de estado, API mínima, ferramentas de teste, estrutura Prisma e workflow de CI.
-O PR #7, de `codex/identity-core` para `codex/identity-scope`, reúne as duas
-migrations de identidade, congregações, vínculos, convites de acesso e auditoria
-(IDN-001A/B), incluindo o PR #8 já incorporado nessa branch. A incorporação à
-`main` continua pendente. Login, sessões, autorização HTTP, aceite de convites,
-envio de e-mail, cadastros de recursos e reservas ainda não foram implementados.
-Os testes atuais comprovam a estrutura de dados; os fluxos funcionais de
-IDN-001 continuam pendentes.
+IDN-001A/B acrescentaram duas migrations de identidade, congregações, vínculos,
+convites de acesso e auditoria, com testes em PostgreSQL 18.6. Esse trabalho
+foi revisado nos PRs #7 e #8 e integra o PR #6. Login, sessões, autorização
+HTTP, aceite de convites, envio de e-mail, cadastros de recursos e reservas
+ainda não foram implementados. Os testes atuais comprovam a estrutura de
+dados; os fluxos funcionais de IDN-001 continuam pendentes.
 
 ## Documentação
 
@@ -42,8 +41,9 @@ IDN-001 continuam pendentes.
 Preferências confirmadas: avaliar hospedagem gerenciada, login por e-mail e
 senha com ativação/recuperação por e-mail e conexão obrigatória na primeira
 versão. O piloto terá uma congregação e até 100 publicadores em serviços
-gratuitos. Os fornecedores de hospedagem, identidade e e-mail ainda estão em
-avaliação; a base de desenvolvimento já está configurada.
+gratuitos. Auth0 Free foi escolhido para a autenticação do piloto; hospedagem
+e provedor externo de e-mail ainda requerem configuração e validação. A base
+de desenvolvimento já está configurada.
 
 1. O mantenedor revisa o escopo e os critérios de cada etapa.
 2. Documentamos o comportamento e escrevemos os testes antes de implementá-lo.
