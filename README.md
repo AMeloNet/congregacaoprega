@@ -32,6 +32,7 @@ funcionais de identidade, recursos, programação e reservas continuam pendentes
 - [Decisão de identidade gerenciada para o piloto](docs/decisoes/0002-identidade-gerenciada.md).
 - [Cenários de testes de identidade](docs/testes/cenarios-identidade.md).
 - [Hospedagem gerenciada e estimativa de custos](docs/operacao/hospedagem-proposta.md).
+- [Publicação da prévia visual UI-001](docs/requisitos/PBL-001.md).
 - [Estratégia e cenários de testes](docs/testes/estrategia.md).
 - [Cenários de horários, equipamentos e programação mensal](docs/testes/cenarios-programacao.md).
 - [Plano de controle das migrations](docs/banco/migrations.md).
