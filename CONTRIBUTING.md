@@ -59,14 +59,15 @@ contêiner em jobs separados, sem segredos de produção.
 
 Prisma 7.10.0 lê `packages/database/prisma.config.ts`. O nome do banco e a URL
 devem ser conferidos antes de qualquer operação. Configure `DATABASE_URL` fora
-do repositório. O schema vazio valida com `pnpm db:validate`; não execute
-`migrate deploy` sobre banco persistente enquanto não houver migration real.
+do repositório. Valide o modelo com `pnpm db:validate`. O histórico real começa
+em IDN-001A; aplique migrations em banco descartável antes de propor promoção
+para outro ambiente.
 
 ```sh
-pnpm --filter @congregacaoprega/database exec prisma migrate dev --name descriptive_change
-pnpm --filter @congregacaoprega/database exec prisma migrate status
-pnpm --filter @congregacaoprega/database exec prisma migrate deploy
-pnpm --filter @congregacaoprega/database exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+pnpm --filter @congregacaoprega/database db:migrate:dev --name descriptive_change
+pnpm --filter @congregacaoprega/database db:migrate:status
+pnpm --filter @congregacaoprega/database db:migrate:deploy
+pnpm --filter @congregacaoprega/database db:migrate:diff
 ```
 
 `migrate dev` destina-se apenas ao desenvolvimento descartável e precisa de
