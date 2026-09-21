@@ -12,6 +12,14 @@ Relacionada a [ADR-0001](../decisoes/0001-arquitetura-inicial.md).
 - Iniciar sem custo de hospedagem para validar o fluxo completo.
 - Piloto com uma congregação e até 100 publicadores.
 
+## Prévia visual UI-001
+
+A prévia visual usa o Static Site gratuito do Render, definido em
+[`render.yaml`](../../render.yaml). Ela publica apenas o build React da UI-001
+e não exige banco, Auth0, domínio ou serviço de e-mail. A prévia não é o piloto
+operacional: dados são fictícios e permanecem somente na memória do navegador.
+O contrato, os critérios e a recuperação estão em [PBL-001](../requisitos/PBL-001.md).
+
 ## Composição proposta para o piloto gratuito
 
 | Serviço | Proposta | Responsabilidade |

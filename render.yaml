@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: congregacaoprega-preview
+    runtime: static
+    branch: main
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @congregacaoprega/web build
+    staticPublishPath: apps/web/dist
