@@ -1,7 +1,10 @@
 # Plano de controle das migrations
 
-Status: Prisma Migrate 7.10.0 configurado. O schema da aplicação está vazio;
-não existe migration de negócio. O histórico fictício de
+Status: Prisma Migrate 7.10.0 configurado. A primeira migration real,
+`20260919223000_create_identity_core`, cria contas externas, congregações e
+vínculos locais conforme [IDN-001A](../requisitos/IDN-001A.md). A segunda,
+`20260920013000_create_access_invitations_and_audit`, acrescenta convites de
+acesso e auditoria conforme [IDN-001B](../requisitos/IDN-001B.md). O histórico fictício de
 `tests/migration-fixtures/` só pode ser aplicado a bancos descartáveis `_test`.
 A política obrigatória está no [AGENTS.md](../../AGENTS.md).
 
@@ -18,18 +21,32 @@ A política obrigatória está no [AGENTS.md](../../AGENTS.md).
 Comandos executáveis estão em [CONTRIBUTING.md](../../CONTRIBUTING.md). Prisma
 Migrate 7.10.0 é a autoridade do histórico, com SQL em
 `packages/database/prisma/migrations/<timestamp>_<name>/migration.sql`.
-O histórico real começa na primeira funcionalidade que precise de banco.
+O histórico real começa com IDN-001A. Não há dados reais a transformar na
+versão anterior, que possuía apenas um schema vazio.
 
-Para a versão 7 proposta, a geração local usa o fluxo `migrate dev`, que requer
+Na versão 7, a geração local usa o fluxo `migrate dev`, que requer
 banco sombra descartável; aplicação em ambiente persistente usa `migrate deploy`.
-Esses são nomes de operações da ferramenta, não scripts já existentes no projeto.
+Os scripts `db:migrate:*` do pacote de banco expõem essas operações.
 O cliente deve ser gerado explicitamente; não depender da geração automática
 de versões anteriores. [Referência da versão 7](https://www.prisma.io/docs/cli/v7/migrate/dev).
 
-`migrate diff` só compara recursos representáveis pelo Prisma; não comprova
-sozinho a ausência de alterações em triggers, views e outros objetos SQL.
-Complementar com verificações do catálogo e testes das restrições que usarmos.
+`migrate diff` não deve ser usado como prova isolada quando a migration tiver
+índices parciais ou restrições SQL sem representação no Prisma. Os testes de
+integração comparam o catálogo completo dos objetos usados nesta etapa com
+outro banco descartável criado pelo histórico real. Uma segunda referência,
+criada pelo SQL de `migrate diff --from-empty --to-schema`, compara os objetos
+representados no modelo Prisma; apenas CHECKs e índices parciais são excluídos
+dessa segunda comparação. Eles continuam obrigatórios na comparação com o SQL.
+Mutações controladas devem comprovar a detecção de divergências de colunas,
+defaults, enums, CHECKs, índices parciais e views. `migrate status` verifica o
+histórico de aplicação, não substitui a comparação de schema.
 [Limitação documentada](https://www.prisma.io/docs/cli/v7/migrate/diff).
+Contrato, limites e resultados: [revisão do PR #7](../testes/idn-001-revisao-pr7.md).
+
+O índice de congregação/destinatário em `AccessInvitation` usa `map` explícito
+para o nome físico truncado pelo PostgreSQL ao aplicar a segunda migration.
+Esse mapeamento reconcilia o modelo com o banco existente; não renomeia nem
+recria o índice, e o histórico SQL permanece intacto.
 
 ## Entrega de cada alteração
 

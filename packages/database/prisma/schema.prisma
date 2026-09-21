@@ -6,3 +6,143 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum MembershipRole {
+  PUBLISHER
+  LOCAL_ADMIN
+
+  @@map("membership_role")
+}
+
+enum MembershipStatus {
+  ACTIVE
+  REVOKED
+
+  @@map("membership_status")
+}
+
+enum InvitationKind {
+  MEMBERSHIP
+  MASTER_BOOTSTRAP
+
+  @@map("invitation_kind")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  REVOKED
+  EXPIRED
+  SUPERSEDED
+
+  @@map("invitation_status")
+}
+
+enum IdentityAuditEventType {
+  MEMBERSHIP_INVITED
+  MEMBERSHIP_REVOKED
+  MEMBERSHIP_REACTIVATED
+  LOCAL_ADMIN_GRANTED
+  LOCAL_ADMIN_REVOKED
+  MASTER_BOOTSTRAP_ISSUED
+
+  @@map("identity_audit_event_type")
+}
+
+enum IdentityAuditOutcome {
+  SUCCEEDED
+  DENIED
+  FAILED
+
+  @@map("identity_audit_outcome")
+}
+
+model IdentityAccount {
+  id              String       @id @default(uuid()) @db.Uuid
+  providerIssuer  String       @map("provider_issuer")
+  providerSubject String       @map("provider_subject")
+  email           String
+  emailVerified   Boolean      @default(false) @map("email_verified")
+  isMaster        Boolean      @default(false) @map("is_master")
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  memberships     Membership[]
+  createdInvitations AccessInvitation[] @relation("InvitationCreator")
+  actedAuditEvents   IdentityAuditEvent[] @relation("AuditActor")
+  subjectAuditEvents IdentityAuditEvent[] @relation("AuditSubject")
+
+  @@unique([providerIssuer, providerSubject])
+  @@map("identity_account")
+}
+
+model Congregation {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String
+  timezone    String       @default("America/Sao_Paulo")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  memberships Membership[]
+  invitations AccessInvitation[]
+  auditEvents IdentityAuditEvent[]
+
+  @@map("congregation")
+}
+
+model Membership {
+  id             String           @id @default(uuid()) @db.Uuid
+  accountId      String           @map("account_id") @db.Uuid
+  congregationId String           @map("congregation_id") @db.Uuid
+  role           MembershipRole   @default(PUBLISHER)
+  status         MembershipStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  revokedAt      DateTime?        @map("revoked_at") @db.Timestamptz(6)
+  account        IdentityAccount  @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  congregation   Congregation     @relation(fields: [congregationId], references: [id], onDelete: Restrict)
+  auditEvents    IdentityAuditEvent[]
+
+  @@unique([accountId, congregationId])
+  @@index([congregationId, status])
+  @@map("membership")
+}
+
+model AccessInvitation {
+  id                       String           @id @default(uuid()) @db.Uuid
+  kind                     InvitationKind
+  congregationId           String?          @map("congregation_id") @db.Uuid
+  recipientEmail           String           @map("recipient_email")
+  recipientEmailNormalized String           @map("recipient_email_normalized")
+  tokenDigest              Bytes            @unique @map("token_digest")
+  targetRole               MembershipRole?  @map("target_role")
+  status                   InvitationStatus @default(PENDING)
+  expiresAt                DateTime         @map("expires_at") @db.Timestamptz(6)
+  completedAt              DateTime?        @map("completed_at") @db.Timestamptz(6)
+  invalidatedAt            DateTime?        @map("invalidated_at") @db.Timestamptz(6)
+  createdByAccountId       String?          @map("created_by_account_id") @db.Uuid
+  createdAt                DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  congregation             Congregation?    @relation(fields: [congregationId], references: [id], onDelete: Restrict)
+  createdByAccount         IdentityAccount? @relation("InvitationCreator", fields: [createdByAccountId], references: [id], onDelete: Restrict)
+  auditEvents              IdentityAuditEvent[]
+
+  @@index([congregationId, recipientEmailNormalized], map: "access_invitation_congregation_id_recipient_email_normalized_id")
+  @@map("access_invitation")
+}
+
+model IdentityAuditEvent {
+  id               String                 @id @default(uuid()) @db.Uuid
+  eventType        IdentityAuditEventType @map("event_type")
+  outcome          IdentityAuditOutcome
+  actorAccountId   String?                @map("actor_account_id") @db.Uuid
+  subjectAccountId String?                @map("subject_account_id") @db.Uuid
+  congregationId   String?                @map("congregation_id") @db.Uuid
+  invitationId     String?                @map("invitation_id") @db.Uuid
+  membershipId     String?                @map("membership_id") @db.Uuid
+  createdAt        DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  actorAccount     IdentityAccount?       @relation("AuditActor", fields: [actorAccountId], references: [id], onDelete: Restrict)
+  subjectAccount   IdentityAccount?       @relation("AuditSubject", fields: [subjectAccountId], references: [id], onDelete: Restrict)
+  congregation     Congregation?          @relation(fields: [congregationId], references: [id], onDelete: Restrict)
+  invitation       AccessInvitation?      @relation(fields: [invitationId], references: [id], onDelete: Restrict)
+  membership       Membership?            @relation(fields: [membershipId], references: [id], onDelete: Restrict)
+
+  @@index([congregationId, createdAt])
+  @@map("identity_audit_event")
+}
