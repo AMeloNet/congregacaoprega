@@ -16,6 +16,9 @@ sessões, autorização HTTP, envio de e-mails, cadastros ou reservas funcionais
 As ações da interface não gravam dados no servidor ou banco. Os testes atuais
 comprovam a estrutura de identidade e as jornadas do protótipo; os fluxos
 funcionais de identidade, recursos, programação e reservas continuam pendentes.
+A prévia pública do protótipo está disponível em
+[congregacaoprega-preview.onrender.com](https://congregacaoprega-preview.onrender.com/),
+com dados exclusivamente fictícios e sem conexão com API ou banco.
 
 ## Documentação
 
@@ -33,6 +36,7 @@ funcionais de identidade, recursos, programação e reservas continuam pendentes
 - [Cenários de testes de identidade](docs/testes/cenarios-identidade.md).
 - [Hospedagem gerenciada e estimativa de custos](docs/operacao/hospedagem-proposta.md).
 - [Publicação da prévia visual UI-001](docs/requisitos/PBL-001.md).
+- [Evidências da publicação PBL-001](docs/testes/pbl-001-evidencias.md).
 - [Estratégia e cenários de testes](docs/testes/estrategia.md).
 - [Cenários de horários, equipamentos e programação mensal](docs/testes/cenarios-programacao.md).
 - [Plano de controle das migrations](docs/banco/migrations.md).

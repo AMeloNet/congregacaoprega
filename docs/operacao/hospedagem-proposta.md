@@ -1,6 +1,7 @@
 # Proposta de hospedagem gerenciada
 
-Status: **avaliação para revisão; nenhum serviço contratado ou configurado**.
+Status: **prévia estática UI-001 configurada; serviços do piloto não contratados
+nem configurados**.
 Preços consultados em 18/09/2026, em dólares dos EUA, sujeitos a mudança.
 Relacionada a [ADR-0001](../decisoes/0001-arquitetura-inicial.md).
 
@@ -14,11 +15,15 @@ Relacionada a [ADR-0001](../decisoes/0001-arquitetura-inicial.md).
 
 ## Prévia visual UI-001
 
-A prévia visual usa o Static Site gratuito do Render, definido em
+A prévia visual está publicada em
+[congregacaoprega-preview.onrender.com](https://congregacaoprega-preview.onrender.com/)
+como Static Site gratuito do Render, definido em
 [`render.yaml`](../../render.yaml). Ela publica apenas o build React da UI-001
 e não exige banco, Auth0, domínio ou serviço de e-mail. A prévia não é o piloto
 operacional: dados são fictícios e permanecem somente na memória do navegador.
 O contrato, os critérios e a recuperação estão em [PBL-001](../requisitos/PBL-001.md).
+As verificações da publicação estão registradas nas
+[evidências PBL-001](../testes/pbl-001-evidencias.md).
 
 ## Composição proposta para o piloto gratuito
 
