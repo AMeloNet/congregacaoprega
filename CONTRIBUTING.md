@@ -19,12 +19,20 @@ pnpm --filter @congregacaoprega/api start:dev
 pnpm --filter @congregacaoprega/web dev
 ```
 
+A UI-001 pode ser visualizada executando apenas
+`pnpm --filter @congregacaoprega/web dev` e abrindo o endereço informado pelo
+Vite. Use o seletor de perfil e “Restaurar demonstração” para percorrer os
+cenários. Os dados ficam somente na memória da página; recarregar preserva a
+tela, mas reinicia os exemplos. A impressão de “Testemunho Público” é uma prévia
+fictícia.
+
 A interface de desenvolvimento usa proxy de `/api` para `127.0.0.1:3000`.
 Defina `DATABASE_URL` no ambiente da API (nunca no Git), apontando para um banco
 sob seu controle. A API exige essa variável para iniciar. A página não requer
 identidade nem dados pessoais nesta etapa. `GET /api/health/live` indica processo
 ativo; `GET /api/health/ready` verifica `SELECT 1` e devolve 503 sem expor a URL
-quando o PostgreSQL está indisponível.
+quando o PostgreSQL está indisponível. A UI-001 não usa a API e não requer
+identidade, banco ou dados pessoais para ser visualizada.
 
 ## Verificações
 

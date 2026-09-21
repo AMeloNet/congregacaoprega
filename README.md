@@ -10,15 +10,18 @@ A base técnica TEC-001 foi incorporada à `main` no PR #5. Ela contém uma pág
 de estado, API mínima, ferramentas de teste, estrutura Prisma e workflow de CI.
 IDN-001A/B acrescentaram duas migrations de identidade, congregações, vínculos,
 convites de acesso e auditoria, com testes em PostgreSQL 18.6. Esse trabalho
-foi revisado nos PRs #7 e #8 e integra o PR #6. Login, sessões, autorização
-HTTP, aceite de convites, envio de e-mail, cadastros de recursos e reservas
-ainda não foram implementados. Os testes atuais comprovam a estrutura de
-dados; os fluxos funcionais de IDN-001 continuam pendentes.
+foi revisado nos PRs #7 e #8 e integra o PR #6. A UI-001 oferece um protótipo
+navegável com dados fictícios para revisar telas e jornadas. Não há login,
+sessões, autorização HTTP, envio de e-mails, cadastros ou reservas funcionais.
+As ações da interface não gravam dados no servidor ou banco. Os testes atuais
+comprovam a estrutura de identidade e as jornadas do protótipo; os fluxos
+funcionais de identidade, recursos, programação e reservas continuam pendentes.
 
 ## Documentação
 
 - [Regras de colaboração e desenvolvimento](AGENTS.md).
 - [Escopo do MVP e próximos passos](docs/requisitos/MVP-001.md).
+- [Protótipo navegável UI-001](docs/requisitos/UI-001.md) e [cenários de teste](docs/testes/cenarios-ui-001.md).
 - [Regras e critérios de aceitação das reservas](docs/requisitos/RES-001.md).
 - [Tipos de equipamento e capacidade dos locais](docs/requisitos/EQP-001.md).
 - [Programação mensal e relatório Testemunho Público](docs/requisitos/PRG-001.md).
