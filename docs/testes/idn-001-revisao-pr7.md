@@ -93,3 +93,37 @@ O histórico real já é testado em banco vazio e atualizado. Os fluxos de
 autenticação/autorização e os testes T-IDN funcionais permanecem pendentes.
 Esta evidência não comprova backup/restauração de ambiente persistente nem
 prontidão para produção.
+
+## Continuidade após o merge do PR #6
+
+O [push na `main` do commit `5c391f4`](https://github.com/AMeloNet/congregacaoprega/actions/runs/35550257095)
+falhou no job PostgreSQL apesar de 9 testes aprovados. O Vitest registrou uma
+exceção não tratada `57P01` (`terminating connection due to administrator
+command`) durante a remoção de um banco `invitation_*_test`. O helper usa
+`DROP DATABASE ... WITH (FORCE)` depois de `pool.end()`: uma conexão pode ainda
+estar terminando quando o banco é removido à força. Os demais três jobs passaram.
+
+Correção FIX-IDN-TEST-01: a remoção de cada banco descartável deve aguardar o
+encerramento normal de todas as conexões, inclusive de outro pool que tenha
+usado o mesmo banco. A limpeza não pode usar `FORCE` nem matar conexões. Um
+teste de integração mantém uma conexão externa por tempo controlado e comprova
+que o helper só conclui após essa conexão terminar. Após a correção, executar
+os testes afetados e os quatro jobs da CI antes de incorporar o reparo à `main`.
+
+O commit `f5320d2` demonstrou a falha TDD no
+[PR #9](https://github.com/AMeloNet/congregacaoprega/pull/9):
+[CI 35550773123](https://github.com/AMeloNet/congregacaoprega/actions/runs/35550773123)
+registrou `expected false to be true` em `closed`, com os outros nove testes de
+integração aprovados. Os três outros jobs passaram. A falha foi do comportamento
+ausente, não de indisponibilidade do ambiente.
+
+O commit `6c76918` substituiu a remoção forçada por uma espera limitada pelas
+sessões de cliente, seguida de `DROP DATABASE` normal. Os helpers de identidade,
+convites, migrations e verificação de schema usam a mesma rotina; o nome do
+banco é validado como descartável `_test`. A
+[CI 35551580293](https://github.com/AMeloNet/congregacaoprega/actions/runs/35551580293)
+aprovou os quatro jobs: dez testes de integração (seis arquivos), incluindo a
+reprodução corrigida, além das verificações estáticas/unitárias, Chromium e
+contêiner. Localmente passaram `pnpm docs:check`, `pnpm format`, `pnpm lint`,
+`pnpm typecheck` e `git diff --check`. PostgreSQL e Docker locais permanecem
+indisponíveis; a verificação desses componentes ocorreu na CI.

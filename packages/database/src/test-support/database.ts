@@ -28,6 +28,33 @@ export function runPrisma(url: string, args: string[]) {
   return prismaCommand(url, args).status;
 }
 
+export async function dropDisposableDatabase(admin: Pool, name: string) {
+  if (!/^(?:identity|invitation|migration)_[0-9a-f]{32}_test$/.test(name)) {
+    throw new Error(
+      'Refusing to drop a database without a disposable test name.',
+    );
+  }
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const sessions = await admin.query<{ total: number }>(
+      `SELECT count(*)::integer AS total FROM pg_stat_activity
+       WHERE datname = $1 AND backend_type = 'client backend'`,
+      [name],
+    );
+    if (sessions.rows[0]?.total === 0) {
+      try {
+        await admin.query('DROP DATABASE IF EXISTS ' + name);
+        return;
+      } catch (error) {
+        if ((error as { code?: string }).code !== '55006') throw error;
+      }
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(
+    'Timed out waiting for disposable database sessions to close.',
+  );
+}
+
 export async function withDisposableDatabase(
   fn: (url: string, pool: Pool) => Promise<void>,
 ) {
@@ -53,7 +80,7 @@ export async function withDisposableDatabase(
     }
   } finally {
     try {
-      if (created) await admin.query('DROP DATABASE ' + name + ' WITH (FORCE)');
+      if (created) await dropDisposableDatabase(admin, name);
     } finally {
       await admin.end();
     }

@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { Pool } from 'pg';
+import { dropDisposableDatabase } from './test-support/database.js';
 
 const adminUrl = process.env.TEST_DATABASE_URL;
 const packageDir = resolve(import.meta.dirname, '..');
@@ -39,8 +40,11 @@ async function withDisposableDatabase(
       await pool.end();
     }
   } finally {
-    await admin.query(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
-    await admin.end();
+    try {
+      await dropDisposableDatabase(admin, name);
+    } finally {
+      await admin.end();
+    }
   }
 }
 
