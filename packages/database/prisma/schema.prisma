@@ -123,7 +123,7 @@ model AccessInvitation {
   createdByAccount         IdentityAccount? @relation("InvitationCreator", fields: [createdByAccountId], references: [id], onDelete: Restrict)
   auditEvents              IdentityAuditEvent[]
 
-  @@index([congregationId, recipientEmailNormalized])
+  @@index([congregationId, recipientEmailNormalized], map: "access_invitation_congregation_id_recipient_email_normalized_id")
   @@map("access_invitation")
 }
 

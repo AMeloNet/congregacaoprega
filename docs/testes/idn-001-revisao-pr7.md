@@ -3,6 +3,8 @@
 Status: **correções autorizadas; validação em andamento**.
 Escopo: IDN-A06, IDN-B02 e IDN-B06. Não altera regras de acesso,
 migrations já versionadas nem integra autenticação ou envio de e-mail.
+O modelo Prisma deve mapear os nomes físicos existentes, inclusive nomes
+truncados pelo PostgreSQL, sem recriar índices nem ignorar sua divergência.
 
 ## Contrato da verificação
 
@@ -42,5 +44,13 @@ Não usar estas fixtures para aplicar alterações em ambientes persistentes.
   O job estático também falhou por `no-unsafe-finally`; essa falha de lint é
   independente da evidência TDD e foi corrigida movendo a validação do caminho
   temporário para antes do bloco `try/finally`.
-- Validação final após implementação: pendente. Não há PostgreSQL/Docker local;
+- `6adc9d2`: [primeira comparação completa](https://github.com/AMeloNet/congregacaoprega/actions/runs/35548726576).
+  A CI detectou divergência real de nome no índice de destinatário/congregação:
+  o PostgreSQL truncou o identificador SQL para 63 bytes, terminando em
+  `recipient_email_normalized_id`; o nome inferido pelo Prisma terminava em
+  `recipient_email_normalize_idx`. Dois testes falharam nessa comparação e
+  sete passaram. Os outros três jobs passaram. A correção deve explicitar
+  `map` no modelo com o nome físico já existente; não há alteração estrutural
+  no banco nem necessidade de nova migration para esse mapeamento.
+- Validação final após correção do mapeamento: pendente. Não há PostgreSQL/Docker local;
   os testes de integração e contêiner são executados na CI em PostgreSQL 18.6.

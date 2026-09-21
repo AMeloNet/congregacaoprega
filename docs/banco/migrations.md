@@ -43,6 +43,11 @@ histórico de aplicação, não substitui a comparação de schema.
 [Limitação documentada](https://www.prisma.io/docs/cli/v7/migrate/diff).
 Contrato, limites e resultados: [revisão do PR #7](../testes/idn-001-revisao-pr7.md).
 
+O índice de congregação/destinatário em `AccessInvitation` usa `map` explícito
+para o nome físico truncado pelo PostgreSQL ao aplicar a segunda migration.
+Esse mapeamento reconcilia o modelo com o banco existente; não renomeia nem
+recria o índice, e o histórico SQL permanece intacto.
+
 ## Entrega de cada alteração
 
 A migration deve acompanhar o modelo e o requisito que a motivou, incluindo
