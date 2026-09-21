@@ -1,6 +1,7 @@
 # IDN-001 — Correções da revisão do PR #7
 
-Status: **correções autorizadas; validação em andamento**.
+Status: **correções verificadas no commit `7a547ee`; aguardando revisão do
+mantenedor no PR #7 para `codex/identity-scope`**.
 Escopo: IDN-A06, IDN-B02 e IDN-B06. Não altera regras de acesso,
 migrations já versionadas nem integra autenticação ou envio de e-mail.
 O modelo Prisma deve mapear os nomes físicos existentes, inclusive nomes
@@ -49,8 +50,44 @@ Não usar estas fixtures para aplicar alterações em ambientes persistentes.
   o PostgreSQL truncou o identificador SQL para 63 bytes, terminando em
   `recipient_email_normalized_id`; o nome inferido pelo Prisma terminava em
   `recipient_email_normalize_idx`. Dois testes falharam nessa comparação e
-  sete passaram. Os outros três jobs passaram. A correção deve explicitar
+  sete passaram. Os outros três jobs passaram. A correção explicita
   `map` no modelo com o nome físico já existente; não há alteração estrutural
   no banco nem necessidade de nova migration para esse mapeamento.
-- Validação final após correção do mapeamento: pendente. Não há PostgreSQL/Docker local;
-  os testes de integração e contêiner são executados na CI em PostgreSQL 18.6.
+- `7a547ee`: [validação após a correção do mapeamento](https://github.com/AMeloNet/congregacaoprega/actions/runs/35548964391).
+  Os quatro jobs passaram: verificações estáticas/unitárias, PostgreSQL,
+  Chromium e contêiner. Nove testes de integração passaram, incluindo o
+  upgrade populado, as duas restrições isoladas de convite e a comparação
+  completa de schema. As 12 mutações independentes do catálogo foram
+  rejeitadas; rollback restaurou o estado válido após cada uma. A divergência
+  intencional da referência Prisma também foi rejeitada. Dois testes E2E
+  passaram. CI em Ubuntu 24.04, Node 24.21.0, pnpm 11.19.0 e PostgreSQL 18.6.
+
+## Verificações locais e limites
+
+Windows, Node 24.19.0 e pnpm 11.19.0:
+
+| Comando | Resultado |
+| --- | --- |
+| `pnpm docs:check` | Aprovado; links Markdown locais válidos, com revisão manual de conteúdo |
+| `pnpm format` | Aprovado |
+| `pnpm lint` | Aprovado após corrigir `no-unsafe-finally` |
+| `pnpm typecheck` | Aprovado nos três pacotes |
+| `pnpm db:validate` | Aprovado, inclusive após o `map` do índice |
+| `pnpm build` | Aprovado para API e interface |
+| `pnpm test:unit` | Quatro testes aprovados |
+| `git diff --check` | Aprovado |
+
+Não há PostgreSQL/Docker configurado localmente. Integração, E2E e contêiner
+foram executados na CI citada acima; não são apresentados como testes locais.
+O sandbox bloqueou alguns processos locais com `EPERM`; as verificações foram
+reexecutadas fora dele e passaram. Essa limitação de ambiente não é falha TDD.
+
+As duas migrations existentes foram preservadas byte a byte. O único ajuste
+no modelo é o mapeamento do nome físico do índice; não muda estruturas nem
+dados no PostgreSQL. Não houve novas dependências, envio de e-mail, dados reais,
+aplicação de migrations em ambiente persistente, merge ou implantação.
+
+O histórico real já é testado em banco vazio e atualizado. Os fluxos de
+autenticação/autorização e os testes T-IDN funcionais permanecem pendentes.
+Esta evidência não comprova backup/restauração de ambiente persistente nem
+prontidão para produção.
