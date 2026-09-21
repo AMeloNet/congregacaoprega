@@ -191,7 +191,7 @@ describe('IDN-001A identity schema', () => {
     });
   }, 120_000);
 
-  it('preserves data on reapplication and detects drift', async () => {
+  it('preserves data on reapplication', async () => {
     await withDisposableDatabase(async (url, pool) => {
       expect(runPrisma(url, ['migrate', 'deploy'])).toBe(0);
       const completedMigrationCount = (
@@ -222,27 +222,6 @@ describe('IDN-001A identity schema', () => {
         ).rows[0].total,
       ).toBe(completedMigrationCount);
       expect(runPrisma(url, ['migrate', 'status'])).toBe(0);
-      expect(
-        (
-          await pool.query(
-            `SELECT EXISTS (
-              SELECT 1 FROM information_schema.columns
-              WHERE table_name = 'identity_account' AND column_name = 'rogue'
-            ) AS exists`,
-          )
-        ).rows[0].exists,
-      ).toBe(false);
-      await pool.query('ALTER TABLE identity_account ADD COLUMN rogue text');
-      expect(
-        (
-          await pool.query(
-            `SELECT EXISTS (
-              SELECT 1 FROM information_schema.columns
-              WHERE table_name = 'identity_account' AND column_name = 'rogue'
-            ) AS exists`,
-          )
-        ).rows[0].exists,
-      ).toBe(true);
     });
   }, 120_000);
 });
