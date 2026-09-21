@@ -35,5 +35,12 @@ Não usar estas fixtures para aplicar alterações em ambientes persistentes.
 
 ## Evidências
 
-Os comandos, commits e resultados serão registrados após execução. Uma falha
-por falta de PostgreSQL local não será registrada como falha TDD do comportamento.
+- `f903e03`: [execução TDD](https://github.com/AMeloNet/congregacaoprega/actions/runs/35548353360).
+  PostgreSQL: oito testes passaram e um falhou por `Schema comparison is not
+  implemented`, após criar as referências pelo histórico e modelo reais.
+  Upgrade populado e normalização já passaram. Chromium e contêiner passaram.
+  O job estático também falhou por `no-unsafe-finally`; essa falha de lint é
+  independente da evidência TDD e foi corrigida movendo a validação do caminho
+  temporário para antes do bloco `try/finally`.
+- Validação final após implementação: pendente. Não há PostgreSQL/Docker local;
+  os testes de integração e contêiner são executados na CI em PostgreSQL 18.6.

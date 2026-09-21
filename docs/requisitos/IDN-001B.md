@@ -1,7 +1,9 @@
 # IDN-001B — Convites de acesso e trilha de auditoria
 
-Status: **migration implementada após a falha TDD confirmada; aguardando
-validação final da CI**. Relacionado a [IDN-001](IDN-001.md),
+Status: **modelo e migration implementados no PR #8 e incorporados ao PR #7**.
+Resultados da CI e correções da revisão estão no
+[registro de evidências](../testes/idn-001-revisao-pr7.md).
+Relacionado a [IDN-001](IDN-001.md),
 [IDN-001A](IDN-001A.md), [ADR-0002](../decisoes/0002-identidade-gerenciada.md)
 e aos cenários T-IDN-14, T-IDN-15, T-IDN-16, T-IDN-18, T-IDN-19, T-IDN-21,
 T-IDN-22, T-IDN-24 e T-IDN-25.
@@ -14,7 +16,7 @@ papéis. A migration não envia e-mail, não cria token em texto aberto, não ac
 convite, não altera vínculo nem autoriza requisições. Esses comportamentos serão
 implementados sobre esta estrutura em incrementos posteriores.
 
-## Modelo proposto
+## Modelo implementado
 
 | Entidade | Campos e invariantes |
 | --- | --- |
@@ -32,7 +34,7 @@ Convites pendentes não são associações. A autorização continuará consulta
 somente `Membership` ativa. Eventos de auditoria registram identificadores e
 resultado, sem token, senha, URL de retorno ou conteúdo de e-mail.
 
-## Critérios e provas antes da implementação
+## Critérios e provas
 
 | ID | Resultado esperado e prova automatizada |
 | --- | --- |
@@ -44,9 +46,11 @@ resultado, sem token, senha, URL de retorno ou conteúdo de e-mail.
 | IDN-B06 | O histórico aplica em banco vazio e sobre IDN-001A com dados fictícios preservados; reaplicação não duplica migrations e drift intencional é detectado |
 
 Os testes de integração foram escritos antes da migration e falharam na CI com
-PostgreSQL 18 por falta de `access_invitation` (`42P01`). Com a migration
-aditiva, devem passar no mesmo ambiente. O banco de teste termina em `_test` e
-é descartado em cada caso.
+PostgreSQL 18 por falta de `access_invitation` (`42P01`). A CI aprovou a migration
+aditiva no commit `8989852`, mas a revisão encontrou lacunas nos testes de
+upgrade, drift e normalização. A correção e suas execuções são registradas
+separadamente nas evidências. O banco de teste termina em `_test` e é descartado
+em cada caso. Os fluxos funcionais T-IDN relacionados ainda não estão entregues.
 
 ## Migration e recuperação
 

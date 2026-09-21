@@ -1,6 +1,7 @@
 # IDN-001A — Estrutura inicial de identidade e congregações
 
-Status: **modelo e migration implementados; validação do CI aprovada no PR #7**.
+Status: **modelo e migration implementados no PR #7**. Resultados da CI e
+correções da revisão estão no [registro de evidências](../testes/idn-001-revisao-pr7.md).
 Relacionado a [IDN-001](IDN-001.md),
 [ADR-0002](../decisoes/0002-identidade-gerenciada.md) e ao
 [plano de migrations](../banco/migrations.md).

@@ -29,6 +29,7 @@ describe('IDN-A06 / IDN-B06 schema verification', () => {
             "DROP INDEX access_invitation_pending_master_bootstrap_key; CREATE UNIQUE INDEX access_invitation_pending_master_bootstrap_key ON access_invitation(kind) WHERE kind = 'MASTER_BOOTSTRAP' AND status = 'ACCEPTED'",
             "ALTER TYPE membership_role ADD VALUE 'UNEXPECTED_ROLE'",
             'CREATE VIEW unexpected_view AS SELECT id FROM identity_account',
+            'CREATE FUNCTION pg_temp.keep_row() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END $$; CREATE TRIGGER unexpected_trigger BEFORE UPDATE ON identity_account FOR EACH ROW EXECUTE FUNCTION pg_temp.keep_row()',
           ];
           const client = await actual.connect();
           try {

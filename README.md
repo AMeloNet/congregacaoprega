@@ -8,10 +8,13 @@ de cada congregação.
 
 A base técnica TEC-001 foi incorporada à `main` no PR #5. Ela contém uma página
 de estado, API mínima, ferramentas de teste, estrutura Prisma e workflow de CI.
-Ainda não há autenticação, cadastros nem reservas. A primeira migration de
-identidade e congregações está em desenvolvimento na branch IDN-001A. Os
-cenários de negócio documentados ainda não foram executados. O escopo da etapa
-seguinte, IDN-001, foi aprovado; a integração ainda não começou.
+O PR #7, de `codex/identity-core` para `codex/identity-scope`, reúne as duas
+migrations de identidade, congregações, vínculos, convites de acesso e auditoria
+(IDN-001A/B), incluindo o PR #8 já incorporado nessa branch. A incorporação à
+`main` continua pendente. Login, sessões, autorização HTTP, aceite de convites,
+envio de e-mail, cadastros de recursos e reservas ainda não foram implementados.
+Os testes atuais comprovam a estrutura de dados; os fluxos funcionais de
+IDN-001 continuam pendentes.
 
 ## Documentação
 
@@ -32,6 +35,7 @@ seguinte, IDN-001, foi aprovado; a integração ainda não começou.
 - [Plano de controle das migrations](docs/banco/migrations.md).
 - [Guia de instalação e testes](CONTRIBUTING.md).
 - [Evidências da base técnica](docs/testes/tec-001-evidencias.md).
+- [Revisão e evidências de IDN-001A/B no PR #7](docs/testes/idn-001-revisao-pr7.md).
 
 ## Como o desenvolvimento será feito
 

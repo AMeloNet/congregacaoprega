@@ -3,9 +3,11 @@ import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { Pool } from 'pg';
 import {
+  createSchemaReference,
   deployIdentityCore,
   identityMigration,
 } from './test-support/database.js';
+import { verifySchema } from './test-support/schema-verification.js';
 
 const adminUrl = process.env.TEST_DATABASE_URL;
 const packageDir = resolve(import.meta.dirname, '..');
@@ -109,6 +111,45 @@ describe('IDN-001B invitation and audit schema', () => {
         code: '23514',
         constraint: 'access_invitation_kind_scope_check',
       });
+      const client = await pool.connect();
+      try {
+        for (const scenario of [
+          {
+            constraint: 'access_invitation_recipient_email_normalized_check',
+            congregation,
+            normalized: 'wrong@example.test',
+          },
+          {
+            constraint: 'access_invitation_kind_scope_check',
+            congregation: null,
+            normalized: 'other@example.test',
+          },
+        ]) {
+          await client.query('BEGIN');
+          try {
+            await client.query(
+              'ALTER TABLE access_invitation DROP CONSTRAINT ' +
+                scenario.constraint,
+            );
+            const inserted = await client.query(
+              `INSERT INTO access_invitation
+                (id, kind, congregation_id, recipient_email, recipient_email_normalized, token_digest, target_role, expires_at)
+               VALUES ($1, 'MEMBERSHIP', $2, 'other@example.test', $3, $4, 'PUBLISHER', now() + interval '7 days')`,
+              [
+                randomUUID(),
+                scenario.congregation,
+                scenario.normalized,
+                Buffer.alloc(32, 3),
+              ],
+            );
+            expect(inserted.rowCount, scenario.constraint).toBe(1);
+          } finally {
+            await client.query('ROLLBACK');
+          }
+        }
+      } finally {
+        client.release();
+      }
       await expect(
         pool.query(
           `INSERT INTO access_invitation
@@ -350,6 +391,15 @@ describe('IDN-001B invitation and audit schema', () => {
         ).rows[0].total,
       ).toBe(1);
       expect(runPrisma(url, ['migrate', 'status'])).toBe(0);
+      await withDisposableDatabase(async (historyUrl, history) => {
+        await withDisposableDatabase(async (modelUrl, model) => {
+          expect(runPrisma(historyUrl, ['migrate', 'deploy'])).toBe(0);
+          await createSchemaReference(modelUrl, model);
+          await expect(
+            verifySchema(pool, history, model),
+          ).resolves.toBeUndefined();
+        });
+      });
     });
   }, 120_000);
 });

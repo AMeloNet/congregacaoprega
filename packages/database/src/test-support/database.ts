@@ -63,6 +63,12 @@ export async function withDisposableDatabase(
 export async function deployIdentityCore(url: string) {
   const temporaryRoot = resolve(tmpdir());
   const directory = await mkdtemp(join(temporaryRoot, 'identity-history-'));
+  const child = relative(temporaryRoot, resolve(directory));
+  if (!child || child.startsWith('..') || isAbsolute(child)) {
+    throw new Error(
+      'Refusing to remove a directory outside the temporary root.',
+    );
+  }
   try {
     const migrations = join(packageDir, 'prisma/migrations');
     await cp(
@@ -82,12 +88,6 @@ export async function deployIdentityCore(url: string) {
       },
     ).status;
   } finally {
-    const child = relative(temporaryRoot, resolve(directory));
-    if (!child || child.startsWith('..') || isAbsolute(child)) {
-      throw new Error(
-        'Refusing to remove a directory outside the temporary root.',
-      );
-    }
     await rm(directory, { recursive: true });
   }
 }

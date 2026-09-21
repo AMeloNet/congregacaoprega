@@ -24,17 +24,24 @@ Migrate 7.10.0 é a autoridade do histórico, com SQL em
 O histórico real começa com IDN-001A. Não há dados reais a transformar na
 versão anterior, que possuía apenas um schema vazio.
 
-Para a versão 7 proposta, a geração local usa o fluxo `migrate dev`, que requer
+Na versão 7, a geração local usa o fluxo `migrate dev`, que requer
 banco sombra descartável; aplicação em ambiente persistente usa `migrate deploy`.
-Esses são nomes de operações da ferramenta, não scripts já existentes no projeto.
+Os scripts `db:migrate:*` do pacote de banco expõem essas operações.
 O cliente deve ser gerado explicitamente; não depender da geração automática
 de versões anteriores. [Referência da versão 7](https://www.prisma.io/docs/cli/v7/migrate/dev).
 
 `migrate diff` não deve ser usado como prova isolada quando a migration tiver
 índices parciais ou restrições SQL sem representação no Prisma. Os testes de
-integração verificam o histórico com `migrate status` e usam o catálogo do
-PostgreSQL para detectar uma coluna divergente inserida intencionalmente,
-além de testarem as restrições efetivas. [Limitação documentada](https://www.prisma.io/docs/cli/v7/migrate/diff).
+integração comparam o catálogo completo dos objetos usados nesta etapa com
+outro banco descartável criado pelo histórico real. Uma segunda referência,
+criada pelo SQL de `migrate diff --from-empty --to-schema`, compara os objetos
+representados no modelo Prisma; apenas CHECKs e índices parciais são excluídos
+dessa segunda comparação. Eles continuam obrigatórios na comparação com o SQL.
+Mutações controladas devem comprovar a detecção de divergências de colunas,
+defaults, enums, CHECKs, índices parciais e views. `migrate status` verifica o
+histórico de aplicação, não substitui a comparação de schema.
+[Limitação documentada](https://www.prisma.io/docs/cli/v7/migrate/diff).
+Contrato, limites e resultados: [revisão do PR #7](../testes/idn-001-revisao-pr7.md).
 
 ## Entrega de cada alteração
 
