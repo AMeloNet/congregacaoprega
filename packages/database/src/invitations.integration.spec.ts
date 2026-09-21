@@ -5,6 +5,7 @@ import { Pool } from 'pg';
 import {
   createSchemaReference,
   deployIdentityCore,
+  dropDisposableDatabase,
   identityMigration,
 } from './test-support/database.js';
 import { verifySchema } from './test-support/schema-verification.js';
@@ -45,8 +46,11 @@ async function withDisposableDatabase(
       await pool.end();
     }
   } finally {
-    await admin.query(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
-    await admin.end();
+    try {
+      await dropDisposableDatabase(admin, name);
+    } finally {
+      await admin.end();
+    }
   }
 }
 

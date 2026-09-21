@@ -109,3 +109,10 @@ usado o mesmo banco. A limpeza não pode usar `FORCE` nem matar conexões. Um
 teste de integração mantém uma conexão externa por tempo controlado e comprova
 que o helper só conclui após essa conexão terminar. Após a correção, executar
 os testes afetados e os quatro jobs da CI antes de incorporar o reparo à `main`.
+
+O commit `f5320d2` demonstrou a falha TDD no
+[PR #9](https://github.com/AMeloNet/congregacaoprega/pull/9):
+[CI 35550773123](https://github.com/AMeloNet/congregacaoprega/actions/runs/35550773123)
+registrou `expected false to be true` em `closed`, com os outros nove testes de
+integração aprovados. Os três outros jobs passaram. A falha foi do comportamento
+ausente, não de indisponibilidade do ambiente.
