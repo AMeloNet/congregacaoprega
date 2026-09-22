@@ -5,6 +5,7 @@ import { App } from './App.js';
 
 beforeEach(() => {
   window.location.hash = '#inicio';
+  window.localStorage.clear();
 });
 
 describe('UI-001 prototype journeys', () => {
@@ -136,5 +137,60 @@ describe('UI-001 prototype journeys', () => {
     expect(screen.getByText('Cancelada')).toBeInTheDocument();
     await user.click(screen.getByRole('link', { name: 'Relatório' }));
     expect(screen.queryByText('Ana; Marina')).not.toBeInTheDocument();
+  });
+});
+
+describe('UI-002 appearance preferences', () => {
+  it('uses the light purple appearance by default and changes theme immediately', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'light');
+    expect(document.documentElement).toHaveAttribute('data-accent', 'purple');
+
+    await user.click(screen.getByRole('button', { name: 'Aparência' }));
+    await user.click(screen.getByRole('button', { name: 'Tema escuro' }));
+    await user.click(screen.getByRole('button', { name: 'Azul' }));
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+    expect(document.documentElement).toHaveAttribute('data-accent', 'blue');
+  });
+
+  it('persists theme and accent selections between visits', async () => {
+    const user = userEvent.setup();
+    const first = render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Aparência' }));
+    await user.click(screen.getByRole('button', { name: 'Tema escuro' }));
+    await user.click(screen.getByRole('button', { name: 'Laranja' }));
+    first.unmount();
+
+    render(<App />);
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+    expect(document.documentElement).toHaveAttribute('data-accent', 'orange');
+  });
+
+  it('uses the device preference when the system option is selected', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Aparência' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Usar aparência do sistema' }),
+    );
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'light');
+    expect(
+      screen.getByRole('button', { name: 'Usar aparência do sistema' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(
+      JSON.parse(
+        window.localStorage.getItem('congregacaoprega.ui-002.appearance') ??
+          '{}',
+      ),
+    ).toMatchObject({
+      themeMode: 'system',
+      accent: 'purple',
+    });
   });
 });

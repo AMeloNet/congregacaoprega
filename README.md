@@ -25,7 +25,7 @@ com dados exclusivamente fictícios e sem conexão com API ou banco.
 
 - [Regras de colaboração e desenvolvimento](AGENTS.md).
 - [Escopo do MVP e próximos passos](docs/requisitos/MVP-001.md).
-- [Protótipo navegável UI-001](docs/requisitos/UI-001.md) e [cenários de teste](docs/testes/cenarios-ui-001.md).
+- [Protótipo navegável UI-001](docs/requisitos/UI-001.md), [temas e cores pessoais UI-002](docs/requisitos/UI-002.md) e seus [cenários de teste](docs/testes/cenarios-ui-002.md).
 - [Regras e critérios de aceitação das reservas](docs/requisitos/RES-001.md).
 - [Tipos de equipamento e capacidade dos locais](docs/requisitos/EQP-001.md).
 - [Programação mensal e relatório Testemunho Público](docs/requisitos/PRG-001.md).

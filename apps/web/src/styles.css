@@ -1,4 +1,18 @@
 :root {
+  --page-bg: #f5f7f3;
+  --surface: #fff;
+  --surface-muted: #edf2eb;
+  --text: #172f29;
+  --text-muted: #536b5a;
+  --border: #d7e2d8;
+  --accent: #65439a;
+  --accent-hover: #4f327b;
+  --accent-soft: #eee8f6;
+  --accent-on: #fff;
+  --sidebar: #35274d;
+  --sidebar-hover: #4f3a70;
+  --sidebar-text: #f4f0f8;
+  --focus: #65439a;
   font-family:
     Inter,
     ui-sans-serif,
@@ -6,9 +20,41 @@
     -apple-system,
     'Segoe UI',
     sans-serif;
-  color: #172f29;
-  background: #f5f7f3;
+  color: var(--text);
+  background: var(--page-bg);
   font-synthesis: none;
+}
+:root[data-accent='orange'] {
+  --accent: #c85e00;
+  --accent-hover: #9e4900;
+  --accent-soft: #fff0e2;
+  --sidebar: #55331d;
+  --sidebar-hover: #754827;
+  --focus: #c85e00;
+}
+:root[data-accent='blue'] {
+  --accent: #356b9f;
+  --accent-hover: #28547e;
+  --accent-soft: #e5eff8;
+  --sidebar: #273d55;
+  --sidebar-hover: #355574;
+  --focus: #356b9f;
+}
+:root[data-accent='green'] {
+  --accent: #37745a;
+  --accent-hover: #285940;
+  --accent-soft: #e6f1e9;
+  --sidebar: #173f35;
+  --sidebar-hover: #326451;
+  --focus: #37745a;
+}
+:root[data-theme='dark'] {
+  --page-bg: #18161b;
+  --surface: #242129;
+  --surface-muted: #302c35;
+  --text: #f4eff7;
+  --text-muted: #d2cad8;
+  --border: #4b444f;
 }
 * {
   box-sizing: border-box;
@@ -111,7 +157,7 @@ a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 3px solid #d09a39;
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 .skip-link {
@@ -1018,6 +1064,162 @@ select:focus-visible {
   font-size: 10px;
   color: #819486;
 }
+
+/* UI-002: tokens apply the selected appearance without changing product states. */
+body {
+  background: var(--page-bg);
+  color: var(--text);
+}
+.skip-link,
+.topbar,
+.metric-card,
+.panel,
+.schedule-card,
+.print-sheet,
+.field input,
+.field select,
+.button.outline,
+.button.danger {
+  background: var(--surface);
+  border-color: var(--border);
+}
+.topbar {
+  border-color: var(--border);
+}
+.breadcrumbs,
+.date-note,
+.muted,
+.page-footer,
+.metric-card > span,
+.metric-card small,
+.field label,
+.field small,
+.panel p,
+.schedule-info p,
+.report-footnote {
+  color: var(--text-muted);
+}
+.breadcrumbs strong,
+.page-top h1,
+.section-heading h2,
+.panel h2,
+.panel h3,
+.schedule-info h3,
+.metric-card > strong,
+.card-title,
+.field input,
+.field select,
+.print-sheet {
+  color: var(--text);
+}
+.sidebar,
+.hero-panel,
+.detail-banner,
+.admin-overview,
+.report-top {
+  background: var(--sidebar);
+  color: var(--sidebar-text);
+}
+.nav-list a:hover,
+.nav-list a[aria-current='page'] {
+  background: var(--sidebar-hover);
+}
+.brand-mark,
+.chip-icon,
+.button.primary,
+.role-tools button.role-active,
+.accent-option[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-on);
+}
+.button.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.button.light,
+.soft-badge,
+.demo-banner,
+.role-tools,
+.avatar,
+.review-hint,
+.info-callout {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.button.outline,
+.text-button,
+.eyebrow,
+.breadcrumbs strong {
+  color: var(--accent);
+}
+.appearance-control {
+  position: relative;
+}
+.appearance-trigger {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
+}
+.appearance-panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 9px);
+  right: 0;
+  width: min(310px, calc(100vw - 32px));
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 12px 30px #00000024;
+  color: var(--text);
+}
+.appearance-panel p {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.appearance-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 13px;
+}
+.appearance-options button {
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 6px 9px;
+  background: var(--surface-muted);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+}
+.accent-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.accent-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #65439a;
+}
+.accent-dot.orange {
+  background: #c85e00;
+}
+.accent-dot.blue {
+  background: #356b9f;
+}
+.accent-dot.green {
+  background: #37745a;
+}
 @media (max-width: 1100px) {
   .app-shell {
     grid-template-columns: 210px minmax(0, 1fr);
@@ -1193,6 +1395,8 @@ select:focus-visible {
   }
   .print-sheet {
     border: 0;
+    background: #fff !important;
+    color: #000 !important;
     box-shadow: none;
     padding: 0;
     overflow: visible;

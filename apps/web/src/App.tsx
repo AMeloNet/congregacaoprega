@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import './styles.css';
 
@@ -15,6 +15,50 @@ type Role = 'publicador' | 'administrador';
 type MonthState = 'liberado' | 'finalizado' | 'reaberto';
 type InvitationState = 'pendente' | 'aceito' | 'recusado';
 type Equipment = 'Carrinho' | 'Quiosque' | 'Display';
+type ThemeMode = 'light' | 'dark' | 'system';
+type Accent = 'purple' | 'orange' | 'blue' | 'green';
+
+type Appearance = {
+  themeMode: ThemeMode;
+  accent: Accent;
+};
+
+const appearanceStorageKey = 'congregacaoprega.ui-002.appearance';
+const defaultAppearance: Appearance = { themeMode: 'light', accent: 'purple' };
+
+const themeOptions: { id: ThemeMode; label: string }[] = [
+  { id: 'light', label: 'Tema claro' },
+  { id: 'dark', label: 'Tema escuro' },
+  { id: 'system', label: 'Usar aparência do sistema' },
+];
+
+const accentOptions: { id: Accent; label: string }[] = [
+  { id: 'purple', label: 'Roxo' },
+  { id: 'orange', label: 'Laranja' },
+  { id: 'blue', label: 'Azul' },
+  { id: 'green', label: 'Verde' },
+];
+
+function readAppearance(): Appearance {
+  try {
+    const saved = window.localStorage.getItem(appearanceStorageKey);
+    if (!saved) return defaultAppearance;
+    const value = JSON.parse(saved) as Partial<Appearance>;
+    const themeMode = themeOptions.some((item) => item.id === value.themeMode)
+      ? (value.themeMode as ThemeMode)
+      : defaultAppearance.themeMode;
+    const accent = accentOptions.some((item) => item.id === value.accent)
+      ? (value.accent as Accent)
+      : defaultAppearance.accent;
+    return { themeMode, accent };
+  } catch {
+    return defaultAppearance;
+  }
+}
+
+function systemPrefersDark(): boolean {
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+}
 
 const navigation: { id: Screen; label: string; marker: string }[] = [
   { id: 'inicio', label: 'Início', marker: '⌂' },
@@ -86,6 +130,41 @@ export function App() {
   const [review, setReview] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [appearance, setAppearance] = useState<Appearance>(readAppearance);
+  const [appearanceOpen, setAppearanceOpen] = useState(false);
+  const [systemDark, setSystemDark] = useState(systemPrefersDark);
+
+  useLayoutEffect(() => {
+    const theme =
+      appearance.themeMode === 'system'
+        ? systemDark
+          ? 'dark'
+          : 'light'
+        : appearance.themeMode;
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.accent = appearance.accent;
+    document.documentElement.style.colorScheme = theme;
+  }, [appearance, systemDark]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        appearanceStorageKey,
+        JSON.stringify(appearance),
+      );
+    } catch {
+      // A demonstração segue utilizável quando o navegador bloqueia armazenamento local.
+    }
+  }, [appearance]);
+
+  useEffect(() => {
+    const media = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (!media) return;
+    const update = (event: MediaQueryListEvent) => setSystemDark(event.matches);
+    setSystemDark(media.matches);
+    media.addEventListener?.('change', update);
+    return () => media.removeEventListener?.('change', update);
+  }, []);
 
   useEffect(() => {
     const handleHash = () => setScreen(routeFromHash());
@@ -234,6 +313,69 @@ export function App() {
           </div>
           <div className="topbar-right">
             <span className="date-note">OUTUBRO 2026</span>
+            <div className="appearance-control">
+              <button
+                type="button"
+                className="appearance-trigger"
+                aria-expanded={appearanceOpen}
+                aria-controls="appearance-panel"
+                onClick={() => setAppearanceOpen((open) => !open)}
+              >
+                Aparência
+              </button>
+              {appearanceOpen && (
+                <section
+                  id="appearance-panel"
+                  className="appearance-panel"
+                  aria-label="Aparência"
+                >
+                  <p>Tema</p>
+                  <div className="appearance-options" aria-label="Tema">
+                    {themeOptions.map(({ id, label }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        aria-pressed={appearance.themeMode === id}
+                        onClick={() =>
+                          setAppearance((current) => ({
+                            ...current,
+                            themeMode: id,
+                          }))
+                        }
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <p>Cor de destaque</p>
+                  <div
+                    className="appearance-options"
+                    aria-label="Cor de destaque"
+                  >
+                    {accentOptions.map(({ id, label }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        className="accent-option"
+                        aria-pressed={appearance.accent === id}
+                        onClick={() =>
+                          setAppearance((current) => ({
+                            ...current,
+                            accent: id,
+                          }))
+                        }
+                      >
+                        <span
+                          className={`accent-dot ${id}`}
+                          aria-hidden="true"
+                        />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
             <span className="avatar">A</span>
           </div>
         </header>
