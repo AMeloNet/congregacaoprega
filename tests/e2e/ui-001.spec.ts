@@ -1,5 +1,27 @@
 import { expect, test } from '@playwright/test';
 
+test.beforeEach(async ({ page }) => {
+  await page.route('**/api/session', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        authenticated: true,
+        email: 'publisher@example.test',
+        emailVerified: true,
+        csrfToken: 'controlled-csrf',
+        activeCongregationId: 'congregation-example',
+        memberships: [
+          {
+            congregationId: 'congregation-example',
+            congregationName: 'Congregação Exemplo',
+            role: 'PUBLISHER',
+          },
+        ],
+      }),
+    });
+  });
+});
+
 test('navigates the fictional screens with a stable route and no horizontal overflow', async ({
   page,
 }) => {
@@ -9,8 +31,14 @@ test('navigates the fictional screens with a stable route and no horizontal over
   });
   await page.goto('/');
   await expect(
-    page.getByText(/demonstração com dados fictícios/i),
+    page.getByText(/programação e reservas ainda usam dados fictícios/i),
   ).toBeVisible();
+  await page.keyboard.press('Tab');
+  await expect(
+    page.getByRole('combobox', { name: 'Congregação ativa' }),
+  ).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('link', { name: 'Sair' })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(
     page.getByRole('link', { name: 'Pular para o conteúdo' }),
@@ -37,7 +65,9 @@ test('navigates the fictional screens with a stable route and no horizontal over
       () => document.documentElement.scrollWidth > innerWidth,
     ),
   ).toBe(false);
-  expect(businessRequests).toEqual([]);
+  expect(
+    businessRequests.filter((url) => !url.endsWith('/api/session')),
+  ).toEqual([]);
 });
 
 test('walks through reservation and invitation examples', async ({ page }) => {

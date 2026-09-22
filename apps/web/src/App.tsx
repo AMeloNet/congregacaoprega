@@ -240,8 +240,8 @@ export function App() {
         <div className="demo-banner">
           <span className="demo-dot" />
           <span>
-            Demonstração com dados fictícios. Sem login real, envio de e-mails
-            ou reservas no servidor.
+            Programação e reservas ainda usam dados fictícios. Identidade e
+            convites de acesso são tratados pela aplicação.
           </span>
         </div>
         <main id="main-content" className="content" tabIndex={-1}>
@@ -1226,7 +1226,7 @@ export function App() {
           )}
 
           <footer className="page-footer no-print">
-            <span>UI-001 · Protótipo navegável</span>
+            <span>UI-001 · Módulos de programação ainda demonstrativos</span>
             <button type="button" className="text-button" onClick={reset}>
               Restaurar demonstração
             </button>

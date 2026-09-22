@@ -3,11 +3,10 @@ import { resolve } from 'node:path';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
+import { validateIdentityEnvironment } from './identity/identity.runtime.js';
 
 async function bootstrap(): Promise<void> {
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL is required to start the API.');
-  }
+  validateIdentityEnvironment();
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix('api');
   app.useStaticAssets(resolve(import.meta.dirname, 'public'));
