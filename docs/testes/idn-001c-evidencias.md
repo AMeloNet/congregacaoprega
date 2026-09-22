@@ -1,7 +1,7 @@
 # Evidências da IDN-001C
 
-Status: **implementação e verificações locais concluídas em 22/09/2026;
-PostgreSQL 18 e container aguardam CI do Pull Request**. Requisito:
+Status: **implementação, verificações locais e CI do Pull Request #13
+concluídas em 22/09/2026**. Requisito:
 [IDN-001C](../requisitos/IDN-001C.md).
 
 ## Ciclo TDD observado
@@ -32,10 +32,20 @@ as suítes afetadas foram repetidas.
 | `pnpm test:e2e` | aprovado; seis testes, desktop e Pixel 7 |
 | `pnpm test:integration` | **não executável localmente**: `TEST_DATABASE_URL` ausente e Docker não instalado; a proteção recusou o alvo antes de acessar dados |
 
-O job `PostgreSQL and migration fixtures` da CI usa PostgreSQL
-18.6 descartável e é a evidência obrigatória para os dois novos casos de fluxo
-funcional e concorrência. O job de container comprova configuração obrigatória
-e o endpoint de processo vivo.
+O
+[workflow 35773479071](https://github.com/AMeloNet/congregacaoprega/actions/runs/35773479071)
+aprovou os quatro jobs: verificações estáticas e unitárias, PostgreSQL 18.6 e
+migrations, Chromium e smoke test do container. O job PostgreSQL executou os 12
+testes de integração, incluindo os dois casos novos de fluxo funcional e
+concorrência. O container recusou configuração ausente e, com valores
+fictícios, serviu os ativos de mesma origem e o endpoint de processo vivo.
+
+A primeira execução da CI identificou duas falhas legítimas. O timestamp de
+criação do convite vinha do relógio real do banco enquanto a expiração usava o
+relógio controlado do domínio; o commit `99fbabe` passou ambos pelo mesmo
+relógio. O smoke test ainda procurava a mensagem de configuração anterior e
+foi alinhado ao contrato novo. A execução completa seguinte aprovou as duas
+correções e os demais jobs.
 
 ## Cobertura funcional entregue
 

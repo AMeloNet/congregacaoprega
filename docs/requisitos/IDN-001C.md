@@ -1,7 +1,7 @@
 # IDN-001C — Fluxos funcionais de identidade e acesso
 
-Status: **implementada na branch da etapa; validação PostgreSQL e container
-aguardam CI do Pull Request**. Relacionada a [IDN-001](IDN-001.md),
+Status: **implementada na branch da etapa e validada pela CI do Pull Request
+#13 em 22/09/2026**. Relacionada a [IDN-001](IDN-001.md),
 [IDN-001A](IDN-001A.md), [IDN-001B](IDN-001B.md),
 [ADR-0002](../decisoes/0002-identidade-gerenciada.md) e aos
 [cenários T-IDN](../testes/cenarios-identidade.md).
