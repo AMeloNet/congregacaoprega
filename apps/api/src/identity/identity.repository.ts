@@ -69,7 +69,7 @@ export interface IdentityRepository {
     | Array<Membership & { congregationName: string }>;
   activeLocalAdminCount(congregationId: string): Promise<number> | number;
   createInvitation(
-    input: Omit<Invitation, 'id' | 'status'>,
+    input: Omit<Invitation, 'id' | 'status'> & { createdAt: Date },
   ): Promise<Invitation>;
   invitationByDigest(digest: string): Promise<Invitation | undefined>;
   invitationById(

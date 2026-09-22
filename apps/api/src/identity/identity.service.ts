@@ -44,7 +44,8 @@ export class IdentityService {
       throw new Error('A conta master já foi inicializada.');
     }
     const token = secretToken();
-    const expiresAt = new Date(this.now().getTime() + 24 * 60 * 60 * 1000);
+    const createdAt = this.now();
+    const expiresAt = new Date(createdAt.getTime() + 24 * 60 * 60 * 1000);
     const invitation = await this.repository.createInvitation({
       kind: 'MASTER_BOOTSTRAP',
       congregationId: null,
@@ -53,6 +54,7 @@ export class IdentityService {
       targetRole: null,
       expiresAt,
       createdByAccountId: null,
+      createdAt,
     });
     await this.repository.addAudit({
       type: 'MASTER_BOOTSTRAP_ISSUED',
@@ -73,7 +75,8 @@ export class IdentityService {
   ) {
     await this.assertCanInvite(actor, input.congregationId, input.role);
     const token = secretToken();
-    const expiresAt = new Date(this.now().getTime() + 7 * 24 * 60 * 60 * 1000);
+    const createdAt = this.now();
+    const expiresAt = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
     const invitation = await this.repository.createInvitation({
       kind: 'MEMBERSHIP',
       congregationId: input.congregationId,
@@ -82,6 +85,7 @@ export class IdentityService {
       targetRole: input.role,
       expiresAt,
       createdByAccountId: actor.accountId,
+      createdAt,
     });
     await this.repository.addAudit({
       type: 'MEMBERSHIP_INVITED',

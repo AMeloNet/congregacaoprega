@@ -75,7 +75,7 @@ jobs:
             echo 'Container unexpectedly started without DATABASE_URL'
             exit 1
           fi
-          grep -q 'DATABASE_URL is required' missing-config.log
+          grep -q 'Required identity configuration is missing: DATABASE_URL' missing-config.log
           docker run --detach --name app --publish 3000:3000 \
             --env DATABASE_URL=postgresql://test:test@127.0.0.1:5432/congregacaoprega_test \
             --env AUTH0_ISSUER=https://identity.example.test/ \

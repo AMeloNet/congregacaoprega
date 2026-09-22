@@ -79,7 +79,7 @@ export class MemoryIdentityRepository implements IdentityRepository {
     ).length;
   }
   createInvitation(
-    input: Omit<Invitation, 'id' | 'status'>,
+    input: Omit<Invitation, 'id' | 'status'> & { createdAt: Date },
   ): Promise<Invitation> {
     for (const item of this.invitationRows.values()) {
       const sameScope =

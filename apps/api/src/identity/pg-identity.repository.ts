@@ -173,7 +173,7 @@ export class PgIdentityRepository implements IdentityRepository {
   }
 
   async createInvitation(
-    input: Omit<Invitation, 'id' | 'status'>,
+    input: Omit<Invitation, 'id' | 'status'> & { createdAt: Date },
   ): Promise<Invitation> {
     return this.transaction(async (client) => {
       if (input.kind === 'MASTER_BOOTSTRAP') {
@@ -192,8 +192,8 @@ export class PgIdentityRepository implements IdentityRepository {
       const result = await client.query<InvitationRow>(
         `INSERT INTO access_invitation
            (id, kind, congregation_id, recipient_email, recipient_email_normalized,
-            token_digest, target_role, expires_at, created_by_account_id)
-         VALUES ($1, $2, $3, $4, $4, $5, $6, $7, $8)
+            token_digest, target_role, expires_at, created_by_account_id, created_at)
+         VALUES ($1, $2, $3, $4, $4, $5, $6, $7, $8, $9)
          RETURNING *`,
         [
           randomUUID(),
@@ -204,6 +204,7 @@ export class PgIdentityRepository implements IdentityRepository {
           input.targetRole,
           input.expiresAt,
           input.createdByAccountId,
+          input.createdAt,
         ],
       );
       return invitation(result.rows[0]!);
