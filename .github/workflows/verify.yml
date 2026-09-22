@@ -78,6 +78,16 @@ jobs:
           grep -q 'DATABASE_URL is required' missing-config.log
           docker run --detach --name app --publish 3000:3000 \
             --env DATABASE_URL=postgresql://test:test@127.0.0.1:5432/congregacaoprega_test \
+            --env AUTH0_ISSUER=https://identity.example.test/ \
+            --env AUTH0_CLIENT_ID=container-test \
+            --env AUTH0_CLIENT_SECRET=container-test-secret \
+            --env AUTH0_AUDIENCE=https://api.example.test \
+            --env AUTH0_CALLBACK_URL=http://127.0.0.1:3000/api/auth/callback \
+            --env AUTH0_LOGOUT_URL=http://127.0.0.1:3000/ \
+            --env SESSION_SECRET=container-test-session-secret-32-bytes \
+            --env BOOTSTRAP_SECRET=container-test-bootstrap-secret \
+            --env APP_BASE_URL=http://127.0.0.1:3000 \
+            --env EMAIL_TRANSPORT=capture \
             congregacaoprega:ci
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:3000/api/health/live > live.json; then break; fi

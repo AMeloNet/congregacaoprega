@@ -1,7 +1,7 @@
 # Cenários de identidade e associação
 
-Status: **IDN-001A/B executados; cenários funcionais da IDN-001C escritos antes
-da implementação**.
+Status: **IDN-001A/B executados; cenários funcionais implementados na
+IDN-001C e aguardando a CI do Pull Request**.
 Requisito: [IDN-001](../requisitos/IDN-001.md). O provedor de identidade
 precisa ter um substituto controlado nos testes; integração com serviço real
 será validada separadamente, sem enviar e-mail a pessoas reais.
