@@ -9,13 +9,14 @@ de cada congregação.
 A base técnica TEC-001 foi incorporada à `main` no PR #5. Ela contém uma página
 de estado, API mínima, ferramentas de teste, estrutura Prisma e workflow de CI.
 IDN-001A/B acrescentaram duas migrations de identidade, congregações, vínculos,
-convites de acesso e auditoria, com testes em PostgreSQL 18.6. Esse trabalho
-foi revisado nos PRs #7 e #8 e integra o PR #6. A UI-001 oferece um protótipo
-navegável com dados fictícios para revisar telas e jornadas. Não há login,
-sessões, autorização HTTP, envio de e-mails, cadastros ou reservas funcionais.
-As ações da interface não gravam dados no servidor ou banco. Os testes atuais
-comprovam a estrutura de identidade e as jornadas do protótipo; os fluxos
-funcionais de identidade, recursos, programação e reservas continuam pendentes.
+convites de acesso e auditoria, com testes em PostgreSQL 18.6. A IDN-001C integra
+sessão OIDC/Auth0, autorização, convites e captura controlada de e-mail. Esse
+trabalho foi revisado nos PRs #7 e #8 e integra o PR #6. A UI-001 oferece um
+protótipo navegável com dados fictícios para revisar telas e jornadas. Identidade
+e acesso agora têm implementação funcional em desenvolvimento; o tenant Auth0
+real e um transporte externo de e-mail ainda não foram validados. Cadastros de
+recursos, programação e reservas permanecem demonstrativos e não gravam no
+servidor.
 A prévia pública do protótipo está disponível em
 [congregacaoprega-preview.onrender.com](https://congregacaoprega-preview.onrender.com/),
 com dados exclusivamente fictícios e sem conexão com API ou banco.
@@ -32,7 +33,9 @@ com dados exclusivamente fictícios e sem conexão com API ou banco.
 - [Versões propostas](docs/arquitetura/versoes-propostas.md).
 - [Escopo da primeira etapa técnica](docs/requisitos/TEC-001.md).
 - [Proposta de identidade e associação à congregação](docs/requisitos/IDN-001.md).
+- [Fluxos funcionais de identidade e acesso](docs/requisitos/IDN-001C.md).
 - [Decisão de identidade gerenciada para o piloto](docs/decisoes/0002-identidade-gerenciada.md).
+- [Operação da identidade com Auth0](docs/operacao/identidade-auth0.md).
 - [Cenários de testes de identidade](docs/testes/cenarios-identidade.md).
 - [Hospedagem gerenciada e estimativa de custos](docs/operacao/hospedagem-proposta.md).
 - [Publicação da prévia visual UI-001](docs/requisitos/PBL-001.md).
@@ -43,6 +46,7 @@ com dados exclusivamente fictícios e sem conexão com API ou banco.
 - [Guia de instalação e testes](CONTRIBUTING.md).
 - [Evidências da base técnica](docs/testes/tec-001-evidencias.md).
 - [Revisão e evidências de IDN-001A/B no PR #7](docs/testes/idn-001-revisao-pr7.md).
+- [Evidências locais da IDN-001C](docs/testes/idn-001c-evidencias.md).
 
 ## Como o desenvolvimento será feito
 

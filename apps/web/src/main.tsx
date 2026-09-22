@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { App } from './App.js';
+import { AccessApp } from './AccessApp.js';
 
 const root = document.querySelector('#root');
 
@@ -10,6 +10,6 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <AccessApp />
   </StrictMode>,
 );

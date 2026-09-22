@@ -1,6 +1,7 @@
 # Cenários de identidade e associação
 
-Status: **planejados para IDN-001; ainda não implementados nem executados**.
+Status: **IDN-001A/B executados; cenários funcionais IDN-001C implementados e
+validados pela CI do Pull Request #13 em 22/09/2026**.
 Requisito: [IDN-001](../requisitos/IDN-001.md). O provedor de identidade
 precisa ter um substituto controlado nos testes; integração com serviço real
 será validada separadamente, sem enviar e-mail a pessoas reais.
@@ -38,3 +39,16 @@ dos testes executáveis e do código; acrescentar os casos específicos de falha
 Cada teste automatizado deve falhar pelo comportamento ausente antes da
 implementação e passar depois. A CI deve executar regressão e migrations
 reais antes de um PR funcional ser considerado pronto.
+
+## Matriz executável da IDN-001C
+
+| Suíte | Cenários cobertos |
+| --- | --- |
+| `apps/api/src/auth/*.spec.ts` | T-IDN-01 a 04 e 13: OIDC controlado, sessão, CSRF, logout e dados sensíveis |
+| `apps/api/src/identity/*.spec.ts` | T-IDN-02, 05 a 08 e 14 a 25: autorização, convites, papéis, isolamento, relógio e e-mail capturado |
+| `packages/database/src/*.integration.spec.ts` | T-IDN-09 a 11, 15, 18, 21 a 25: migrations, constraints e transações em PostgreSQL 18 |
+| `apps/web/src/*.spec.tsx` | T-IDN-01, 02, 04, 12, 14, 17 e 22: estados e jornadas responsivas em português |
+| `tests/e2e/ui-001.spec.ts` | sessão controlada, teclado, tela móvel e integração da identidade com o protótipo |
+
+O Auth0 real não é chamado na CI. A validação do tenant de homologação é uma
+verificação operacional separada e não autoriza e-mail para pessoas reais.

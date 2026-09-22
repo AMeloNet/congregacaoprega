@@ -19,6 +19,13 @@ pnpm --filter @congregacaoprega/api start:dev
 pnpm --filter @congregacaoprega/web dev
 ```
 
+Copie os nomes de configuração de [`.env.example`](.env.example) para um
+arquivo local ignorado pelo Git e substitua todos os placeholders. A API da
+IDN-001C exige configuração Auth0, segredos distintos, `APP_BASE_URL` e
+`EMAIL_TRANSPORT=capture`; detalhes e rotação estão no
+[guia operacional](docs/operacao/identidade-auth0.md). O transporte `capture`
+não envia mensagens pela rede.
+
 A UI-001 pode ser visualizada executando apenas
 `pnpm --filter @congregacaoprega/web dev` e abrindo o endereço informado pelo
 Vite. Use o seletor de perfil e “Restaurar demonstração” para percorrer os
@@ -28,11 +35,12 @@ fictícia.
 
 A interface de desenvolvimento usa proxy de `/api` para `127.0.0.1:3000`.
 Defina `DATABASE_URL` no ambiente da API (nunca no Git), apontando para um banco
-sob seu controle. A API exige essa variável para iniciar. A página não requer
-identidade nem dados pessoais nesta etapa. `GET /api/health/live` indica processo
+sob seu controle. A API exige essa variável para iniciar. A página consulta a
+sessão de identidade. `GET /api/health/live` indica processo
 ativo; `GET /api/health/ready` verifica `SELECT 1` e devolve 503 sem expor a URL
-quando o PostgreSQL está indisponível. A UI-001 não usa a API e não requer
-identidade, banco ou dados pessoais para ser visualizada.
+quando o PostgreSQL está indisponível. Programação, recursos e reservas da
+UI-001 continuam demonstrativos; identidade, seleção de congregação e convites
+de acesso usam a API.
 
 ## Verificações
 

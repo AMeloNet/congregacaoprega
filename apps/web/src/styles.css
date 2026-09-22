@@ -16,6 +16,82 @@
 body {
   margin: 0;
 }
+
+.access-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: var(--surface, #f5f3ed);
+}
+
+.access-card {
+  width: min(100%, 32rem);
+  display: grid;
+  gap: 1rem;
+}
+
+.identity-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #142f2a;
+  color: white;
+}
+
+.identity-bar select {
+  max-width: 20rem;
+}
+
+.identity-bar a {
+  margin-left: auto;
+  color: white;
+}
+
+.identity-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  background: #eef2ed;
+}
+
+.compact-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.compact-panel h2,
+.compact-panel p {
+  margin: 0;
+}
+
+.membership-list {
+  display: grid;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.membership-list li {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+@media (max-width: 640px) {
+  .identity-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .identity-bar a {
+    margin-left: 0;
+  }
+}
 button,
 input,
 select {
