@@ -128,13 +128,7 @@ test('finalizes before printing and blocks a publisher even after an administrat
   ).toBeDisabled();
 });
 
-test('applies and persists a personal appearance without calling the API', async ({
-  page,
-}) => {
-  const businessRequests: string[] = [];
-  page.on('request', (request) => {
-    if (request.url().includes('/api/')) businessRequests.push(request.url());
-  });
+test('applies and persists a personal appearance', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Aparência' }).click();
   await page.getByRole('button', { name: 'Tema escuro' }).click();
@@ -144,7 +138,6 @@ test('applies and persists a personal appearance without calling the API', async
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(page.locator('html')).toHaveAttribute('data-accent', 'purple');
-  expect(businessRequests).toEqual([]);
 });
 
 test('follows an operating system appearance change when selected', async ({

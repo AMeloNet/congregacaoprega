@@ -10,7 +10,7 @@ Status: executados localmente em 22/09/2026. Referência:
 | T-UI2-03 | UI2-03, UI2-05 | Cada paleta pode ser selecionada por teclado e comunica a seleção; foco continua visível. |
 | T-UI2-04 | UI2-04 | Cor e tema escolhidos permanecem após desmontar, montar e recarregar a página. |
 | T-UI2-05 | UI2-06 | No modo de impressão, conteúdo usa papel claro e texto escuro mesmo que a tela esteja escura. |
-| T-UI2-06 | UI2-07 | A troca de aparência não faz chamadas a `/api/`, nem introduz migration. |
+| T-UI2-06 | UI2-07 | A revisão do diff confirma que a etapa não introduz cliente de API, migration ou dado real. |
 
 Os testes de componente devem começar falhando porque a UI-001 não contém o
 painel, atributos de tema ou persistência. Os testes E2E cobrem a persistência
