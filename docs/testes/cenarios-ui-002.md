@@ -1,7 +1,8 @@
 # UI-002 — Cenários de temas e cores
 
-Status: executados localmente em 22/09/2026. Referência:
-[UI-002](../requisitos/UI-002.md).
+Status: **executados localmente em 22/09/2026 e aprovados na CI do Pull Request
+[#14](https://github.com/AMeloNet/congregacaoprega/pull/14), incorporado à
+`main` em 23/09/2026**. Referência: [UI-002](../requisitos/UI-002.md).
 
 | Cenário | Critério | Resultado esperado |
 | --- | --- | --- |
@@ -37,3 +38,11 @@ após a implementação.
 Não houve alteração de schema, migration ou API, portanto `pnpm test:integration`
 não foi executado localmente. A CI continuará a executá-lo em PostgreSQL
 descartável para o repositório.
+
+## Evidência pós-merge
+
+O PR #14 foi incorporado no merge commit
+`72c93df9c3ad27ecbdb56de2a82aab5477142209`. A página do PR registrou os quatro
+checks obrigatórios aprovados. Essa incorporação não publicou a aplicação no
+Render: a prévia estática permanece no commit da UI-001, conforme a
+[proposta de hospedagem](../operacao/hospedagem-proposta.md).

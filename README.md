@@ -12,14 +12,19 @@ IDN-001A/B acrescentaram duas migrations de identidade, congregações, vínculo
 convites de acesso e auditoria, com testes em PostgreSQL 18.6. A IDN-001C integra
 sessão OIDC/Auth0, autorização, convites e captura controlada de e-mail. Esse
 trabalho foi revisado nos PRs #7 e #8 e integra o PR #6. A UI-001 oferece um
-protótipo navegável com dados fictícios para revisar telas e jornadas. Identidade
-e acesso agora têm implementação funcional em desenvolvimento; o tenant Auth0
+protótipo navegável com dados fictícios para revisar telas e jornadas. A UI-002,
+incorporada pelo PR #14, acrescenta temas claro, escuro e do sistema e quatro
+paletas persistidas localmente. Identidade e acesso têm implementação funcional;
+o tenant Auth0
 real e um transporte externo de e-mail ainda não foram validados. Cadastros de
 recursos, programação e reservas permanecem demonstrativos e não gravam no
 servidor.
 A prévia pública do protótipo está disponível em
 [congregacaoprega-preview.onrender.com](https://congregacaoprega-preview.onrender.com/),
-com dados exclusivamente fictícios e sem conexão com API ou banco.
+no commit estático da UI-001 `7873e0d`, com dados exclusivamente fictícios e sem
+conexão com API ou banco. A `main` atual depende de API, PostgreSQL e Auth0 e não
+deve substituir essa prévia como Static Site. A próxima publicação funcional
+está especificada, mas não configurada.
 
 ## Documentação
 
@@ -40,6 +45,7 @@ com dados exclusivamente fictícios e sem conexão com API ou banco.
 - [Hospedagem gerenciada e estimativa de custos](docs/operacao/hospedagem-proposta.md).
 - [Publicação da prévia visual UI-001](docs/requisitos/PBL-001.md).
 - [Evidências da publicação PBL-001](docs/testes/pbl-001-evidencias.md).
+- [Publicação funcional controlada PBL-002](docs/requisitos/PBL-002.md) e seus [cenários de validação](docs/testes/cenarios-pbl-002.md).
 - [Estratégia e cenários de testes](docs/testes/estrategia.md).
 - [Cenários de horários, equipamentos e programação mensal](docs/testes/cenarios-programacao.md).
 - [Plano de controle das migrations](docs/banco/migrations.md).

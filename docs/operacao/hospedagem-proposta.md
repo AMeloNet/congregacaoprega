@@ -1,7 +1,7 @@
 # Proposta de hospedagem gerenciada
 
-Status: **prévia estática UI-001 configurada; serviços do piloto não contratados
-nem configurados**.
+Status: **prévia estática UI-001 no commit `7873e0d`; publicação funcional
+especificada na PBL-002, mas não configurada**.
 Preços consultados em 18/09/2026, em dólares dos EUA, sujeitos a mudança.
 Relacionada a [ADR-0001](../decisoes/0001-arquitetura-inicial.md).
 
@@ -25,6 +25,23 @@ O contrato, os critérios e a recuperação estão em [PBL-001](../requisitos/PB
 As verificações da publicação estão registradas nas
 [evidências PBL-001](../testes/pbl-001-evidencias.md).
 
+Em 23/09/2026, o painel do Render e a URL pública foram verificados novamente.
+O último e único deploy continuava `Live` no commit
+`7873e0d385e9844c22560b8263454821eb1aeacd`, merge do PR #11. A página ainda
+exibia “Protótipo UI-001” e o aviso de dados fictícios, sem login real, API ou
+banco. O serviço estava associado à branch `main` e configurado como
+`Auto-Deploy: On Commit`, mas os eventos não mostravam tentativa posterior ao
+deploy inicial. Esta observação não identifica a causa e não autoriza disparar
+novo deploy.
+
+A `main` atual, no merge commit da UI-002
+`72c93df9c3ad27ecbdb56de2a82aab5477142209`, renderiza `AccessApp` e consulta
+`/api/session`. Não publicar esse commit nem versões posteriores pelo Static
+Site atual: sem NestJS, PostgreSQL e Auth0, a interface não representa a
+aplicação funcional. Preservar a URL PBL-001 até que a
+[PBL-002](../requisitos/PBL-002.md) seja implementada e validada em outro Web
+Service e outra URL.
+
 ## Composição proposta para o piloto gratuito
 
 | Serviço | Proposta | Responsabilidade |
@@ -33,6 +50,11 @@ As verificações da publicação estão registradas nas
 | Banco | Neon Free, PostgreSQL 18 | Persistência externa compatível com Prisma e migrations SQL |
 | Identidade | Auth0 Free | Login hospedado, e-mail/senha e fluxo OIDC |
 | E-mail | Resend Free | Avisos da aplicação e integração de e-mail da identidade |
+
+A primeira publicação funcional deve usar captura controlada e dados fictícios,
+conforme a PBL-002. Resend permanece uma avaliação posterior para entrega real;
+não trocar `EMAIL_TRANSPORT=capture` antes de existir implementação, testes,
+domínio/remetente verificável e autorização próprios.
 
 Essa composição tem custo-base de **US$ 0 por mês dentro das franquias**, sem
 incluir domínio. Não é uma promessa de disponibilidade, capacidade ou ausência
@@ -156,6 +178,12 @@ Produção depende de autorização específica. Propor publicação manual apó
 e migration serializada, usando artefatos revisados. A integração com GitHub
 não deve ativar publicação automática irrestrita da `main`.
 [Fonte: publicação manual no Render](https://render.com/docs/deploys).
+
+O contrato executável, as variáveis, a origem única, o CORS, a ordem de
+migrations e os cenários de validação da próxima etapa estão em
+[PBL-002](../requisitos/PBL-002.md) e
+[cenários PBL-002](../testes/cenarios-pbl-002.md). A documentação não cria banco,
+tenant, serviço ou segredo e não constitui uma publicação.
 
 ## Informações necessárias para fechar a escolha
 
