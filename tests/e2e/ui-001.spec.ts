@@ -22,6 +22,30 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test('applies and persists a personal appearance', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Aparência' }).click();
+  await page.getByRole('button', { name: 'Tema escuro' }).click();
+  await page.getByRole('button', { name: 'Roxo' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('html')).toHaveAttribute('data-accent', 'purple');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('html')).toHaveAttribute('data-accent', 'purple');
+});
+
+test('follows an operating system appearance change when selected', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Aparência' }).click();
+  await page.getByRole('button', { name: 'Usar aparência do sistema' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+});
+
 test('navigates the fictional screens with a stable route and no horizontal overflow', async ({
   page,
 }) => {
@@ -126,28 +150,4 @@ test('finalizes before printing and blocks a publisher even after an administrat
   await expect(
     page.getByRole('button', { name: 'Revisar reserva' }),
   ).toBeDisabled();
-});
-
-test('applies and persists a personal appearance', async ({ page }) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Aparência' }).click();
-  await page.getByRole('button', { name: 'Tema escuro' }).click();
-  await page.getByRole('button', { name: 'Roxo' }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(page.locator('html')).toHaveAttribute('data-accent', 'purple');
-  await page.reload();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(page.locator('html')).toHaveAttribute('data-accent', 'purple');
-});
-
-test('follows an operating system appearance change when selected', async ({
-  page,
-}) => {
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Aparência' }).click();
-  await page.getByRole('button', { name: 'Usar aparência do sistema' }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await page.emulateMedia({ colorScheme: 'light' });
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 });
