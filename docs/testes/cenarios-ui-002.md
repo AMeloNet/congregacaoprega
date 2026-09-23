@@ -31,7 +31,7 @@ após a implementação.
 | `pnpm lint` | Aprovado; nenhum aviso ou erro. |
 | `pnpm typecheck` | Aprovado nos projetos API, web e database. |
 | `pnpm build` | Aprovado nos projetos API e web. |
-| `pnpm exec vitest run --project web-unit --reporter=verbose --maxWorkers=1 --no-file-parallelism` | Aprovado; 8 testes, incluindo os 3 cenários unitários da UI-002. |
+| `pnpm exec vitest run --config vitest.config.ts --reporter=verbose --maxWorkers=1 --no-file-parallelism` em `apps/web` | Aprovado; 14 testes, incluindo os 3 cenários unitários da UI-002 e os fluxos de acesso integrados. |
 | `pnpm test:e2e` | Aprovado; 10 jornadas em Chromium desktop e celular, incluindo persistência e modo do sistema. |
 
 Não houve alteração de schema, migration ou API, portanto `pnpm test:integration`
