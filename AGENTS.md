@@ -1,129 +1,50 @@
 # AGENTS.md — congregacaoprega
 
-## Project
+## Objetivo
 
-Repository: https://github.com/AMeloNet/congregacaoprega
+Sistema web responsivo para organizar equipamentos, pontos, horários, participantes e designações de pregação em múltiplas congregações.
 
-Responsive multi-tenant web application for managing preaching equipment,
-locations, schedules, participants, and assignments for congregations.
+## Regras obrigatórias
 
-Approved stack: TypeScript, React, NestJS, PostgreSQL, Prisma, and Docker.
-The project is licensed under `AGPL-3.0-only`.
+- Leia esta instrução e a especificação relacionada antes de alterar o código.
+- Preserve alterações existentes de outras pessoas.
+- Implemente somente o escopo solicitado/autorizado.
+- Antes de implementar uma funcionalidade, defina seus critérios de aceitação e testes.
+- Para funcionalidades e correções, escreva ou ajuste os testes antes da implementação sempre que aplicável.
+- Execute os testes afetados após a alteração e corrija falhas antes de concluir.
+- Toda alteração de banco deve usar migration versionada. Nunca altere uma migration já incorporada à `main`.
+- Valide permissões e entradas no servidor; não confie apenas na interface.
+- Não inclua credenciais, tokens, `.env`, dados reais ou informações pessoais no código, testes ou commits.
+- Atualize a documentação quando o comportamento, contrato ou configuração do sistema mudar.
+- Mantenha mudanças pequenas e relacionadas ao objetivo da tarefa.
 
-Current status: the technical foundation and initial identity data model exist,
-but authentication, reservations, and deployment are not implemented. Do not
-describe planned or unexecuted checks as completed. See
-`docs/testes/tec-001-evidencias.md` and `docs/testes/idn-001-revisao-pr7.md`.
+## Git
 
-## Mandatory workflow
+- Use branches curtas e específicas.
+- Commits devem ser em inglês no formato `type(scope): summary`.
+- Abra um Pull Request para mudanças concluídas.
+- Não faça merge na `main`; o mantenedor decide o merge.
+- Não reescreva histórico compartilhado.
 
-For every change:
+## Quando houver dúvida
 
-1. Read the relevant specification and inspect the current repository state.
-   Preserve unrelated and existing work.
-2. Record the expected behavior, scope, acceptance criteria, and impacts on
-   data and permissions before implementation.
-3. For executable behavior, write and run tests first. Confirm that they fail
-   for the missing behavior rather than because of an environment problem.
-4. Implement the smallest complete change that satisfies the criteria.
-5. Run affected tests after each increment, then run the relevant regression,
-   formatting, linting, type, build, and documentation checks before delivery.
-6. Update affected documentation, API contracts, operational instructions,
-   and migrations. Review the final diff for unrelated files or sensitive data.
-7. Report the commands run, their results, limitations, and any checks that
-   were not executed.
+- Se faltar uma regra de negócio que possa alterar o resultado, pergunte antes de decidir.
+- Para decisões técnicas rotineiras dentro do escopo, escolha uma solução razoável e prossiga.
+- Não peça novamente uma autorização que já foi concedida.
 
-Start bug fixes with a reproducing test. Protect refactors with tests that
-preserve existing behavior. Documentation-only changes require content,
-Markdown, link, and example review rather than artificial functional tests.
+## Conclusão
 
-Ask before implementing a missing business rule that would change the expected
-result or before materially expanding scope. Routine technical decisions within
-an approved scope do not require additional approval.
+Antes de considerar uma tarefa concluída:
 
-## Implementation and security
+1. Código implementado conforme o escopo.
+2. Testes relevantes executados e aprovados.
+3. Migrations criadas/revisadas quando necessário.
+4. Documentação atualizada quando necessário.
+5. Nenhum segredo ou dado indevido incluído.
+6. Informe no final o que foi alterado, os testes executados e eventuais pendências.
 
-- Keep business rules, persistence, and presentation separated. Validate input
-  and authorization on the server, even when the UI also validates them.
-- Derive tenant access from the authenticated identity and authorized
-  membership; never trust a client-provided tenant identifier alone.
-- Enforce integrity and concurrency rules in both the server and database.
-- Keep contracts explicitly typed and error handling consistent.
-- Add dependencies only when justified; verify maintenance, version, and
-  license compatibility. Pin runtime and tool versions and commit the lockfile.
-- Keep changes small and focused. Avoid unrelated formatting or refactoring.
-- Build accessible, responsive UI in Brazilian Portuguese, including keyboard
-  navigation and clear loading, empty, and error states.
-- Define and test date, interval, overlap, and time-zone behavior explicitly.
-- Never commit credentials, tokens, `.env` files, backups, production data, or
-  personal data. Use fictional examples and controlled local substitutes for
-  external effects such as email.
-- Grant CI and application accounts minimum privileges. Do not expose secrets
-  or credential-bearing URLs in commands, logs, or test reports.
+## Documentação detalhada
 
-## Tests and database changes
+Consulte a documentação em `docs/` quando a tarefa envolver requisitos específicos, arquitetura, banco, testes, segurança ou operação.
 
-- Use unit tests for isolated rules, integration tests for API and persistence,
-  and end-to-end tests for critical browser journeys.
-- Integration and migration tests must use disposable PostgreSQL matching the
-  target major version. Mocks do not replace transaction, constraint, isolation,
-  or concurrency tests.
-- Keep tests independent and deterministic. Control time and randomness, and
-  never target production systems or real recipients.
-- Cover success, failure, boundaries, tenant isolation, permissions,
-  concurrency, overlap, cancellation, and request idempotency where relevant.
-- Do not disable tests or weaken correct expectations to bypass failures.
-
-Every schema, constraint, index, database permission, or required data change
-must have a reviewed and versioned Prisma migration. Never edit, delete, or
-reorder a migration already merged into `main` or applied to a shared database;
-correct it with a new migration.
-
-Validate both a clean database built from the complete migration history and an
-upgrade from the previous supported version with representative data. Check
-data preservation, constraints, tenant isolation, repeat application behavior,
-and schema drift. Do not use direct schema synchronization, automatic migration
-generation, or database reset in staging or production.
-
-Destructive data changes require documented impact, a recoverable backup, a
-tested recovery procedure, and explicit maintainer authorization. Prefer
-expand-migrate-contract changes and account for older application versions that
-may still be running.
-
-## Documentation and language
-
-- Keep documentation versioned with the code and link requirements, tests,
-  migrations, and pull requests by identifier.
-- Record architecture decisions as ADRs with context, alternatives, decision,
-  consequences, and status.
-- Document API contracts, data models, environment variables, installation,
-  testing, upgrades, backup, and recovery as they are introduced.
-- Documentation, user communication, issues, and pull request descriptions are
-  in Portuguese. Code, database identifiers, migration names, and commit
-  messages are in English. The initial UI is Brazilian Portuguese.
-- Use fictional data and reproducible commands in examples.
-- Real project commands are documented in `CONTRIBUTING.md`.
-
-## Git and delivery
-
-- Work on short, cohesive branches such as `docs/project-rules`,
-  `feat/booking`, or `fix/booking-conflict`.
-- Use English commits in the form `type(scope): summary`, with types such as
-  `docs`, `test`, `feat`, `fix`, `refactor`, `ci`, and `chore`.
-- Agents may create branches, push verified commits, and open pull requests for
-  authorized work. The maintainer decides whether to merge into `main`.
-- Never merge, enable auto-merge, bypass required checks, or rewrite shared
-  history unless the maintainer explicitly instructs it.
-- Pull requests must describe the problem, result, related requirement,
-  documentation, executed tests, and database/recovery impact.
-- Production release requires explicit maintainer approval.
-
-## Definition of done
-
-A change is complete only when its acceptance criteria are met, documentation
-and tests match the delivered behavior, relevant checks have passed, database
-changes include reviewed migrations and recovery guidance, and the diff contains
-no unrelated files, real data, or secrets.
-
-Report local preparation, GitHub push, merge, and production release as separate
-states. State exactly which one was reached.
+Não carregue documentação que não seja relevante para a tarefa.
