@@ -1,7 +1,7 @@
 # PBL-002A — Preparação da publicação funcional e captura controlada
 
-Status: **implementada localmente em 23/09/2026; CI e infraestrutura externa
-pendentes**. Este é o primeiro incremento da [PBL-002](PBL-002.md) e preserva a
+Status: **incorporada à `main` em 24/09/2026; ativação da infraestrutura externa
+pendente**. Este é o primeiro incremento da [PBL-002](PBL-002.md) e preserva a
 prévia [PBL-001](PBL-001.md) sem alterações. Evidências:
 [PBL-002A](../testes/pbl-002a-evidencias.md).
 

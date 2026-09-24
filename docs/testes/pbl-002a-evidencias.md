@@ -1,7 +1,8 @@
 # Evidências da PBL-002A
 
-Status: **implementação local concluída em 23/09/2026; CI e infraestrutura
-externa pendentes**. Requisito: [PBL-002A](../requisitos/PBL-002A.md).
+Status: **implementação e CI incorporadas à `main` em 24/09/2026;
+infraestrutura externa pendente**. Requisito:
+[PBL-002A](../requisitos/PBL-002A.md).
 
 ## Auditoria anterior à mudança
 
@@ -60,6 +61,23 @@ Blueprint pelo Render CLI não foi executada porque a ferramenta não está
 instalada; Prettier validou a sintaxe YAML e a aplicação real permanece
 pendente de revisão no painel.
 
+## CI e incorporação
+
+O [PR #17](https://github.com/AMeloNet/congregacaoprega/pull/17) executou a CI
+no commit `db674e535b87b8ca1d116f18e2926ad306509dcc`. Os quatro checks obrigatórios
+concluíram com sucesso:
+
+- `Static checks and unit tests`;
+- `PostgreSQL and migration fixtures`;
+- `Chromium browser`;
+- `Container smoke test`.
+
+O PR foi incorporado somente depois dessas aprovações. O merge commit é
+`730ad048c4134840213111f1162631923d039486`. Depois do merge, a URL pública da
+prévia continuava exibindo “Protótipo UI-001” com dados fictícios. A branch
+local `main` permaneceu em `26b146a` e o PR #15 permaneceu aberto, sem reset,
+reescrita ou incorporação acidental.
+
 ## Cobertura entregue
 
 - Captura em memória limitada a domínios reservados, com validação anterior à
@@ -90,6 +108,6 @@ Reinício, suspensão ou deploy encerra sessões e apaga a captura. Convites
 persistidos permanecem no PostgreSQL e precisam ser revogados ou reemitidos; o
 token antigo não pode ser recuperado. Uma única réplica continua obrigatória.
 
-Permanecem pendentes a CI do Pull Request, criação/configuração de Neon, Auth0 e
+Permanecem pendentes a criação/configuração de PostgreSQL gerenciado, Auth0 e
 Render, aplicação real das migrations, login real, rollback e restauração. Não
 há publicação funcional nem autorização para produção ou dados pessoais.
