@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: congregacaoprega-staging
+    runtime: docker
+    repo: https://github.com/AMeloNet/congregacaoprega
+    branch: main
+    plan: free
+    numInstances: 1
+    autoDeployTrigger: off
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health/live
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: AUTH0_ISSUER
+        sync: false
+      - key: AUTH0_CLIENT_ID
+        sync: false
+      - key: AUTH0_CLIENT_SECRET
+        sync: false
+      - key: AUTH0_AUDIENCE
+        sync: false
+      - key: AUTH0_CALLBACK_URL
+        sync: false
+      - key: AUTH0_LOGOUT_URL
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: BOOTSTRAP_SECRET
+        sync: false
+      - key: CAPTURE_OPERATOR_SECRET
+        sync: false
+      - key: APP_BASE_URL
+        sync: false
+      - key: EMAIL_TRANSPORT
+        value: capture
