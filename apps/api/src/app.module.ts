@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DatabaseHealth, HealthController } from './health.js';
+import { CaptureController } from './identity/capture.controller.js';
 import {
   AuthController,
   IdentityController,
@@ -7,7 +8,12 @@ import {
 import { IdentityRuntime } from './identity/identity.runtime.js';
 
 @Module({
-  controllers: [HealthController, AuthController, IdentityController],
+  controllers: [
+    HealthController,
+    AuthController,
+    IdentityController,
+    CaptureController,
+  ],
   providers: [DatabaseHealth, IdentityRuntime],
 })
 export class AppModule {}
