@@ -18,7 +18,9 @@ senha. Cadastre URLs exatas por ambiente, sem curingas amplos:
 Use o domínio HTTPS do tenant com barra final em `AUTH0_ISSUER`. Configure
 `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET` e a audiência da API fora do Git. Gere
 `SESSION_SECRET` e `BOOTSTRAP_SECRET` distintos, aleatórios e com pelo menos 32
-caracteres. O arquivo [`.env.example`](../../.env.example) contém apenas
+caracteres. Na PBL-002A, `CAPTURE_OPERATOR_SECRET` também é obrigatório,
+exclusivo e do mesmo tamanho mínimo. O arquivo
+[`.env.example`](../../.env.example) contém apenas
 placeholders.
 
 A API valida ID tokens RS256 com a JWKS do emissor, `iss`, `aud`, `exp` e
@@ -43,8 +45,10 @@ opacos HttpOnly; não copie tokens para `localStorage`, logs ou URLs de suporte.
 
 Não inclua o segredo ou o token em histórico de shell, Issue, PR, log ou
 evidência. A captura em memória se perde ao reiniciar a API e existe somente
-para desenvolvimento/teste. Uma interface administrativa restrita para ler a
-captura não é exposta por HTTP.
+para desenvolvimento/teste. A PBL-002A substitui a ausência de observação
+remota por uma rota operacional assinada, documentada no
+[guia de homologação](pbl-002a-homologacao.md). Ela não usa sessão comum nem o
+segredo de bootstrap e não torna a captura publicamente utilizável.
 
 ## Rotação e incidentes
 

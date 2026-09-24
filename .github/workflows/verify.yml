@@ -85,7 +85,8 @@ jobs:
             --env AUTH0_CALLBACK_URL=http://127.0.0.1:3000/api/auth/callback \
             --env AUTH0_LOGOUT_URL=http://127.0.0.1:3000/ \
             --env SESSION_SECRET=container-test-session-secret-32-bytes \
-            --env BOOTSTRAP_SECRET=container-test-bootstrap-secret \
+            --env BOOTSTRAP_SECRET=container-test-bootstrap-secret-32 \
+            --env CAPTURE_OPERATOR_SECRET=container-test-capture-operator-secret \
             --env APP_BASE_URL=http://127.0.0.1:3000 \
             --env EMAIL_TRANSPORT=capture \
             congregacaoprega:ci
@@ -95,5 +96,13 @@ jobs:
           done
           grep -q '"status":"ok"' live.json
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'congregacaoprega'
+          curl --fail --silent --dump-header session.headers \
+            --header 'Origin: https://external.example.test' \
+            http://127.0.0.1:3000/api/session > session.json
+          grep -q '"authenticated":false' session.json
+          if grep -Eqi '^access-control-allow-(origin|credentials):' session.headers; then
+            echo 'Container unexpectedly enabled cross-origin access'
+            exit 1
+          fi
       - if: always()
         run: docker rm --force app || true

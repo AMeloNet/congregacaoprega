@@ -1,0 +1,68 @@
+name: Deploy controlled staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full approved commit SHA already incorporated into main
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: congregacaoprega-staging-migration
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate immutable target
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require a full commit SHA
+        env:
+          TARGET_SHA: ${{ inputs.commit_sha }}
+        run: |
+          if [[ ! "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'The target must be a full lowercase commit SHA.'
+            exit 1
+          fi
+
+  migrate:
+    name: Apply migrations serially
+    needs: validate
+    runs-on: ubuntu-24.04
+    environment: staging
+    env:
+      DATABASE_URL: ${{ secrets.STAGING_MIGRATION_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+      - name: Require target to belong to origin/main
+        env:
+          TARGET_SHA: ${{ inputs.commit_sha }}
+        run: git merge-base --is-ancestor "$TARGET_SHA" origin/main
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+      - run: npm install --global pnpm@11.19.0
+      - run: pnpm install --frozen-lockfile
+      - name: Apply reviewed Prisma history
+        run: pnpm --filter @congregacaoprega/database db:migrate:deploy
+
+  deploy:
+    name: Trigger the approved Render commit
+    needs: migrate
+    runs-on: ubuntu-24.04
+    environment: staging
+    env:
+      RENDER_DEPLOY_HOOK_URL: ${{ secrets.STAGING_RENDER_DEPLOY_HOOK_URL }}
+      TARGET_SHA: ${{ inputs.commit_sha }}
+    steps:
+      - name: Deploy the same immutable SHA
+        run: >-
+          curl --fail --silent --show-error --output /dev/null --get
+          --data-urlencode "ref=$TARGET_SHA" "$RENDER_DEPLOY_HOOK_URL"

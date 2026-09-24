@@ -18,7 +18,7 @@ provas exigidas antes de implementar ou configurar a
 | T-PBL2-10 | PBL2-07 | Navegador | Login e callback válidos criam sessão opaca; callback adulterado/repetido, emissor ou audiência incorretos são recusados |
 | T-PBL2-11 | PBL2-07, PBL2-13 | Navegador | Logout revoga sessão; reinício encerra sessões em memória e a interface retorna ao estado não autenticado |
 | T-PBL2-12 | PBL2-08 | Navegador e HTTP | Requisições relativas funcionam sem CORS; origem externa não recebe permissão curinga nem credenciais |
-| T-PBL2-13 | PBL2-09 | Integração e segurança | Convite para endereço fictício aparece somente na captura autorizada; não há conexão SMTP/HTTP externa, token em log ou endpoint público |
+| T-PBL2-13 | PBL2-09 | Integração e segurança | Convite para endereço fictício aparece somente na captura autorizada; não há conexão SMTP/HTTP externa, token em log ou resposta útil sem assinatura operacional |
 | T-PBL2-14 | PBL2-09, PBL2-13 | Operação | Reinício remove a captura em memória; o convite persistido pode ser revogado/reemitido sem recuperar o token antigo |
 | T-PBL2-15 | PBL2-10 | Operação | Segredo inválido, Auth0 indisponível ou banco inacessível produz falha observável e bloqueia promoção sem reduzir validações |
 | T-PBL2-16 | PBL2-11 | Recuperação | Rollback inicia a versão anterior compatível sem reverter migration; backup lógico restaura dados fictícios em banco descartável |

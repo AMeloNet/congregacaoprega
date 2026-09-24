@@ -84,6 +84,19 @@ describe('IDN-001C invitations and tenant authorization', () => {
     ).rejects.toThrow('A conta master já foi inicializada.');
   });
 
+  it('rejects a non-fictional recipient before persisting an invitation', async () => {
+    const { repository, service } = fixture();
+
+    await expect(
+      service.inviteMember(local, {
+        congregationId: 'cong-a',
+        email: 'person@real-domain.test.br',
+        role: 'PUBLISHER',
+      }),
+    ).rejects.toThrow('A captura aceita somente endereços fictícios.');
+    expect(repository.invitationTokenDigests()).toEqual([]);
+  });
+
   it('lets master invite a local admin and local admin invite only publishers', async () => {
     const { repository, service } = fixture();
     const adminInvite = await service.inviteMember(master, {

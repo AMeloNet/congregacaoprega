@@ -1,7 +1,7 @@
 # Proposta de hospedagem gerenciada
 
 Status: **prévia estática UI-001 no commit `7873e0d`; publicação funcional
-especificada na PBL-002, mas não configurada**.
+especificada na PBL-002 e preparada pela PBL-002A, mas não configurada**.
 Preços consultados em 18/09/2026, em dólares dos EUA, sujeitos a mudança.
 Relacionada a [ADR-0001](../decisoes/0001-arquitetura-inicial.md).
 

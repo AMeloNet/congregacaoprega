@@ -12,6 +12,7 @@
   },
   "scripts": {
     "build": "pnpm -r --if-present build",
+    "capture": "node scripts/capture-client.mjs",
     "db:generate": "pnpm --filter @congregacaoprega/database db:generate",
     "db:validate": "pnpm --filter @congregacaoprega/database db:validate",
     "docs:check": "node scripts/check-docs.mjs",

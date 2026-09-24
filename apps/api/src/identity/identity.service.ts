@@ -43,6 +43,7 @@ export class IdentityService {
     if (await this.repository.hasMaster()) {
       throw new Error('A conta master já foi inicializada.');
     }
+    this.email.assertAllowedRecipient(normalized(email));
     const token = secretToken();
     const createdAt = this.now();
     const expiresAt = new Date(createdAt.getTime() + 24 * 60 * 60 * 1000);
@@ -74,6 +75,7 @@ export class IdentityService {
     input: { congregationId: string; email: string; role: LocalRole },
   ) {
     await this.assertCanInvite(actor, input.congregationId, input.role);
+    this.email.assertAllowedRecipient(normalized(input.email));
     const token = secretToken();
     const createdAt = this.now();
     const expiresAt = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);

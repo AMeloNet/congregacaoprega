@@ -26,6 +26,11 @@ IDN-001C exige configuração Auth0, segredos distintos, `APP_BASE_URL` e
 [guia operacional](docs/operacao/identidade-auth0.md). O transporte `capture`
 não envia mensagens pela rede.
 
+A PBL-002A exige ainda `CAPTURE_OPERATOR_SECRET`, diferente dos outros segredos
+e com pelo menos 32 caracteres. O procedimento remoto, o cliente `pnpm capture`
+e a perda intencional após reinício estão no
+[guia de homologação](docs/operacao/pbl-002a-homologacao.md).
+
 A UI-001 pode ser visualizada executando apenas
 `pnpm --filter @congregacaoprega/web dev` e abrindo o endereço informado pelo
 Vite. Use o seletor de perfil e “Restaurar demonstração” para percorrer os
