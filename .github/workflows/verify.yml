@@ -96,6 +96,7 @@ jobs:
           done
           grep -q '"status":"ok"' live.json
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'congregacaoprega'
+          curl --fail --silent http://127.0.0.1:3000/convites/container-test-token | grep -q 'congregacaoprega'
           curl --fail --silent --dump-header session.headers \
             --header 'Origin: https://external.example.test' \
             http://127.0.0.1:3000/api/session > session.json

@@ -14,7 +14,7 @@ provas exigidas antes de implementar ou configurar a
 | T-PBL2-06 | PBL2-04 | Integração PostgreSQL | Atualização desde a versão anterior preserva dados fictícios, constraints e auditoria; nova execução não reaplica migrations |
 | T-PBL2-07 | PBL2-04, PBL2-10 | Integração PostgreSQL | Migration inválida ou concorrente falha e impede a promoção sem marcar estado manualmente |
 | T-PBL2-08 | PBL2-05 | Fumaça | Processo sem banco aprova somente `/api/health/live`; `/api/health/ready` retorna indisponível sem detalhe da conexão |
-| T-PBL2-09 | PBL2-05, PBL2-06 | Fumaça | Com banco atualizado, saúde pronta, raiz e `/api/session` respondem sob a mesma origem HTTPS |
+| T-PBL2-09 | PBL2-05, PBL2-06 | Fumaça | Com banco atualizado, saúde pronta, raiz, link direto `/convites/<token>` e `/api/session` respondem sob a mesma origem HTTPS; o link serve a SPA sem alterar o tratamento de `/api/...` |
 | T-PBL2-10 | PBL2-07 | Navegador | Login e callback válidos criam sessão opaca; callback adulterado/repetido, emissor ou audiência incorretos são recusados |
 | T-PBL2-11 | PBL2-07, PBL2-13 | Navegador | Logout revoga sessão; reinício encerra sessões em memória e a interface retorna ao estado não autenticado |
 | T-PBL2-12 | PBL2-08 | Navegador e HTTP | Requisições relativas funcionam sem CORS; origem externa não recebe permissão curinga nem credenciais |
