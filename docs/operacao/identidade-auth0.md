@@ -27,6 +27,10 @@ A API valida ID tokens RS256 com a JWKS do emissor, `iss`, `aud`, `exp` e
 `nonce`. O fluxo também usa `state` e PKCE. O navegador recebe somente cookies
 opacos HttpOnly; não copie tokens para `localStorage`, logs ou URLs de suporte.
 
+O Web Service deve servir a entrada da SPA também em acessos diretos a
+`/convites/<token>`. Esse fallback é exclusivo das rotas da interface e nunca
+deve transformar um caminho `/api/...` desconhecido em uma resposta HTML.
+
 ## Inicialização controlada
 
 1. Aplique as migrations IDN-001A/B em um banco vazio ou na versão anterior
