@@ -54,8 +54,8 @@ export class Auth0OidcClient implements OidcClient {
       new URL('oauth/token', this.config.issuer),
       {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
           grant_type: 'authorization_code',
           client_id: this.config.clientId,
           client_secret: this.config.clientSecret,

@@ -43,6 +43,54 @@ function clientFor(token: string, jwk: JsonWebKey) {
 }
 
 describe('Auth0 OIDC token validation', () => {
+  it('exchanges the authorization code using form-encoded client-secret post authentication', async () => {
+    const issued = createToken({
+      iss: config.issuer,
+      sub: 'auth0|person',
+      aud: config.clientId,
+      exp: Math.floor(Date.now() / 1000) + 60,
+      nonce: 'expected-nonce',
+      email: 'person@example.test',
+    });
+    const request = vi.fn(
+      async (input: string | URL | Request, _init?: RequestInit) => {
+        if (input.toString().endsWith('/oauth/token')) {
+          return new Response(JSON.stringify({ id_token: issued.token }), {
+            status: 200,
+          });
+        }
+        return new Response(JSON.stringify({ keys: [issued.jwk] }), {
+          status: 200,
+        });
+      },
+    );
+    const client = new Auth0OidcClient(config, request);
+
+    await client.exchangeCode({
+      code: 'one-use-code',
+      codeVerifier: 'verifier',
+      expectedNonce: 'expected-nonce',
+    });
+
+    const [, init] = request.mock.calls[0]!;
+    expect(init).toMatchObject({
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+    });
+    expect(init?.body?.toString()).toBe(
+      new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
+        code: 'one-use-code',
+        code_verifier: 'verifier',
+        redirect_uri: config.callbackUrl,
+      }).toString(),
+    );
+  });
+
   it('accepts a signed, current token with exact issuer, audience and nonce', async () => {
     const issued = createToken({
       iss: config.issuer,
