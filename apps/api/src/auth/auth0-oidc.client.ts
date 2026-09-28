@@ -65,7 +65,23 @@ export class Auth0OidcClient implements OidcClient {
         }),
       },
     );
-    if (!response.ok) throw new Error('Não foi possível concluir a entrada.');
+    if (!response.ok) {
+      let providerError = 'unknown';
+      try {
+        const body = (await response.json()) as { error?: unknown };
+        if (
+          typeof body.error === 'string' &&
+          /^[a-z0-9_]{1,64}$/i.test(body.error)
+        ) {
+          providerError = body.error;
+        }
+      } catch {
+        // The provider response can be empty or non-JSON; do not expose it.
+      }
+      throw new Error(
+        `Auth0 token exchange failed (${response.status}:${providerError}).`,
+      );
+    }
     const body = (await response.json()) as { id_token?: string };
     if (!body.id_token) throw new Error('Resposta de identidade inválida.');
     return this.verifyIdToken(body.id_token, input.expectedNonce);
