@@ -46,10 +46,11 @@ describe('Auth0 OIDC token validation', () => {
   it('reports a safe token-exchange failure reason without the authorization code', async () => {
     const client = new Auth0OidcClient(
       config,
-      vi.fn(async () =>
-        new Response(JSON.stringify({ error: 'unauthorized_client' }), {
-          status: 401,
-        }),
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ error: 'unauthorized_client' }), {
+            status: 401,
+          }),
       ),
     );
 
