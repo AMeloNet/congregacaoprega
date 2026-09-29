@@ -49,6 +49,94 @@ describe('IDN-001C access interface', () => {
     ).toBeInTheDocument();
   });
 
+  it('lets a verified account without a congregation accept its first invitation', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            authenticated: true,
+            emailVerified: true,
+            csrfToken: 'csrf',
+            memberships: [],
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            authenticated: true,
+            emailVerified: true,
+            isMaster: true,
+            csrfToken: 'csrf',
+            memberships: [],
+            adminCongregations: [],
+          }),
+          { status: 200 },
+        ),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    render(<AccessApp invitationToken="first-invite" />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Convite de acesso' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Conta sem congregação')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Programação e reservas ainda usam dados fictícios/),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Aceitar convite' }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/invitations/first-invite/accept',
+      {
+        method: 'POST',
+        headers: { 'x-csrf-token': 'csrf' },
+      },
+    );
+    expect(await screen.findByText('Administrador master')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Aceitar convite' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('returns an unlinked account to the restricted state after declining', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            authenticated: true,
+            emailVerified: true,
+            csrfToken: 'csrf',
+            memberships: [],
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+    render(<AccessApp invitationToken="first-invite" />);
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Recusar convite' }),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/invitations/first-invite/decline',
+      {
+        method: 'POST',
+        headers: { 'x-csrf-token': 'csrf' },
+      },
+    );
+    expect(
+      await screen.findByRole('heading', { name: 'Conta sem congregação' }),
+    ).toBeInTheDocument();
+  });
+
   it('selects only an authorized active congregation through the API', async () => {
     const user = userEvent.setup();
     const fetchMock = vi
