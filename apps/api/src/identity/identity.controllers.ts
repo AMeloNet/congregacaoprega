@@ -7,6 +7,7 @@ import {
   Get,
   GoneException,
   Headers,
+  Logger,
   NotFoundException,
   Param,
   Patch,
@@ -83,6 +84,8 @@ function fail(error: unknown): never {
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private readonly runtime: IdentityRuntime) {}
 
   @Get('login')
@@ -123,7 +126,15 @@ export class AuthController {
         path: '/',
       });
       response.redirect(this.runtime.config.logoutUrl);
-    } catch {
+    } catch (error) {
+      const reason =
+        error instanceof Error &&
+        /^Auth0 token exchange failed \(\d{3}:[a-z0-9_]{1,64}\)\.$/i.test(
+          error.message,
+        )
+          ? error.message
+          : 'identity_validation_failed';
+      this.logger.warn(`Auth callback failed: ${reason}`);
       response.clearCookie(flowCookie, { path: '/api/auth/callback' });
       throw new UnauthorizedException({
         code: 'INVALID_IDENTITY_RESPONSE',
