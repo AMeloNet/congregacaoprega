@@ -44,6 +44,7 @@ export function AccessApp({
   const [adminEmail, setAdminEmail] = useState('');
   const [adminCongregation, setAdminCongregation] = useState('');
   const [message, setMessage] = useState('');
+  const [invitationHandled, setInvitationHandled] = useState(false);
   const [managedMemberships, setManagedMemberships] = useState<
     ManagedMembership[]
   >([]);
@@ -118,7 +119,25 @@ export function AccessApp({
     );
   }
   const memberships = session.memberships ?? [];
+  const invitationAvailable = Boolean(invitationToken && !invitationHandled);
   if (memberships.length === 0 && !session.isMaster) {
+    if (invitationAvailable) {
+      return (
+        <main className="access-page">
+          <section className="panel access-card">
+            {invitationContent(true)}
+            {error && (
+              <p className="feedback error" role="alert">
+                {error}
+              </p>
+            )}
+            <a className="button outline" href="/api/auth/logout">
+              Sair
+            </a>
+          </section>
+        </main>
+      );
+    }
     return (
       <main className="access-page">
         <section className="panel access-card">
@@ -127,6 +146,12 @@ export function AccessApp({
             Você ainda não possui vínculo ativo. Abra o convite recebido ou fale
             com um administrador local.
           </p>
+          {message && <p className="feedback success">{message}</p>}
+          {error && (
+            <p className="feedback error" role="alert">
+              {error}
+            </p>
+          )}
           <a className="button outline" href="/api/auth/logout">
             Sair
           </a>
@@ -135,6 +160,32 @@ export function AccessApp({
     );
   }
   const selected = memberships.find((item) => item.congregationId === active);
+
+  function invitationContent(standalone: boolean) {
+    const Heading = standalone ? 'h1' : 'h2';
+    return (
+      <>
+        <Heading>Convite de acesso</Heading>
+        <p>Aceite somente se reconhecer o convite e o destinatário.</p>
+        <div className="panel-actions">
+          <button
+            className="button"
+            type="button"
+            onClick={() => void invitationAction('accept')}
+          >
+            Aceitar convite
+          </button>
+          <button
+            className="button outline"
+            type="button"
+            onClick={() => void invitationAction('decline')}
+          >
+            Recusar convite
+          </button>
+        </div>
+      </>
+    );
+  }
 
   async function invitationAction(action: 'accept' | 'decline'): Promise<void> {
     setError('');
@@ -146,7 +197,26 @@ export function AccessApp({
       setError('O convite não está disponível ou não pertence a esta conta.');
       return;
     }
-    setMessage(action === 'accept' ? 'Convite aceito.' : 'Convite recusado.');
+    setInvitationHandled(true);
+    if (action === 'decline') {
+      setMessage('Convite recusado.');
+      return;
+    }
+    try {
+      const sessionResponse = await fetch('/api/session');
+      if (!sessionResponse.ok) throw new Error('Session refresh failed.');
+      const updatedSession = (await sessionResponse.json()) as Session;
+      setSession(updatedSession);
+      setActive(
+        updatedSession.activeCongregationId ??
+          updatedSession.memberships?.[0]?.congregationId ??
+          '',
+      );
+      setAdminCongregation(updatedSession.adminCongregations?.[0]?.id ?? '');
+      setMessage('Convite aceito.');
+    } catch {
+      setError('Convite aceito. Atualize a página para consultar seu acesso.');
+    }
   }
 
   async function invitePublisher(
@@ -293,7 +363,7 @@ export function AccessApp({
         </strong>
         <a href="/api/auth/logout">Sair</a>
       </div>
-      {(invitationToken ||
+      {(invitationAvailable ||
         selected?.role === 'LOCAL_ADMIN' ||
         session.isMaster) && (
         <section className="identity-actions" aria-label="Acesso e convites">
@@ -307,28 +377,9 @@ export function AccessApp({
               {error}
             </p>
           )}
-          {invitationToken && (
+          {invitationAvailable && (
             <div className="panel compact-panel">
-              <h2>Convite de acesso</h2>
-              <p>
-                Aceite somente se reconhecer a congregação e o destinatário.
-              </p>
-              <div className="panel-actions">
-                <button
-                  className="button"
-                  type="button"
-                  onClick={() => void invitationAction('accept')}
-                >
-                  Aceitar convite
-                </button>
-                <button
-                  className="button outline"
-                  type="button"
-                  onClick={() => void invitationAction('decline')}
-                >
-                  Recusar convite
-                </button>
-              </div>
+              {invitationContent(false)}
             </div>
           )}
           {selected?.role === 'LOCAL_ADMIN' && (

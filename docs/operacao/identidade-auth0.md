@@ -44,6 +44,9 @@ deve transformar um caminho `/api/...` desconhecido em uma resposta HTML.
 4. Entre pelo Auth0 com exatamente o destinatário verificado e aceite o link.
    Nova emissão invalida a pendente anterior. Depois do primeiro aceite, a API
    recusa nova inicialização enquanto existir master.
+   Uma conta verificada ainda sem vínculo vê as ações de aceite/recusa ao abrir
+   `/convites/<token>`; a raiz continua restrita. Após o aceite, a interface
+   consulta novamente a sessão para refletir o papel master ou o novo vínculo.
 5. O master seleciona uma congregação e convida o primeiro administrador
    local. O administrador local pode então convidar publicadores.
 
