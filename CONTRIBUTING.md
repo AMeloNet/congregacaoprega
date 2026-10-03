@@ -8,6 +8,10 @@ casos já aprovados, exceto se forem diretamente afetados. Commits usam inglês
 abrir o PR e fazer o merge na `main` sem autorização adicional.
 Também é permitido consultar os checks de qualquer Pull Request antes do
 planejamento, sem autorização adicional.
+Também é permitido conferir o PR e todos os seus checks imediatamente antes do
+merge autorizado, sem autorização adicional.
+Os quatro checks de CI do Pull Request não são pré-requisito para merge: basta
+o teste representativo local da alteração passar.
 
 ## Pré-requisitos
 
