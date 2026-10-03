@@ -73,8 +73,19 @@ jobs:
             createdb --host=127.0.0.1 --username=postgres --template=template0 congregacaoprega_restore_test
           if ! docker exec --env "PGPASSWORD=$restore_password" "$container_name" \
             pg_restore --host=127.0.0.1 --username=postgres --dbname=congregacaoprega_restore_test --single-transaction \
-              --no-owner --no-privileges /backup/staging.dump \
+              --clean --if-exists --no-owner --no-privileges /backup/staging.dump \
             > "$RUNNER_TEMP/staging-restore.log" 2>&1; then
+            if grep -q 'schema "public" already exists' "$RUNNER_TEMP/staging-restore.log"; then
+              echo 'Restore category: existing public schema.'
+            elif grep -q 'COPY failed' "$RUNNER_TEMP/staging-restore.log"; then
+              echo 'Restore category: table data.'
+            elif grep -q 'could not execute query' "$RUNNER_TEMP/staging-restore.log"; then
+              echo 'Restore category: schema or constraint query.'
+            elif grep -q 'could not open input file' "$RUNNER_TEMP/staging-restore.log"; then
+              echo 'Restore category: archive unavailable.'
+            else
+              echo 'Restore category: unclassified; private log retained only on the runner.'
+            fi
             echo 'Disposable restore failed; no source data was changed.'
             exit 1
           fi
