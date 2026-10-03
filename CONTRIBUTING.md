@@ -1,8 +1,13 @@
 # Contribuindo
 
 Leia [AGENTS.md](AGENTS.md) e o requisito da etapa antes de alterar código.
-Documentação e testes precedem implementação; execute novamente os testes após
-cada incremento. Commits usam inglês (`type(scope): summary`); PRs, português.
+Defina o comportamento antes de implementá-lo e crie ou ajuste um teste
+representativo, quando aplicável. Após ele passar, não é necessário retestar
+casos já aprovados, exceto se forem diretamente afetados. Commits usam inglês
+(`type(scope): summary`); PRs, português. Quem desenvolve pode enviar ao remoto,
+abrir o PR e fazer o merge na `main` sem autorização adicional.
+Também é permitido consultar os checks de qualquer Pull Request antes do
+planejamento, sem autorização adicional.
 
 ## Pré-requisitos
 
