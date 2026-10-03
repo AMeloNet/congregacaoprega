@@ -1,0 +1,83 @@
+name: Verify staging backup and restore
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: congregacaoprega-staging-migration
+  cancel-in-progress: false
+
+jobs:
+  backup-and-restore:
+    name: Restore a staging dump into disposable PostgreSQL
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: staging
+    env:
+      POSTGRES_IMAGE: postgres:18.6-alpine3.24@sha256:6c538e7206ea40ff740ef27883529390a690b6ead6ba96b44c67a9f7c638e8fd
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Require main and verify staging data scope
+        env:
+          STAGING_DATABASE_URL: ${{ secrets.STAGING_MIGRATION_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" != 'refs/heads/main' || -z "${STAGING_DATABASE_URL:-}" ]]; then
+            echo 'This drill requires main and the staging migration credential.'
+            exit 1
+          fi
+          if ! docker run --rm --env STAGING_DATABASE_URL \
+            --volume "$GITHUB_WORKSPACE:/work:ro" "$POSTGRES_IMAGE" \
+            sh -ec 'psql "$STAGING_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f /work/scripts/staging-recovery/preflight.sql' \
+            > "$RUNNER_TEMP/staging-preflight.log" 2>&1; then
+            echo 'Staging preflight failed; no backup was produced.'
+            exit 1
+          fi
+
+      - name: Create a private logical backup on the ephemeral runner
+        env:
+          STAGING_DATABASE_URL: ${{ secrets.STAGING_MIGRATION_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          if ! docker run --rm --env STAGING_DATABASE_URL \
+            --volume "$RUNNER_TEMP:/backup" "$POSTGRES_IMAGE" \
+            sh -ec 'pg_dump --dbname="$STAGING_DATABASE_URL" --format=custom --schema=public --no-privileges --file=/backup/staging.dump' \
+            > "$RUNNER_TEMP/staging-dump.log" 2>&1; then
+            echo 'Logical backup failed; no dump was published.'
+            exit 1
+          fi
+          test -s "$RUNNER_TEMP/staging.dump"
+
+      - name: Restore and verify in an isolated PostgreSQL 18 container
+        run: |
+          set -euo pipefail
+          container_name="pbl002-restore-${GITHUB_RUN_ID}"
+          restore_password="$(openssl rand -hex 24)"
+          trap 'docker rm --force "$container_name" > /dev/null 2>&1 || true' EXIT
+          docker run --detach --name "$container_name" \
+            --env "POSTGRES_PASSWORD=$restore_password" \
+            --volume "$RUNNER_TEMP:/backup:ro" "$POSTGRES_IMAGE" > /dev/null
+          for attempt in $(seq 1 30); do
+            if docker exec "$container_name" pg_isready -U postgres -d postgres > /dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec "$container_name" pg_isready -U postgres -d postgres > /dev/null
+          docker exec --env "PGPASSWORD=$restore_password" "$container_name" \
+            createdb --username=postgres --template=template0 congregacaoprega_restore_test
+          if ! docker exec --env "PGPASSWORD=$restore_password" "$container_name" \
+            pg_restore --username=postgres --dbname=congregacaoprega_restore_test --single-transaction \
+              --no-owner --no-privileges /backup/staging.dump \
+            > "$RUNNER_TEMP/staging-restore.log" 2>&1; then
+            echo 'Disposable restore failed; no source data was changed.'
+            exit 1
+          fi
+          docker exec --interactive --env "PGPASSWORD=$restore_password" "$container_name" \
+            psql --username=postgres --dbname=congregacaoprega_restore_test -X -q -v ON_ERROR_STOP=1 \
+            < scripts/staging-recovery/verify-restored.sql > /dev/null
+          echo 'Staging backup restored and verified in disposable PostgreSQL 18.'
