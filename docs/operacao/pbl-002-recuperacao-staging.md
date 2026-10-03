@@ -18,8 +18,9 @@ produzir backup.
 
 `pg_dump` 18 cria um arquivo lógico de formato customizado, incluindo schema
 `public` e dados. O arquivo permanece apenas no diretório temporário do runner;
-não é publicado como artefato nem impresso no log. `pg_restore` executa em uma
-única transação num contêiner PostgreSQL 18 isolado, sem porta publicada. A
+não é publicado como artefato nem impresso no log. `pg_restore` limpa apenas o
+banco descartável e executa em uma única transação num contêiner PostgreSQL 18
+isolado, sem porta publicada. A
 [verificação restaurada](../../scripts/staging-recovery/verify-restored.sql)
 confere o histórico Prisma, a congregação fictícia, master, administrador local
 ativo e convites aceitos. O contêiner é removido ao fim, e o runner é
