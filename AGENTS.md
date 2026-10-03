@@ -24,6 +24,7 @@ Sistema web responsivo para organizar equipamentos, pontos, horários, participa
 - Commits devem ser em inglês no formato `type(scope): summary`.
 - Após o teste representativo passar, envie as mudanças ao Git remoto, abra um Pull Request e faça o merge na `main`.
 - Não é necessário pedir autorização adicional para `push`, Pull Request ou merge deste repositório.
+- É permitido fazer merge por squash de Pull Requests sem autorização adicional.
 - É permitido consultar os checks de qualquer Pull Request antes de planejar a execução, sem autorização adicional.
 - É permitido conferir o Pull Request e todos os seus checks imediatamente antes do merge autorizado, sem autorização adicional.
 - Os quatro checks de CI do Pull Request não precisam estar concluídos ou aprovados para fazer o merge; o teste representativo local da alteração é suficiente.

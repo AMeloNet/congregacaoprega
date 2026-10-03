@@ -6,6 +6,7 @@ representativo, quando aplicável. Após ele passar, não é necessário retesta
 casos já aprovados, exceto se forem diretamente afetados. Commits usam inglês
 (`type(scope): summary`); PRs, português. Quem desenvolve pode enviar ao remoto,
 abrir o PR e fazer o merge na `main` sem autorização adicional.
+Merge por squash de Pull Requests também é permitido sem autorização adicional.
 Também é permitido consultar os checks de qualquer Pull Request antes do
 planejamento, sem autorização adicional.
 Também é permitido conferir o PR e todos os seus checks imediatamente antes do

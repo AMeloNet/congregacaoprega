@@ -70,6 +70,7 @@ de desenvolvimento já está configurada.
    repetidos, salvo se forem diretamente afetados ou houver indício de regressão.
 4. Enviamos documentação, código, migrations e evidências ao Git remoto, abrimos
    um Pull Request e fazemos o merge na `main` sem autorização adicional.
+   Merge por squash também é permitido sem autorização adicional.
    Os quatro checks de CI do PR não são pré-requisito; basta o teste
    representativo local passar.
 5. A liberação para produção continua exigindo decisão específica.
