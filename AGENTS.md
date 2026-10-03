@@ -9,9 +9,9 @@ Sistema web responsivo para organizar equipamentos, pontos, horários, participa
 - Leia esta instrução e a especificação relacionada antes de alterar o código.
 - Preserve alterações existentes de outras pessoas.
 - Implemente somente o escopo solicitado/autorizado.
-- Antes de implementar uma funcionalidade, defina seus critérios de aceitação e testes.
-- Para funcionalidades e correções, escreva ou ajuste os testes antes da implementação sempre que aplicável.
-- Execute os testes afetados após a alteração e corrija falhas antes de concluir.
+- Antes de implementar uma funcionalidade, defina seus critérios de aceitação e um teste relevante.
+- Para cada funcionalidade ou correção, crie ou ajuste um único teste representativo quando aplicável e execute-o após a alteração. Corrija falhas antes de concluir.
+- Não é necessário executar novamente testes que já passaram, salvo quando a alteração posterior os afetar diretamente ou houver indício de regressão.
 - Toda alteração de banco deve usar migration versionada. Nunca altere uma migration já incorporada à `main`.
 - Valide permissões e entradas no servidor; não confie apenas na interface.
 - Não inclua credenciais, tokens, `.env`, dados reais ou informações pessoais no código, testes ou commits.
@@ -22,8 +22,10 @@ Sistema web responsivo para organizar equipamentos, pontos, horários, participa
 
 - Use branches curtas e específicas.
 - Commits devem ser em inglês no formato `type(scope): summary`.
-- Abra um Pull Request para mudanças concluídas.
-- Não faça merge na `main`; o mantenedor decide o merge.
+- Após o teste representativo passar, envie as mudanças ao Git remoto, abra um Pull Request e faça o merge na `main`.
+- Não é necessário pedir autorização adicional para `push`, Pull Request ou merge deste repositório.
+- É permitido consultar os checks de qualquer Pull Request antes de planejar a execução, sem autorização adicional.
+- Antes de um ensaio de recuperação, é permitido consultar somente a saúde e os nomes dos assets públicos, sem autorização adicional.
 - Não reescreva histórico compartilhado.
 
 ## Quando houver dúvida
@@ -37,7 +39,7 @@ Sistema web responsivo para organizar equipamentos, pontos, horários, participa
 Antes de considerar uma tarefa concluída:
 
 1. Código implementado conforme o escopo.
-2. Testes relevantes executados e aprovados.
+2. Um teste representativo da alteração executado e aprovado, quando aplicável.
 3. Migrations criadas/revisadas quando necessário.
 4. Documentação atualizada quando necessário.
 5. Nenhum segredo ou dado indevido incluído.

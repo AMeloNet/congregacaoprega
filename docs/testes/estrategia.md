@@ -18,10 +18,10 @@ configurar as ferramentas escolhidas por ADR e demonstrar que uma falha
 intencional é detectada pelo runner e pela CI. Corrigir a falha e comprovar
 o resultado aprovado. Registrar os comandos reais e seus resultados.
 
-Depois, para cada comportamento: escrever o teste, executar e observar a
-falha pelo comportamento ausente, implementar e executar novamente os testes
-afetados. Antes de entregar, executar regressão e verificações obrigatórias.
-Falha de instalação ou ambiente não conta como a etapa de falha do TDD.
+Depois, para cada comportamento: criar ou ajustar um teste representativo,
+implementar e executá-lo. Não é necessário executar regressão nem repetir testes
+já aprovados, salvo quando forem diretamente afetados ou houver indício de
+regressão. Falha de instalação ou ambiente não conta como validação funcional.
 
 ## Camadas
 

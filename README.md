@@ -63,12 +63,14 @@ gratuitos. Auth0 Free foi escolhido para a autenticação do piloto; hospedagem
 e provedor externo de e-mail ainda requerem configuração e validação. A base
 de desenvolvimento já está configurada.
 
-1. O mantenedor revisa o escopo e os critérios de cada etapa.
-2. Documentamos o comportamento e escrevemos os testes antes de implementá-lo.
-3. Executamos os testes para demonstrar a falha pelo comportamento ausente.
-4. Implementamos e executamos novamente os testes pertinentes.
-5. Enviamos documentação, código, migrations e evidências em um Pull Request.
-6. O mantenedor decide a incorporação à `main` e a liberação para produção.
+1. Definimos o escopo e os critérios de aceitação de cada etapa.
+2. Documentamos o comportamento e criamos ou ajustamos um teste representativo,
+   quando aplicável.
+3. Implementamos e executamos esse teste; testes já aprovados não precisam ser
+   repetidos, salvo se forem diretamente afetados ou houver indício de regressão.
+4. Enviamos documentação, código, migrations e evidências ao Git remoto, abrimos
+   um Pull Request e fazemos o merge na `main` sem autorização adicional.
+5. A liberação para produção continua exigindo decisão específica.
 
 Os comandos de instalação, execução e atualização da base inicial estão em
 [CONTRIBUTING.md](CONTRIBUTING.md). As verificações que dependem de PostgreSQL
