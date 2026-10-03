@@ -61,23 +61,24 @@ jobs:
           docker run --detach --name "$container_name" \
             --env "POSTGRES_PASSWORD=$restore_password" \
             --volume "$RUNNER_TEMP:/backup:ro" "$POSTGRES_IMAGE" > /dev/null
+          # The image's temporary init server uses a Unix socket; TCP waits for the final server.
           for attempt in $(seq 1 30); do
-            if docker exec "$container_name" pg_isready -U postgres -d postgres > /dev/null 2>&1; then
+            if docker exec "$container_name" pg_isready --host=127.0.0.1 -U postgres -d postgres > /dev/null 2>&1; then
               break
             fi
             sleep 1
           done
-          docker exec "$container_name" pg_isready -U postgres -d postgres > /dev/null
+          docker exec "$container_name" pg_isready --host=127.0.0.1 -U postgres -d postgres > /dev/null
           docker exec --env "PGPASSWORD=$restore_password" "$container_name" \
-            createdb --username=postgres --template=template0 congregacaoprega_restore_test
+            createdb --host=127.0.0.1 --username=postgres --template=template0 congregacaoprega_restore_test
           if ! docker exec --env "PGPASSWORD=$restore_password" "$container_name" \
-            pg_restore --username=postgres --dbname=congregacaoprega_restore_test --single-transaction \
+            pg_restore --host=127.0.0.1 --username=postgres --dbname=congregacaoprega_restore_test --single-transaction \
               --no-owner --no-privileges /backup/staging.dump \
             > "$RUNNER_TEMP/staging-restore.log" 2>&1; then
             echo 'Disposable restore failed; no source data was changed.'
             exit 1
           fi
           docker exec --interactive --env "PGPASSWORD=$restore_password" "$container_name" \
-            psql --username=postgres --dbname=congregacaoprega_restore_test -X -q -v ON_ERROR_STOP=1 \
+            psql --host=127.0.0.1 --username=postgres --dbname=congregacaoprega_restore_test -X -q -v ON_ERROR_STOP=1 \
             < scripts/staging-recovery/verify-restored.sql > /dev/null
           echo 'Staging backup restored and verified in disposable PostgreSQL 18.'
