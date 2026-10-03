@@ -25,6 +25,7 @@ Sistema web responsivo para organizar equipamentos, pontos, horários, participa
 - Após o teste representativo passar, envie as mudanças ao Git remoto, abra um Pull Request e faça o merge na `main`.
 - Não é necessário pedir autorização adicional para `push`, Pull Request ou merge deste repositório.
 - É permitido consultar os checks de qualquer Pull Request antes de planejar a execução, sem autorização adicional.
+- Antes de um ensaio de recuperação, é permitido consultar somente a saúde e os nomes dos assets públicos, sem autorização adicional.
 - Não reescreva histórico compartilhado.
 
 ## Quando houver dúvida
