@@ -59,6 +59,23 @@ segredo de bootstrap e não torna a captura publicamente utilizável.
 
 ## Rotação e incidentes
 
+### Diagnóstico de falha no callback
+
+O log `Auth callback failed: stage=<etapa> reason=<motivo>` distingue
+`login_flow` (cookie ausente/inválido, fluxo perdido ou consumido, expiração e
+state divergente), `token_exchange`, `jwks`, `id_token_validation` (assinatura,
+emissor, audiência, expiração, nonce e campos obrigatórios), `account_sync`
+(gravação da conta) e `session_response`. Falhas não classificadas aparecem
+como `unexpected_failure`; isso não identifica a causa interna do banco.
+A troca recusada pelo Auth0 mantém somente status HTTP e código de erro
+restrito, sem descrição do provedor. A resposta pública permanece
+`INVALID_IDENTITY_RESPONSE`, sem divulgar o diagnóstico.
+
+Ao investigar no Render, registrar somente etapa, motivo e horário. Não copiar
+senhas, cookies, tokens, códigos de autorização, URLs completas de callback ou
+mensagens internas de exceção. Um fluxo perdido ou consumido exige iniciar
+uma entrada nova pela raiz; recarregar o callback não recupera o fluxo.
+
 - Rotacionar `AUTH0_CLIENT_SECRET` exige atualizar o ambiente e reiniciar a
   aplicação; validar login antes de revogar definitivamente o segredo antigo.
 - Rotacionar `SESSION_SECRET` encerra todas as sessões locais. Reiniciar o

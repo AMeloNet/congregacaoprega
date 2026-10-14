@@ -1,5 +1,6 @@
 import { createPublicKey, verify } from 'node:crypto';
 import type { AuthConfig, OidcClient, OidcIdentity } from './auth.service.js';
+import { AuthDiagnosticError } from './auth-diagnostic.error.js';
 
 type JwtHeader = { alg?: string; kid?: string };
 type JwtClaims = {
@@ -14,7 +15,16 @@ type JwtClaims = {
 type Jwk = JsonWebKey & { kid?: string; alg?: string; use?: string };
 
 function decodePart<T>(part: string): T {
-  return JSON.parse(Buffer.from(part, 'base64url').toString('utf8')) as T;
+  try {
+    const value: unknown = JSON.parse(
+      Buffer.from(part, 'base64url').toString('utf8'),
+    );
+    if (!value || typeof value !== 'object' || Array.isArray(value))
+      throw new Error();
+    return value as T;
+  } catch {
+    throw new AuthDiagnosticError('token_malformed');
+  }
 }
 
 export class Auth0OidcClient implements OidcClient {
@@ -64,7 +74,9 @@ export class Auth0OidcClient implements OidcClient {
           redirect_uri: this.config.callbackUrl,
         }),
       },
-    );
+    ).catch(() => {
+      throw new AuthDiagnosticError('token_exchange_request_failed');
+    });
     if (!response.ok) {
       let providerError = 'unknown';
       try {
@@ -82,8 +94,11 @@ export class Auth0OidcClient implements OidcClient {
         `Auth0 token exchange failed (${response.status}:${providerError}).`,
       );
     }
-    const body = (await response.json()) as { id_token?: string };
-    if (!body.id_token) throw new Error('Resposta de identidade inválida.');
+    const body = (await response.json().catch(() => {
+      throw new AuthDiagnosticError('token_response_invalid');
+    })) as { id_token?: string } | null;
+    if (!body || typeof body.id_token !== 'string' || !body.id_token)
+      throw new AuthDiagnosticError('id_token_missing');
     return this.verifyIdToken(body.id_token, input.expectedNonce);
   }
 
@@ -101,11 +116,11 @@ export class Auth0OidcClient implements OidcClient {
     nonce: string,
   ): Promise<OidcIdentity> {
     const parts = jwt.split('.');
-    if (parts.length !== 3) throw new Error('Resposta de identidade inválida.');
+    if (parts.length !== 3) throw new AuthDiagnosticError('token_malformed');
     const header = decodePart<JwtHeader>(parts[0]!);
     const claims = decodePart<JwtClaims>(parts[1]!);
     if (header.alg !== 'RS256' || !header.kid) {
-      throw new Error('Resposta de identidade inválida.');
+      throw new AuthDiagnosticError('token_algorithm_invalid');
     }
     let keys = await this.getKeys();
     let jwk = keys.find((item) => item.kid === header.kid);
@@ -113,7 +128,7 @@ export class Auth0OidcClient implements OidcClient {
       keys = await this.getKeys(true);
       jwk = keys.find((item) => item.kid === header.kid);
     }
-    if (!jwk) throw new Error('Resposta de identidade inválida.');
+    if (!jwk) throw new AuthDiagnosticError('token_key_missing');
     const validSignature = verify(
       'RSA-SHA256',
       Buffer.from(`${parts[0]}.${parts[1]}`),
@@ -123,18 +138,18 @@ export class Auth0OidcClient implements OidcClient {
       Buffer.from(parts[2]!, 'base64url'),
     );
     const audiences = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
-    if (
-      !validSignature ||
-      claims.iss !== this.config.issuer ||
-      !audiences.includes(this.config.clientId) ||
-      !claims.exp ||
-      claims.exp * 1000 <= Date.now() ||
-      claims.nonce !== nonce ||
-      !claims.sub ||
-      !claims.email
-    ) {
-      throw new Error('Resposta de identidade inválida.');
-    }
+    if (!validSignature)
+      throw new AuthDiagnosticError('token_signature_invalid');
+    if (claims.iss !== this.config.issuer)
+      throw new AuthDiagnosticError('token_issuer_mismatch');
+    if (!audiences.includes(this.config.clientId))
+      throw new AuthDiagnosticError('token_audience_mismatch');
+    if (!claims.exp || claims.exp * 1000 <= Date.now())
+      throw new AuthDiagnosticError('token_expired');
+    if (claims.nonce !== nonce)
+      throw new AuthDiagnosticError('token_nonce_mismatch');
+    if (!claims.sub) throw new AuthDiagnosticError('token_subject_missing');
+    if (!claims.email) throw new AuthDiagnosticError('token_email_missing');
     return {
       issuer: claims.iss,
       subject: claims.sub,
@@ -148,10 +163,15 @@ export class Auth0OidcClient implements OidcClient {
     if (this.jwks && !refresh) return this.jwks;
     const response = await this.request(
       new URL('.well-known/jwks.json', this.config.issuer),
-    );
-    if (!response.ok) throw new Error('Não foi possível validar a identidade.');
-    const body = (await response.json()) as { keys?: Jwk[] };
-    if (!body.keys) throw new Error('Resposta de identidade inválida.');
+    ).catch(() => {
+      throw new AuthDiagnosticError('jwks_unavailable');
+    });
+    if (!response.ok) throw new AuthDiagnosticError('jwks_unavailable');
+    const body = (await response.json().catch(() => {
+      throw new AuthDiagnosticError('jwks_invalid');
+    })) as { keys?: Jwk[] } | null;
+    if (!body || !Array.isArray(body.keys))
+      throw new AuthDiagnosticError('jwks_invalid');
     this.jwks = body.keys;
     return body.keys;
   }

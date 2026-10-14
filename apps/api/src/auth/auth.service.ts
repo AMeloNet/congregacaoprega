@@ -5,6 +5,7 @@ import {
   timingSafeEqual,
 } from 'node:crypto';
 import { MemorySessionStore, type SessionIdentity } from './session.store.js';
+import { AuthDiagnosticError } from './auth-diagnostic.error.js';
 
 export type OidcIdentity = Omit<SessionIdentity, 'csrfToken'> & {
   nonce: string;
@@ -93,16 +94,16 @@ export class AuthService {
     state: string;
     flowCookie: string;
   }): Promise<{ sessionCookie: string; identity: SessionIdentity }> {
+    if (!input.flowCookie) throw new AuthDiagnosticError('flow_cookie_missing');
     const id = this.verify(input.flowCookie);
+    if (!id) throw new AuthDiagnosticError('flow_cookie_invalid');
     const flow = id ? this.flows.get(id) : undefined;
     if (id) this.flows.delete(id);
-    if (
-      !flow ||
-      flow.expiresAt <= this.now().getTime() ||
-      !equal(flow.state, input.state)
-    ) {
-      throw new Error('Fluxo de entrada inválido ou já utilizado.');
-    }
+    if (!flow) throw new AuthDiagnosticError('flow_missing_or_consumed');
+    if (flow.expiresAt <= this.now().getTime())
+      throw new AuthDiagnosticError('flow_expired');
+    if (!equal(flow.state, input.state))
+      throw new AuthDiagnosticError('state_mismatch');
     const identity = await this.oidc.exchangeCode({
       code: input.code,
       codeVerifier: flow.codeVerifier,
@@ -112,7 +113,7 @@ export class AuthService {
       identity.issuer !== this.config.issuer ||
       !equal(identity.nonce, flow.nonce)
     ) {
-      throw new Error('Resposta de identidade inválida.');
+      throw new AuthDiagnosticError('identity_mismatch');
     }
     const { nonce: _nonce, ...sessionIdentity } = identity;
     const session = this.sessions.create(sessionIdentity);
