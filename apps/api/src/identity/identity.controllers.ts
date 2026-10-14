@@ -18,6 +18,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { SessionIdentity } from '../auth/session.store.js';
+import { AuthDiagnosticError } from '../auth/auth-diagnostic.error.js';
 import type { AuthenticatedIdentity } from './identity.service.js';
 import type { LocalRole } from './identity.repository.js';
 import { IdentityRuntime } from './identity.runtime.js';
@@ -110,13 +111,16 @@ export class AuthController {
       typeof request.query.code === 'string' ? request.query.code : '';
     const state =
       typeof request.query.state === 'string' ? request.query.state : '';
+    let stage = 'authentication';
     try {
       const result = await this.runtime.auth.completeLogin({
         code,
         state,
         flowCookie: readCookie(request, flowCookie) ?? '',
       });
+      stage = 'account_sync';
       await this.runtime.repository.syncExternalAccount(result.identity);
+      stage = 'session_response';
       response.clearCookie(flowCookie, { path: '/api/auth/callback' });
       response.cookie(sessionCookie, result.sessionCookie, {
         httpOnly: true,
@@ -127,14 +131,17 @@ export class AuthController {
       });
       response.redirect(this.runtime.config.logoutUrl);
     } catch (error) {
+      if (error instanceof AuthDiagnosticError) stage = error.stage;
       const reason =
-        error instanceof Error &&
-        /^Auth0 token exchange failed \(\d{3}:[a-z0-9_]{1,64}\)\.$/i.test(
-          error.message,
-        )
-          ? error.message
-          : 'identity_validation_failed';
-      this.logger.warn(`Auth callback failed: ${reason}`);
+        error instanceof AuthDiagnosticError
+          ? error.reason
+          : error instanceof Error &&
+              /^Auth0 token exchange failed \(\d{3}:[a-z0-9_]{1,64}\)\.$/i.test(
+                error.message,
+              )
+            ? error.message
+            : 'unexpected_failure';
+      this.logger.warn(`Auth callback failed: stage=${stage} reason=${reason}`);
       response.clearCookie(flowCookie, { path: '/api/auth/callback' });
       throw new UnauthorizedException({
         code: 'INVALID_IDENTITY_RESPONSE',
