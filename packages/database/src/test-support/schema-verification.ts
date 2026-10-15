@@ -38,7 +38,7 @@ async function readCatalog(database: Database): Promise<CatalogEntry[]> {
     UNION ALL
     SELECT 'index', r.relname || '.' || ic.relname,
       jsonb_build_object('definition', pg_get_indexdef(i.indexrelid),
-        'valid', i.indisvalid, 'ready', i.indisready), i.indpred IS NULL
+        'valid', i.indisvalid, 'ready', i.indisready), i.indpred IS NULL AND i.indexprs IS NULL
     FROM relations r JOIN pg_index i ON i.indrelid = r.oid
     JOIN pg_class ic ON ic.oid = i.indexrelid
     UNION ALL

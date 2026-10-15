@@ -1419,3 +1419,44 @@ body {
     font-size: 8pt;
   }
 }
+
+.equipment-panel form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+.equipment-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+.equipment-list li {
+  display: grid;
+  gap: 0.5rem;
+  overflow-wrap: anywhere;
+}
+.equipment-panel input,
+.equipment-panel select,
+.equipment-panel textarea {
+  width: 100%;
+  min-width: 0;
+}
+.equipment-panel input,
+.equipment-panel select,
+.equipment-panel textarea {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  font: inherit;
+}
+.equipment-panel textarea {
+  resize: vertical;
+  min-height: 5rem;
+}
+.equipment-panel button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
