@@ -53,9 +53,9 @@ Defina `DATABASE_URL` no ambiente da API (nunca no Git), apontando para um banco
 sob seu controle. A API exige essa variável para iniciar. A página consulta a
 sessão de identidade. `GET /api/health/live` indica processo
 ativo; `GET /api/health/ready` verifica `SELECT 1` e devolve 503 sem expor a URL
-quando o PostgreSQL está indisponível. Programação, recursos e reservas da
+quando o PostgreSQL está indisponível. Programação, locais, horários e reservas da
 UI-001 continuam demonstrativos; identidade, seleção de congregação e convites
-de acesso usam a API.
+de acesso usam a API. O inventário em Recursos também usa a API e PostgreSQL, com acesso exclusivo ao administrador local (EQP-001).
 
 ## Verificações
 

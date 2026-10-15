@@ -89,3 +89,7 @@ etapas compatíveis. Reverter o código não reverte o banco. Mudanças destruti
 exigem autorização para o ambiente afetado, cópia recuperável e procedimento
 de recuperação testado. Testar restauração periodicamente; apenas ter um
 arquivo de backup não comprova recuperação.
+
+## Inventário EQP-001
+
+`20261015000100_create_equipment` cria `equipment`, `equipment_state_history` e `equipment_type`. É aditiva, sem transformação de dados anteriores; volume inicial zero. Cria CHECKs de comprimento e índice único de expressão `(congregation_id, lower(name))`, não representado pelo Prisma; revisar pelo SQL. Os bloqueios limitam-se às novas estruturas e às referências das FKs. Aplicar por `migrate deploy` no job serializado; falha parcial interrompe promoção e exige diagnóstico antes de conciliar histórico. Reverter código preserva as tabelas e o histórico, sem exclusão automática.

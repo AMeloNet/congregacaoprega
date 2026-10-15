@@ -487,7 +487,13 @@ export function AccessApp({
           )}
         </section>
       )}
-      <App />
+      <App
+        equipmentContext={{
+          congregationId: active,
+          csrfToken: session.csrfToken ?? '',
+          canManage: selected?.role === 'LOCAL_ADMIN',
+        }}
+      />
     </>
   );
 }

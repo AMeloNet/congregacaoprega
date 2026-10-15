@@ -1,3 +1,4 @@
+import { EquipmentService } from '../equipment.service.js';
 import {
   BadRequestException,
   Body,
@@ -366,6 +367,50 @@ export class IdentityController {
     } catch (error) {
       fail(error);
     }
+  }
+
+  @Get('congregations/:id/equipment')
+  async equipmentList(@Req() request: HttpRequest, @Param('id') id: string) {
+    const { account } = await this.requireIdentity(request, undefined, false);
+    return new EquipmentService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      'list',
+    );
+  }
+
+  @Post('congregations/:id/equipment')
+  async equipmentCreate(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new EquipmentService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      'create',
+      body,
+    );
+  }
+
+  @Patch('congregations/:id/equipment/:equipmentId/state')
+  async equipmentState(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('equipmentId') equipmentId: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new EquipmentService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      'state',
+      body,
+      equipmentId,
+    );
   }
 
   private async requireIdentity(

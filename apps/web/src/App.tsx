@@ -1,3 +1,4 @@
+import { EquipmentPanel, type EquipmentContext } from './EquipmentPanel.js';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import './styles.css';
@@ -111,7 +112,9 @@ function stateLabel(state: MonthState): string {
   return 'Mês liberado · cenário ilustrativo';
 }
 
-export function App() {
+export function App({
+  equipmentContext,
+}: { equipmentContext?: EquipmentContext } = {}) {
   const [screen, setScreen] = useState<Screen>(routeFromHash);
   const [role, setRole] = useState<Role>('publicador');
   const [monthState, setMonthState] = useState<MonthState>('liberado');
@@ -1239,26 +1242,33 @@ export function App() {
                 ))}
               </div>
               <div className="two-column resource-bottom">
-                <section className="panel">
-                  <p className="eyebrow">INVENTÁRIO FICTÍCIO</p>
-                  <h2>Equipamentos</h2>
-                  <div className="summary-line">
-                    <span>Carrinhos</span>
-                    <strong>2 ativos</strong>
-                  </div>
-                  <div className="summary-line">
-                    <span>Quiosques</span>
-                    <strong>1 ativo</strong>
-                  </div>
-                  <div className="summary-line">
-                    <span>Displays</span>
-                    <strong>1 ativo · 1 inativo</strong>
-                  </div>
-                  <p className="info-callout">
-                    Unidades inativas não entram na disponibilidade de novas
-                    reservas.
-                  </p>
-                </section>
+                {equipmentContext ? (
+                  <EquipmentPanel
+                    key={equipmentContext.congregationId}
+                    context={equipmentContext}
+                  />
+                ) : (
+                  <section className="panel">
+                    <p className="eyebrow">INVENTÁRIO FICTÍCIO</p>
+                    <h2>Equipamentos</h2>
+                    <div className="summary-line">
+                      <span>Carrinhos</span>
+                      <strong>2 ativos</strong>
+                    </div>
+                    <div className="summary-line">
+                      <span>Quiosques</span>
+                      <strong>1 ativo</strong>
+                    </div>
+                    <div className="summary-line">
+                      <span>Displays</span>
+                      <strong>1 ativo · 1 inativo</strong>
+                    </div>
+                    <p className="info-callout">
+                      Unidades inativas não entram na disponibilidade de novas
+                      reservas.
+                    </p>
+                  </section>
+                )}
                 <section className="panel">
                   <p className="eyebrow">CONFIGURAÇÃO FICTÍCIA</p>
                   <h2>Horários semanais</h2>
