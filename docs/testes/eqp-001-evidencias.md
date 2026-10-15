@@ -25,4 +25,17 @@ A comparação de catálogo valida integralmente o histórico SQL. CHECKs, índi
 
 A execução inicial excedeu o timeout padrão do teste; o teste de integração passou após ajuste para 120 segundos. Foram corrigidos o timestamp da fixture de revogação e o default SQL de timestamp para corresponder ao Prisma. Os pools locais `forks` e `threads` não concluíram a inicialização do teste web; `vmForks` executou o cenário com sucesso. O pnpm disponível localmente é 11.25.0; os comandos diretos foram usados porque os scripts de pacote exigem 11.19.0. Não houve alteração das versões exigidas pelo projeto.
 
-Os cenários de reservas/capacidade T-EQP continuam planejados. Não foi feita homologação visual em navegador nem aplicação da migration em ambiente persistente nesta entrega.
+Os cenários de reservas/capacidade T-EQP continuam planejados. Não foi feita homologação visual em navegador. A aplicação persistente posterior está registrada abaixo.
+
+## Publicação em staging — 15/10/2026
+
+Após autorização do mantenedor, o workflow [Deploy controlled staging #6](https://github.com/AMeloNet/congregacaoprega/actions/runs/38711773933) publicou o SHA imutável `5943e3d5eac82a7b69aeb7dae8a83b6d2deab8d1`, incorporado pelo PR #33.
+
+- Validação do SHA, aplicação serializada das migrations e acionamento do Render concluídos com sucesso.
+- O log de migration confirma `Applying migration 20261015000100_create_equipment` e conclusão de todo o histórico.
+- O serviço [congregacaoprega-staging](https://congregacaoprega-staging.onrender.com) passou a servir os assets `index-D_AXbCMi.js` e `index-DNH9CHB4.css`; o bundle contém o inventário funcional e o formulário de cadastro.
+- `GET /api/health/live` e `GET /api/health/ready`: 200, status `ok`.
+- `GET /api/session` sem login: 200, `authenticated: false`.
+- `GET /api/congregations/00000000-0000-0000-0000-000000000000/equipment` sem login: 401, confirmando a rota protegida publicada.
+
+Não foram manipuladas credenciais nem criados equipamentos de teste no banco persistente. A jornada autenticada de cadastro e mudança de estado em staging não foi executada; a prova funcional continua sendo o teste com PostgreSQL descartável. A prévia estática não foi alterada.
