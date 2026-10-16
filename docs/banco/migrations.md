@@ -96,6 +96,9 @@ arquivo de backup não comprova recuperação.
 
 ## Horários semanais PRG-001
 
+O modelo por ponto abaixo substitui o uso das restrições globais descritas
+nesta seção; o histórico antigo é preservado.
+
 `20261016000100_create_weekly_hours` acrescenta `congregation.weekly_hours_version`
 (padrão zero), `weekly_hours_day` e `weekly_hours_history`. Preserva o fuso já
 existente e os demais cadastros; ausência de linhas significa 24 horas disponíveis
@@ -110,3 +113,27 @@ por `migrate deploy` no job serializado autorizado; esta entrega aplica apenas
 em banco descartável, sem staging. Em falha, interromper promoção e diagnosticar
 o histórico antes de conciliar. Reverter o código preserva configuração e
 histórico; não remover tabelas ou coluna automaticamente.
+
+## Horários semanais por ponto
+
+`20261016000200_create_point_weekly_hours` adiciona versão de edição em
+`preaching_point` e cria `point_weekly_hours_day` e
+`point_weekly_hours_history`, com FKs para ponto e autor, CHECKs de dia/modo/array
+e índice do histórico por ponto/data. O modelo Prisma acompanha a migration.
+A congregação do ponto é validada no servidor antes de qualquer leitura ou
+escrita. O fuso permanece em `congregation` e sua versão compartilhada protege
+alterações concorrentes, inclusive entre pontos diferentes.
+
+Conforme decisão explícita do mantenedor, não há cópia dos horários globais.
+As tabelas novas começam vazias, e pontos existentes e novos oferecem 24 horas
+em cada dia até receberem configuração própria. Os registros e histórico globais
+são preservados, porém deixam de ser usados pela API e interface atuais.
+
+Migration aditiva, sem transformação ou remoção de dados. A coluna com default
+constante requer breve bloqueio DDL em `preaching_point`; FKs também referenciam
+contas. Aplicar por `migrate deploy` serializado, após validação em PostgreSQL
+descartável. Falha interrompe promoção e exige diagnóstico antes de conciliar
+histórico. Não editar migrations anteriores. Reverter código não remove novas
+estruturas; voltar à versão global reexibiria horários históricos e exige revisão
+operacional antes de eventual rollback. Esta entrega não aplica a migration em
+staging automaticamente.

@@ -22,7 +22,13 @@ const empty = () => ({
   allowedTypes: [] as string[],
 });
 
-export function PointsPanel({ context }: { context: EquipmentContext }) {
+export function PointsPanel({
+  context,
+  onChanged,
+}: {
+  context: EquipmentContext;
+  onChanged?: () => void;
+}) {
   const [items, setItems] = useState<Point[]>([]);
   const [form, setForm] = useState(empty);
   const [editing, setEditing] = useState<string | null>(null);
@@ -79,6 +85,7 @@ export function PointsPanel({ context }: { context: EquipmentContext }) {
       setEditing(null);
       setMessage('Ponto salvo.');
       await load();
+      onChanged?.();
     } catch (failure) {
       setError(
         failure instanceof Error

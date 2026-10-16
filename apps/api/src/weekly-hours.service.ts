@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import type { Pool } from 'pg';
 
@@ -18,6 +19,7 @@ const invalid = () =>
 function validate(input: unknown): {
   timezone: string;
   version: number;
+  timezoneVersion: number;
   days: Day[];
 } {
   if (!input || typeof input !== 'object' || Array.isArray(input))
@@ -25,11 +27,14 @@ function validate(input: unknown): {
   const body = input as Record<string, unknown>;
   if (
     Object.keys(body).some(
-      (key) => !['timezone', 'version', 'days'].includes(key),
+      (key) =>
+        !['timezone', 'version', 'timezoneVersion', 'days'].includes(key),
     ) ||
     typeof body.timezone !== 'string' ||
     body.timezone.length > 100 ||
     !Number.isSafeInteger(body.version) ||
+    !Number.isSafeInteger(body.timezoneVersion) ||
+    (body.timezoneVersion as number) < 0 ||
     (body.version as number) < 0 ||
     !Array.isArray(body.days) ||
     body.days.length !== 7
@@ -95,7 +100,12 @@ function validate(input: unknown): {
       return { day: day.day, mode: day.mode, intervals };
     })
     .sort((a, b) => a.day - b.day);
-  return { timezone: body.timezone, version: body.version as number, days };
+  return {
+    timezone: body.timezone,
+    version: body.version as number,
+    timezoneVersion: body.timezoneVersion as number,
+    days,
+  };
 }
 
 export class WeeklyHoursService {
@@ -104,12 +114,16 @@ export class WeeklyHoursService {
   async execute(
     accountId: string,
     congregationId: string,
+    pointId: string,
     action: 'get' | 'save',
     input?: unknown,
   ) {
     if (
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        congregationId,
+      [congregationId, pointId].some(
+        (id) =>
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            id,
+          ),
       )
     )
       throw new BadRequestException('Identificador inválido.');
@@ -121,16 +135,24 @@ export class WeeklyHoursService {
         [accountId, congregationId],
       );
       if (!access.rowCount) throw new ForbiddenException('Acesso negado.');
-      const current = (
+      const congregation = (
         await client.query(
-          'SELECT timezone, weekly_hours_version AS version FROM congregation WHERE id=$1 FOR UPDATE',
+          'SELECT timezone, weekly_hours_version AS "timezoneVersion" FROM congregation WHERE id=$1 FOR UPDATE',
           [congregationId],
         )
       ).rows[0];
+      const point = (
+        await client.query(
+          'SELECT weekly_hours_version AS version FROM preaching_point WHERE id=$1 AND congregation_id=$2 FOR UPDATE',
+          [pointId, congregationId],
+        )
+      ).rows[0];
+      if (!point) throw new NotFoundException('Ponto não encontrado.');
+      const current = { ...congregation, ...point };
       const stored = (
         await client.query(
-          'SELECT day, mode, intervals FROM weekly_hours_day WHERE congregation_id=$1 ORDER BY day',
-          [congregationId],
+          'SELECT day, mode, intervals FROM point_weekly_hours_day WHERE point_id=$1 ORDER BY day',
+          [pointId],
         )
       ).rows as Day[];
       // JSONB does not preserve object key order. Normalize before comparison
@@ -153,7 +175,10 @@ export class WeeklyHoursService {
       let result = previous;
       if (action === 'save') {
         const config = validate(input);
-        if (config.version !== current.version)
+        if (
+          config.version !== current.version ||
+          config.timezoneVersion !== current.timezoneVersion
+        )
           throw new ConflictException(
             'A configuração foi alterada por outro administrador. Recarregue antes de editar novamente.',
           );
@@ -164,35 +189,37 @@ export class WeeklyHoursService {
           JSON.stringify(config.days) !== JSON.stringify(previous.days)
         ) {
           await client.query(
-            'DELETE FROM weekly_hours_day WHERE congregation_id=$1',
-            [congregationId],
+            'DELETE FROM point_weekly_hours_day WHERE point_id=$1',
+            [pointId],
           );
           for (const day of config.days) {
             if (day.mode !== 'unrestricted')
               await client.query(
-                'INSERT INTO weekly_hours_day (congregation_id,day,mode,intervals) VALUES ($1,$2,$3,$4)',
-                [
-                  congregationId,
-                  day.day,
-                  day.mode,
-                  JSON.stringify(day.intervals),
-                ],
+                'INSERT INTO point_weekly_hours_day (point_id,day,mode,intervals) VALUES ($1,$2,$3,$4)',
+                [pointId, day.day, day.mode, JSON.stringify(day.intervals)],
               );
           }
           result = {
             timezone: config.timezone,
             version: current.version + 1,
+            timezoneVersion:
+              current.timezoneVersion +
+              (config.timezone !== current.timezone ? 1 : 0),
             days: config.days,
           };
           await client.query(
             'UPDATE congregation SET timezone=$2,weekly_hours_version=$3 WHERE id=$1',
-            [congregationId, result.timezone, result.version],
+            [congregationId, result.timezone, result.timezoneVersion],
           );
           await client.query(
-            'INSERT INTO weekly_hours_history (id,congregation_id,actor_account_id,previous,configuration) VALUES ($1,$2,$3,$4,$5)',
+            'UPDATE preaching_point SET weekly_hours_version=$2 WHERE id=$1 AND congregation_id=$3',
+            [pointId, result.version, congregationId],
+          );
+          await client.query(
+            'INSERT INTO point_weekly_hours_history (id,point_id,actor_account_id,previous,configuration) VALUES ($1,$2,$3,$4,$5)',
             [
               randomUUID(),
-              congregationId,
+              pointId,
               accountId,
               JSON.stringify(previous),
               JSON.stringify(result),
