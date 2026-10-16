@@ -66,6 +66,11 @@ nas [evidências por ponto](docs/testes/prg-001-horarios-por-ponto-evidencias.md
 
 ## Verificações
 
+A tela autenticada de Programação consulta API e PostgreSQL reais para mês atual e
+seguinte no fuso da congregação, pontos, horários e inventário ativo. O administrador
+pode finalizar e reabrir o mês; reabertura mantém publicadores bloqueados. Reservas
+continuam demonstrativas e ainda não são gravadas. Contrato em PRG-001.
+
 ```sh
 pnpm docs:check
 pnpm format

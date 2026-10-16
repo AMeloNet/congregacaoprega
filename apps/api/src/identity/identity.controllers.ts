@@ -1,4 +1,5 @@
 import { EquipmentService } from '../equipment.service.js';
+import { MonthlyScheduleService } from '../monthly-schedule.service.js';
 import { PointsService } from '../points.service.js';
 import { WeeklyHoursService } from '../weekly-hours.service.js';
 import {
@@ -489,6 +490,35 @@ export class IdentityController {
       pointId,
       'save',
       body,
+    );
+  }
+
+  @Get('congregations/:id/schedule')
+  async monthlySchedule(@Req() request: HttpRequest, @Param('id') id: string) {
+    const { account } = await this.requireIdentity(request, undefined, false);
+    return new MonthlyScheduleService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      'get',
+    );
+  }
+
+  @Post('congregations/:id/schedule/:month/:action')
+  async monthlyState(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('month') month: string,
+    @Param('action') action: string,
+  ) {
+    if (action !== 'finalize' && action !== 'reopen')
+      throw new NotFoundException();
+    const { account } = await this.requireIdentity(request, csrf);
+    return new MonthlyScheduleService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      action,
+      month,
     );
   }
 
