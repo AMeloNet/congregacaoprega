@@ -92,6 +92,12 @@ arquivo de backup não comprova recuperação.
 
 ## Organização mensal PRG-001
 
+`20261016000400_create_reservation_core` acrescenta somente a tabela de reservas
+e índices, com CHECKs de duração/hora/intervalo, FKs e chave única de requisição.
+Sem transformação de dados. Aplicar apenas em banco descartável nesta entrega;
+falha interrompe promoção e exige diagnóstico antes de conciliação. Reverter
+código preserva registros. Ver [ADR-0003](../decisoes/0003-reserva-minima.md).
+
 `20261016000300_create_schedule_month` cria estado mensal por congregação e seu
 histórico de transições com ator e instante. É aditiva, sem conversão de dados.
 Ausência de registro equivale a mês aberto. CHECKs restringem mês e estados;

@@ -32,6 +32,11 @@ export class EquipmentService {
         [accountId, congregationId],
       );
       if (!access.rowCount) throw new ForbiddenException('Acesso negado.');
+      if (action !== 'list')
+        await client.query(
+          'SELECT id FROM congregation WHERE id=$1 FOR UPDATE',
+          [congregationId],
+        );
       let result;
       if (action === 'list') {
         result = (
@@ -84,7 +89,7 @@ export class EquipmentService {
             throw new BadRequestException('Estado inválido.');
           const existing = (
             await client.query(
-              'SELECT active FROM equipment WHERE id=$1 AND congregation_id=$2 FOR UPDATE',
+              'SELECT active,type FROM equipment WHERE id=$1 AND congregation_id=$2 FOR UPDATE',
               [equipmentId, congregationId],
             )
           ).rows[0];
@@ -92,6 +97,16 @@ export class EquipmentService {
             throw new NotFoundException('Equipamento não encontrado.');
           if (existing.active === body.active)
             throw new ConflictException('O equipamento já está nesse estado.');
+          if (!body.active) {
+            const conflict = await client.query(
+              `SELECT 1 FROM reservation r WHERE r.congregation_id=$1 AND r.equipment_type=$2 AND r.cancelled_at IS NULL AND r.ends_at>now() AND (SELECT count(*) FROM reservation other WHERE other.congregation_id=$1 AND other.equipment_type=$2 AND other.cancelled_at IS NULL AND other.starts_at<=greatest(r.starts_at,now()) AND other.ends_at>greatest(r.starts_at,now())) > (SELECT count(*)-1 FROM equipment WHERE congregation_id=$1 AND type=$2 AND active) LIMIT 1`,
+              [congregationId, existing.type],
+            );
+            if (conflict.rowCount)
+              throw new ConflictException(
+                'Existem reservas que ficariam sem equipamento disponível. Resolva o conflito antes de inativar.',
+              );
+          }
           result = (
             await client.query(
               'UPDATE equipment SET active=$3, observation=$4 WHERE id=$1 AND congregation_id=$2 RETURNING id, name, type, active, observation',

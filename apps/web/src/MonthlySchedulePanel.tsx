@@ -1,10 +1,21 @@
 import { useEffect, useState } from 'react';
 import type { EquipmentContext } from './EquipmentPanel.js';
+import { ReservationForm } from './ReservationForm.js';
 
 type Schedule = {
   timezone: string;
   months: { month: string; state: string; canBook: boolean }[];
   equipment: { type: string; units: number }[];
+  reservations?: {
+    id: string;
+    pointName: string;
+    date: string;
+    startHour: number;
+    duration: number;
+    equipmentType: string;
+    thirdPositionOpen: boolean;
+    isResponsible: boolean;
+  }[];
   points: {
     id: string;
     name: string;
@@ -41,6 +52,7 @@ export function MonthlySchedulePanel({
   const [selected, setSelected] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [revision, setRevision] = useState(0);
   const url = `/api/congregations/${encodeURIComponent(context.congregationId)}/schedule`;
   useEffect(() => {
     const controller = new AbortController();
@@ -53,14 +65,18 @@ export function MonthlySchedulePanel({
         const result = (await response.json()) as Schedule;
         if (!controller.signal.aborted) {
           setData(result);
-          setSelected(result.months[0]!.month);
+          setSelected((previous) =>
+            result.months.some((item) => item.month === previous)
+              ? previous
+              : result.months[0]!.month,
+          );
         }
       })
       .catch((failure) => {
         if (!controller.signal.aborted) setError((failure as Error).message);
       });
     return () => controller.abort();
-  }, [url]);
+  }, [url, revision]);
   async function change(action: 'finalize' | 'reopen') {
     setBusy(true);
     setError('');
@@ -124,11 +140,59 @@ export function MonthlySchedulePanel({
             </button>
           )}
           <p>
-            A marcação de reservas será integrada no próximo incremento. As
-            quantidades abaixo representam o inventário ativo, não uma garantia
-            de disponibilidade por horário.
+            As quantidades abaixo representam o inventário ativo. A
+            disponibilidade do intervalo será verificada ao confirmar sua
+            reserva.
           </p>
           {!data.points.length && <p>Nenhum ponto cadastrado.</p>}
+          {(month?.canBook ||
+            (context.canManage && month?.state === 'reopened')) &&
+            data.points.length > 0 && (
+              <ReservationForm
+                key={selected}
+                context={context}
+                month={selected}
+                points={data.points}
+                onSaved={() => setRevision((value) => value + 1)}
+              />
+            )}
+          <h2>Designações do mês</h2>
+          {!(data.reservations ?? []).some((item) =>
+            item.date.startsWith(selected),
+          ) && <p>Nenhuma designação neste mês.</p>}
+          <div className="schedule-list">
+            {(data.reservations ?? [])
+              .filter((item) => item.date.startsWith(selected))
+              .map((item) => (
+                <article className="schedule-card" key={item.id}>
+                  <div>
+                    <h3>
+                      {item.date.split('-').reverse().join('/')} ·{' '}
+                      {item.pointName}
+                    </h3>
+                    <p>
+                      {String(item.startHour).padStart(2, '0')}:00–
+                      {String((item.startHour + item.duration) % 24).padStart(
+                        2,
+                        '0',
+                      )}
+                      :00
+                      {item.startHour + item.duration >= 24
+                        ? ' (dia seguinte)'
+                        : ''}{' '}
+                      · {labels[item.equipmentType]}
+                    </p>
+                    <p>
+                      {item.isResponsible ? 'Sua reserva' : 'Grupo em formação'}{' '}
+                      · 1 responsável ·{' '}
+                      {item.thirdPositionOpen
+                        ? '2 vagas abertas'
+                        : '1 vaga aberta e terceira bloqueada'}
+                    </p>
+                  </div>
+                </article>
+              ))}
+          </div>
           <div className="schedule-list">
             {data.points.map((point) => (
               <article className="panel" key={point.id}>

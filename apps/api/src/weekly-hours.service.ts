@@ -182,8 +182,36 @@ export class WeeklyHoursService {
           throw new ConflictException(
             'A configuração foi alterada por outro administrador. Recarregue antes de editar novamente.',
           );
-        // No assignments exist in this release. Future assignment writes must lock
-        // this congregation row too and enforce PRG-001 PM-05 before this update.
+        if (
+          config.timezone !== current.timezone &&
+          (
+            await client.query(
+              'SELECT 1 FROM reservation WHERE congregation_id=$1 AND cancelled_at IS NULL LIMIT 1',
+              [congregationId],
+            )
+          ).rowCount
+        )
+          throw new ConflictException(
+            'Existem designações na congregação. Não é possível alterar o fuso.',
+          );
+        const changedDays = config.days
+          .filter(
+            (day, index) =>
+              JSON.stringify(day) !== JSON.stringify(previous.days[index]),
+          )
+          .map((day) => day.day);
+        if (
+          changedDays.length &&
+          (
+            await client.query(
+              `SELECT 1 FROM reservation r CROSS JOIN LATERAL generate_series(r.starts_at,r.ends_at-interval '1 microsecond',interval '1 hour') AS segment WHERE r.congregation_id=$1 AND r.point_id=$2 AND r.cancelled_at IS NULL AND extract(dow FROM segment AT TIME ZONE $3)::int=ANY($4) LIMIT 1`,
+              [congregationId, pointId, current.timezone, changedDays],
+            )
+          ).rowCount
+        )
+          throw new ConflictException(
+            'Existem designações nos dias alterados deste ponto. Resolva o conflito antes de alterar os horários.',
+          );
         if (
           config.timezone !== current.timezone ||
           JSON.stringify(config.days) !== JSON.stringify(previous.days)

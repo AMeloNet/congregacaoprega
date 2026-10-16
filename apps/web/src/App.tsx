@@ -390,7 +390,7 @@ export function App({
           <span className="demo-dot" />
           <span>
             {equipmentContext
-              ? 'Programação mensal e Recursos usam dados reais. Reservas e demais exemplos continuam demonstrativos.'
+              ? 'Programação mensal e Recursos usam dados reais, incluindo marcações em Programação. Demais exemplos continuam demonstrativos.'
               : 'Programação e reservas ainda usam dados fictícios. Identidade e convites de acesso são tratados pela aplicação.'}
           </span>
         </div>

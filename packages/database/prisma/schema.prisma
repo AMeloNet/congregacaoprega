@@ -75,6 +75,7 @@ model IdentityAccount {
   actedAuditEvents   IdentityAuditEvent[] @relation("AuditActor")
   subjectAuditEvents IdentityAuditEvent[] @relation("AuditSubject")
   scheduleMonthHistory ScheduleMonthHistory[]
+  reservations Reservation[]
 
   @@unique([providerIssuer, providerSubject])
   @@map("identity_account")
@@ -94,6 +95,7 @@ model Congregation {
   invitations AccessInvitation[]
   auditEvents IdentityAuditEvent[]
   scheduleMonths ScheduleMonth[]
+  reservations Reservation[]
 
   @@map("congregation")
 }
@@ -203,6 +205,7 @@ model PreachingPoint {
   weeklyHoursVersion Int @default(0) @map("weekly_hours_version")
   weeklyHoursDays PointWeeklyHoursDay[]
   weeklyHoursHistory PointWeeklyHoursHistory[]
+  reservations Reservation[]
   congregation Congregation @relation(fields: [congregationId], references: [id], onDelete: Restrict)
 
   @@map("preaching_point")
@@ -279,4 +282,28 @@ model ScheduleMonthHistory {
   scheduleMonth ScheduleMonth @relation(fields: [congregationId, month], references: [congregationId, month], onDelete: Restrict, map: "schedule_month_history_month_fkey")
   actorAccount IdentityAccount @relation(fields: [actorAccountId], references: [id], onDelete: Restrict)
   @@map("schedule_month_history")
+}
+
+model Reservation {
+  id String @id @default(uuid()) @db.Uuid
+  congregationId String @map("congregation_id") @db.Uuid
+  pointId String @map("point_id") @db.Uuid
+  responsibleAccountId String @map("responsible_account_id") @db.Uuid
+  requestKey String @map("request_key") @db.Uuid
+  localDate String @map("local_date")
+  startHour Int @map("start_hour")
+  duration Int
+  equipmentType EquipmentType @map("equipment_type")
+  thirdPositionOpen Boolean @map("third_position_open")
+  startsAt DateTime @map("starts_at") @db.Timestamptz(6)
+  endsAt DateTime @map("ends_at") @db.Timestamptz(6)
+  cancelledAt DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  congregation Congregation @relation(fields: [congregationId], references: [id], onDelete: Restrict)
+  point PreachingPoint @relation(fields: [pointId], references: [id], onDelete: Restrict)
+  responsible IdentityAccount @relation(fields: [responsibleAccountId], references: [id], onDelete: Restrict)
+  @@unique([congregationId, responsibleAccountId, requestKey], map: "reservation_request_key")
+  @@index([congregationId, startsAt, endsAt], map: "reservation_congregation_interval_idx")
+  @@index([responsibleAccountId, startsAt, endsAt], map: "reservation_responsible_interval_idx")
+  @@map("reservation")
 }

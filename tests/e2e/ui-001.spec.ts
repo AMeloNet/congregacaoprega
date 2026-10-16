@@ -106,6 +106,14 @@ test('navigates the monthly schedule with a stable route and no horizontal overf
   await expect(
     page.getByRole('heading', { name: 'Ponto do teste' }),
   ).toBeVisible();
+  await expect(
+    page.getByRole('combobox', { name: 'Dia da semana' }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+  ).toBe(false);
   await page
     .getByRole('combobox', { name: 'Mês da programação' })
     .selectOption('2026-11');
