@@ -90,6 +90,17 @@ exigem autorização para o ambiente afetado, cópia recuperável e procedimento
 de recuperação testado. Testar restauração periodicamente; apenas ter um
 arquivo de backup não comprova recuperação.
 
+## Organização mensal PRG-001
+
+`20261016000300_create_schedule_month` cria estado mensal por congregação e seu
+histórico de transições com ator e instante. É aditiva, sem conversão de dados.
+Ausência de registro equivale a mês aberto. CHECKs restringem mês e estados;
+FKs preservam congregação, autor e referência mensal. Requer `migrate deploy`;
+não aplicar em staging nesta entrega. Bloqueios de DDL limitam-se às estruturas
+novas e referências; falhas interrompem promoção, exigindo inspeção do catálogo e
+do histórico Prisma antes de conciliar. Reverter código preserva tabelas e histórico.
+Teste HTTP com PostgreSQL: `monthly-schedule.integration.spec.ts`.
+
 ## Inventário EQP-001
 
 `20261015000100_create_equipment` cria `equipment`, `equipment_state_history` e `equipment_type`. É aditiva, sem transformação de dados anteriores; volume inicial zero. Cria CHECKs de comprimento e índice único de expressão `(congregation_id, lower(name))`, não representado pelo Prisma; revisar pelo SQL. Os bloqueios limitam-se às novas estruturas e às referências das FKs. Aplicar por `migrate deploy` no job serializado; falha parcial interrompe promoção e exige diagnóstico antes de conciliar histórico. Reverter código preserva as tabelas e o histórico, sem exclusão automática.

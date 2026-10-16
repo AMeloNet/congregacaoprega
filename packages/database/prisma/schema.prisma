@@ -74,6 +74,7 @@ model IdentityAccount {
   createdInvitations AccessInvitation[] @relation("InvitationCreator")
   actedAuditEvents   IdentityAuditEvent[] @relation("AuditActor")
   subjectAuditEvents IdentityAuditEvent[] @relation("AuditSubject")
+  scheduleMonthHistory ScheduleMonthHistory[]
 
   @@unique([providerIssuer, providerSubject])
   @@map("identity_account")
@@ -92,6 +93,7 @@ model Congregation {
   points PreachingPoint[]
   invitations AccessInvitation[]
   auditEvents IdentityAuditEvent[]
+  scheduleMonths ScheduleMonth[]
 
   @@map("congregation")
 }
@@ -254,4 +256,27 @@ model WeeklyHoursHistory {
 
   @@index([congregationId, createdAt], map: "weekly_hours_history_congregation_created_idx")
   @@map("weekly_hours_history")
+}
+
+model ScheduleMonth {
+  congregationId String @map("congregation_id") @db.Uuid
+  month String
+  state String @default("open")
+  congregation Congregation @relation(fields: [congregationId], references: [id], onDelete: Restrict)
+  history ScheduleMonthHistory[]
+  @@id([congregationId, month])
+  @@map("schedule_month")
+}
+
+model ScheduleMonthHistory {
+  id String @id @default(uuid()) @db.Uuid
+  congregationId String @map("congregation_id") @db.Uuid
+  month String
+  actorAccountId String @map("actor_account_id") @db.Uuid
+  previousState String @map("previous_state")
+  state String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  scheduleMonth ScheduleMonth @relation(fields: [congregationId, month], references: [congregationId, month], onDelete: Restrict, map: "schedule_month_history_month_fkey")
+  actorAccount IdentityAccount @relation(fields: [actorAccountId], references: [id], onDelete: Restrict)
+  @@map("schedule_month_history")
 }
