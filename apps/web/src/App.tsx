@@ -1,4 +1,5 @@
 import { PointsPanel } from './PointsPanel.js';
+import { WeeklyHoursPanel } from './WeeklyHoursPanel.js';
 import { EquipmentPanel, type EquipmentContext } from './EquipmentPanel.js';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
@@ -1214,7 +1215,7 @@ export function App({
               <div className="intro-row">
                 <p>
                   {equipmentContext
-                    ? 'Cadastre os pontos e equipamentos da sua congregação. Horários permanecem demonstrativos.'
+                    ? 'Cadastre os pontos, equipamentos e horários semanais da sua congregação.'
                     : 'Exemplos de locais, tipos permitidos e unidades.'}
                 </p>
                 <span className="soft-badge">
@@ -1284,26 +1285,33 @@ export function App({
                     </p>
                   </section>
                 )}
-                <section className="panel">
-                  <p className="eyebrow">CONFIGURAÇÃO FICTÍCIA</p>
-                  <h2>Horários semanais</h2>
-                  <div className="summary-line">
-                    <span>Segunda a sexta</span>
-                    <strong>08:00–18:00</strong>
-                  </div>
-                  <div className="summary-line">
-                    <span>Sábado</span>
-                    <strong>07:00–19:00</strong>
-                  </div>
-                  <div className="summary-line">
-                    <span>Domingo</span>
-                    <strong>Sem restrição</strong>
-                  </div>
-                  <p className="info-callout">
-                    Fuso da congregação: America/Sao_Paulo. Estes horários
-                    servem apenas para visualizar a interface.
-                  </p>
-                </section>
+                {equipmentContext ? (
+                  <WeeklyHoursPanel
+                    key={equipmentContext.congregationId}
+                    context={equipmentContext}
+                  />
+                ) : (
+                  <section className="panel">
+                    <p className="eyebrow">CONFIGURAÇÃO FICTÍCIA</p>
+                    <h2>Horários semanais</h2>
+                    <div className="summary-line">
+                      <span>Segunda a sexta</span>
+                      <strong>08:00–18:00</strong>
+                    </div>
+                    <div className="summary-line">
+                      <span>Sábado</span>
+                      <strong>07:00–19:00</strong>
+                    </div>
+                    <div className="summary-line">
+                      <span>Domingo</span>
+                      <strong>Sem restrição</strong>
+                    </div>
+                    <p className="info-callout">
+                      Fuso da congregação: America/Sao_Paulo. Estes horários
+                      servem apenas para visualizar a interface.
+                    </p>
+                  </section>
+                )}
               </div>
             </>
           )}

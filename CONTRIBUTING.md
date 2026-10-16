@@ -54,8 +54,13 @@ sob seu controle. A API exige essa variável para iniciar. A página consulta a
 sessão de identidade. `GET /api/health/live` indica processo
 ativo; `GET /api/health/ready` verifica `SELECT 1` e devolve 503 sem expor a URL
 quando o PostgreSQL está indisponível. Programação, locais, horários e reservas da
-UI-001 continuam demonstrativos; identidade, seleção de congregação e convites
+UI-001 continuam demonstrativos, exceto os cadastros reais em Recursos; identidade, seleção de congregação e convites
 de acesso usam a API. O inventário em Recursos também usa a API e PostgreSQL, com acesso exclusivo ao administrador local (EQP-001).
+
+Pontos e horários semanais em Recursos também usam API e PostgreSQL reais. A
+configuração semanal permite dias fechados, dias sem restrição (24 horas),
+múltiplos intervalos dentro do mesmo dia e escolha do fuso IANA. Contrato,
+concorrência e limites estão nas [evidências PRG-001](docs/testes/prg-001-horarios-evidencias.md).
 
 ## Verificações
 

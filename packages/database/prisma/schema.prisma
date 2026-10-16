@@ -67,6 +67,7 @@ model IdentityAccount {
   isMaster        Boolean      @default(false) @map("is_master")
   createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  weeklyHoursHistory WeeklyHoursHistory[]
   equipmentHistory EquipmentStateHistory[]
   memberships     Membership[]
   createdInvitations AccessInvitation[] @relation("InvitationCreator")
@@ -81,6 +82,9 @@ model Congregation {
   id          String       @id @default(uuid()) @db.Uuid
   name        String
   timezone    String       @default("America/Sao_Paulo")
+  weeklyHoursVersion Int @default(0) @map("weekly_hours_version")
+  weeklyHoursDays WeeklyHoursDay[]
+  weeklyHoursHistory WeeklyHoursHistory[]
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   memberships Membership[]
   equipment Equipment[]
@@ -196,4 +200,29 @@ model PreachingPoint {
   congregation Congregation @relation(fields: [congregationId], references: [id], onDelete: Restrict)
 
   @@map("preaching_point")
+}
+
+model WeeklyHoursDay {
+  congregationId String       @map("congregation_id") @db.Uuid
+  day            Int
+  mode           String
+  intervals      Json
+  congregation   Congregation @relation(fields: [congregationId], references: [id], onDelete: Restrict)
+
+  @@id([congregationId, day])
+  @@map("weekly_hours_day")
+}
+
+model WeeklyHoursHistory {
+  id             String          @id @default(uuid()) @db.Uuid
+  congregationId String          @map("congregation_id") @db.Uuid
+  actorAccountId String          @map("actor_account_id") @db.Uuid
+  previous       Json
+  configuration  Json
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  congregation   Congregation    @relation(fields: [congregationId], references: [id], onDelete: Restrict)
+  actorAccount   IdentityAccount @relation(fields: [actorAccountId], references: [id], onDelete: Restrict)
+
+  @@index([congregationId, createdAt], map: "weekly_hours_history_congregation_created_idx")
+  @@map("weekly_hours_history")
 }

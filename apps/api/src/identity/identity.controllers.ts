@@ -1,5 +1,6 @@
 import { EquipmentService } from '../equipment.service.js';
 import { PointsService } from '../points.service.js';
+import { WeeklyHoursService } from '../weekly-hours.service.js';
 import {
   BadRequestException,
   Body,
@@ -455,6 +456,32 @@ export class IdentityController {
       'update',
       body,
       pointId,
+    );
+  }
+
+  @Get('congregations/:id/weekly-hours')
+  async weeklyHoursGet(@Req() request: HttpRequest, @Param('id') id: string) {
+    const { account } = await this.requireIdentity(request, undefined, false);
+    return new WeeklyHoursService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      'get',
+    );
+  }
+
+  @Put('congregations/:id/weekly-hours')
+  async weeklyHoursSave(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new WeeklyHoursService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      'save',
+      body,
     );
   }
 
