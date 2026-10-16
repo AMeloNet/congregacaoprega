@@ -167,14 +167,22 @@ export async function createReservation(
       const [hour, part] = text.split(':').map(Number);
       return hour! * 60 + part!;
     };
+    let coveredUntil = minute;
+    if (day?.mode === 'intervals') {
+      const ranges = (day.intervals as { start: string; end: string }[])
+        .map(
+          (interval) =>
+            [minutes(interval.start), minutes(interval.end)] as const,
+        )
+        .sort((a, b) => a[0] - b[0]);
+      for (const [start, end] of ranges) {
+        if (start > coveredUntil) break;
+        if (end > coveredUntil) coveredUntil = end;
+      }
+    }
     if (
       day?.mode === 'closed' ||
-      (day?.mode === 'intervals' &&
-        !day.intervals.some(
-          (interval: { start: string; end: string }) =>
-            minutes(interval.start) <= minute &&
-            minutes(interval.end) >= minute + 60,
-        ))
+      (day?.mode === 'intervals' && coveredUntil < minute + 60)
     )
       throw unavailable('horário fechado no ponto.');
   }
@@ -236,15 +244,19 @@ export async function createReservation(
     for (
       let instant = new Date(row.starts_at).getTime();
       instant < new Date(row.ends_at).getTime();
-      instant += 3600000
+      instant += 60000
     ) {
       const date = localParts(new Date(instant), timezone).date;
-      totals.set(date, (totals.get(date) ?? 0) + 1);
+      totals.set(
+        date,
+        (totals.get(date) ?? 0) +
+          Math.min(60000, new Date(row.ends_at).getTime() - instant) / 60000,
+      );
     }
   }
   for (const segment of times.segments) {
-    totals.set(segment.date, (totals.get(segment.date) ?? 0) + 1);
-    if (totals.get(segment.date)! > 8)
+    totals.set(segment.date, (totals.get(segment.date) ?? 0) + 60);
+    if (totals.get(segment.date)! > 480)
       throw unavailable('limite de oito horas por dia excedido.');
   }
   return (

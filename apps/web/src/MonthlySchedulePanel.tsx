@@ -15,6 +15,19 @@ type Schedule = {
     equipmentType: string;
     thirdPositionOpen: boolean;
     isResponsible: boolean;
+    seriesId?: string | null;
+    seriesStoppedAt?: string | null;
+  }[];
+  recurrences?: {
+    id: string;
+    sourceReservationId: string;
+    stoppedAt: string | null;
+    pointId: string;
+    weekday: number;
+    startHour: number;
+    equipmentType: string;
+    isResponsible: boolean;
+    conflicts: { date: string; message: string }[];
   }[];
   points: {
     id: string;
@@ -52,6 +65,7 @@ export function MonthlySchedulePanel({
   const [selected, setSelected] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
   const [revision, setRevision] = useState(0);
   const url = `/api/congregations/${encodeURIComponent(context.congregationId)}/schedule`;
   useEffect(() => {
@@ -96,9 +110,38 @@ export function MonthlySchedulePanel({
     }
   }
   const month = data?.months.find((m) => m.month === selected);
+  async function recurrence(path: string) {
+    setBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      const response = await fetch(
+        `/api/congregations/${encodeURIComponent(context.congregationId)}/${path}`,
+        { method: 'POST', headers: { 'x-csrf-token': context.csrfToken } },
+      );
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(
+          result.message ?? 'Não foi possível alterar a recorrência.',
+        );
+      setMessage(
+        result.stopped
+          ? 'Recorrência encerrada. Reservas já criadas foram preservadas.'
+          : result.conflicts?.length
+            ? 'Há datas indisponíveis. Confira as pendências da recorrência; nenhuma reserva conflitante foi incluída.'
+            : 'Recorrência atualizada. As reservas disponíveis foram registradas.',
+      );
+      setRevision((value) => value + 1);
+    } catch (failure) {
+      setError((failure as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <section aria-label="Programação mensal">
       {error && <p role="alert">{error}</p>}
+      {message && <p role="status">{message}</p>}
       {!data && !error && <p role="status">Carregando programação…</p>}
       {data && (
         <>
@@ -189,10 +232,100 @@ export function MonthlySchedulePanel({
                         ? '2 vagas abertas'
                         : '1 vaga aberta e terceira bloqueada'}
                     </p>
+                    {item.seriesId ? (
+                      <p>
+                        {item.seriesStoppedAt
+                          ? 'Recorrência encerrada; esta reserva foi preservada.'
+                          : 'Parte de uma recorrência semanal.'}
+                      </p>
+                    ) : (
+                      (item.isResponsible || context.canManage) &&
+                      (month?.canBook ||
+                        (context.canManage && month?.state === 'reopened')) && (
+                        <button
+                          className="button outline"
+                          type="button"
+                          disabled={busy}
+                          onClick={() =>
+                            void recurrence(
+                              `reservations/${item.id}/recurrence`,
+                            )
+                          }
+                        >
+                          Repetir toda semana
+                        </button>
+                      )
+                    )}
                   </div>
                 </article>
               ))}
           </div>
+          <section aria-label="Recorrências semanais">
+            <h2>Recorrências semanais</h2>
+            <p>
+              Repetir toda semana mantém somente o responsável, no mesmo dia da
+              semana, ponto, horário e tipo de equipamento, nos meses seguintes
+              até encerrar. Datas indisponíveis ficam pendentes para tratamento.
+            </p>
+            {(data.recurrences ?? []).map((series) => (
+              <article className="panel" key={series.id}>
+                <h3>
+                  {days[series.weekday]} ·{' '}
+                  {String(series.startHour).padStart(2, '0')}:00 ·{' '}
+                  {
+                    data.points.find((point) => point.id === series.pointId)
+                      ?.name
+                  }{' '}
+                  · {labels[series.equipmentType]}
+                </h3>
+                <p>{series.stoppedAt ? 'Encerrada' : 'Ativa'}</p>
+                {!series.stoppedAt && (
+                  <button
+                    className="button outline"
+                    type="button"
+                    disabled={busy}
+                    onClick={() =>
+                      void recurrence(`recurrences/${series.id}/stop`)
+                    }
+                  >
+                    Encerrar recorrência
+                  </button>
+                )}
+                {series.conflicts.map((conflict) => (
+                  <div key={conflict.date}>
+                    <p role="alert">
+                      {conflict.date.split('-').reverse().join('/')}:{' '}
+                      {conflict.message}
+                    </p>
+                    {!series.stoppedAt && (
+                      <button
+                        className="button outline"
+                        type="button"
+                        disabled={
+                          busy ||
+                          !data.months.some(
+                            (item) =>
+                              conflict.date.startsWith(item.month) &&
+                              (item.canBook ||
+                                (context.canManage &&
+                                  item.state === 'reopened')),
+                          )
+                        }
+                        onClick={() =>
+                          void recurrence(
+                            `recurrences/${series.id}/retry/${conflict.date}`,
+                          )
+                        }
+                      >
+                        Tentar novamente em{' '}
+                        {conflict.date.split('-').reverse().join('/')}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </article>
+            ))}
+          </section>
           <div className="schedule-list">
             {data.points.map((point) => (
               <article className="panel" key={point.id}>

@@ -92,6 +92,15 @@ arquivo de backup não comprova recuperação.
 
 ## Organização mensal PRG-001
 
+`20261016000500_create_weekly_recurrence` acrescenta séries e ocorrências por data,
+autores de ativação/encerramento e tentativas de geração. Índices únicos por origem,
+série/data e reserva impedem duplicação; CHECKs exigem resultado coerente (reserva
+ou motivo de indisponibilidade) e encerramento com autor. Não transforma nem apaga
+reservas. DDL aditivo, restrito a estruturas novas e referências de FKs. Falha
+interrompe promoção e exige diagnóstico do catálogo/histórico antes de conciliação;
+reverter código preserva séries, reservas e tentativas. Teste representativo com
+PostgreSQL descartável: `recurrence.integration.spec.ts`. Não aplicar em staging.
+
 `20261016000400_create_reservation_core` acrescenta somente a tabela de reservas
 e índices, com CHECKs de duração/hora/intervalo, FKs e chave única de requisição.
 Sem transformação de dados. Aplicar apenas em banco descartável nesta entrega;

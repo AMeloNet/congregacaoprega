@@ -71,7 +71,10 @@ seguinte no fuso da congregação, pontos, horários e inventário ativo. O admi
 pode finalizar e reabrir o mês; reabertura mantém publicadores bloqueados. Em
 Programação é possível registrar reservas reais com somente o responsável;
 as demais telas de exemplos permanecem demonstrativas. Contrato em PRG-001
-e RES-001. Recorrência é o próximo incremento, sem convites ou impressão.
+e RES-001. Após criar uma reserva, “Repetir toda semana” ativa a recorrência
+somente do responsável. A API processa séries na inicialização e a cada 60 segundos;
+conflitos ficam explícitos e exigem nova tentativa manual. Encerrar preserva
+reservas existentes. Sem convites ou impressão e sem publicação em staging.
 
 ```sh
 pnpm docs:check

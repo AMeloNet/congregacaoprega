@@ -168,6 +168,133 @@ test('walks through reservation and invitation examples', async ({ page }) => {
   await expect(page.getByRole('status')).toContainText('Convite aceito');
 });
 
+test('activates weekly recurrence, shows unavailable dates and stops without removing bookings', async ({
+  page,
+}) => {
+  let active = false;
+  let stopped = false;
+  let retried = false;
+  const source = {
+    id: 'source-booking',
+    pointName: 'Ponto recorrente',
+    date: '2026-10-20',
+    startHour: 8,
+    duration: 2,
+    equipmentType: 'CART',
+    thirdPositionOpen: true,
+    isResponsible: true,
+  };
+  await page.route(
+    '**/api/congregations/congregation-example/schedule',
+    async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          timezone: 'America/Sao_Paulo',
+          months: [
+            { month: '2026-10', state: 'open', canBook: true },
+            { month: '2026-11', state: 'open', canBook: true },
+          ],
+          equipment: [],
+          points: [],
+          reservations: [
+            {
+              ...source,
+              seriesId: active ? 'weekly-series' : null,
+              seriesStoppedAt: stopped ? '2026-10-16T15:00:00Z' : null,
+            },
+          ],
+          recurrences: active
+            ? [
+                {
+                  id: 'weekly-series',
+                  sourceReservationId: source.id,
+                  pointId: 'point',
+                  weekday: 2,
+                  startHour: 8,
+                  equipmentType: 'CART',
+                  isResponsible: true,
+                  stoppedAt: stopped ? '2026-10-16T15:00:00Z' : null,
+                  conflicts: retried
+                    ? []
+                    : [
+                        {
+                          date: '2026-10-27',
+                          message:
+                            'Reserva indisponível: ponto ou equipamento ocupado.',
+                        },
+                      ],
+                },
+              ]
+            : [],
+        }),
+      });
+    },
+  );
+  await page.route(
+    '**/api/congregations/congregation-example/reservations/source-booking/recurrence',
+    async (route) => {
+      expect(route.request().headers()['x-csrf-token']).toBe('controlled-csrf');
+      active = true;
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'weekly-series',
+          generated: 3,
+          conflicts: [{ date: '2026-10-27', message: 'Reserva indisponível' }],
+        }),
+      });
+    },
+  );
+  await page.route(
+    '**/api/congregations/congregation-example/recurrences/weekly-series/retry/2026-10-27',
+    async (route) => {
+      retried = true;
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ generated: 1, conflicts: [] }),
+      });
+    },
+  );
+  await page.route(
+    '**/api/congregations/congregation-example/recurrences/weekly-series/stop',
+    async (route) => {
+      stopped = true;
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ stopped: true }),
+      });
+    },
+  );
+  await page.goto('/#programacao');
+  await page.getByRole('button', { name: 'Repetir toda semana' }).click();
+  await expect(page.getByRole('alert')).toContainText(
+    '27/10/2026: Reserva indisponível',
+  );
+  await page
+    .getByRole('button', { name: 'Tentar novamente em 27/10/2026' })
+    .click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Encerrar recorrência' }).click();
+  await expect(
+    page.getByText('Recorrência encerrada; esta reserva foi preservada.'),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: '20/10/2026 · Ponto recorrente' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Encerrar recorrência' }),
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+  ).toBe(false);
+});
+
 test('finalizes before printing and blocks a publisher even after an administrative reopening', async ({
   page,
 }) => {

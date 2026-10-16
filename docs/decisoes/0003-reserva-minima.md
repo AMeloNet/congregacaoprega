@@ -34,3 +34,10 @@ Sem cancelamento ou remanejamento silencioso.
 Migration aditiva `20261016000400_create_reservation_core`: sem transformação de
 dados. Reverter código preserva reservas; falha de aplicação interrompe promoção
 e exige diagnóstico de catálogo/histórico. Não há publicação em staging.
+
+A recorrência semanal posterior usa a reserva original como modelo imutável
+e primeira ocorrência, sem duplicá-la. Cada data tem resultado persistido e
+histórico de tentativas. A execução periódica usa permissão de publicador,
+inclusive quando a série foi ativada por administrador; reabertura exige ação
+administrativa explícita. Encerrar o modelo preserva todas as reservas existentes.
+Contrato, periodicidade e tratamento de pendências estão em PRG-001.

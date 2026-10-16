@@ -116,8 +116,14 @@ export class MonthlyScheduleService {
       ).rows;
       const reservations = (
         await client.query(
-          `SELECT r.id,r.point_id AS "pointId",p.name AS "pointName",r.local_date AS date,r.start_hour AS "startHour",r.duration,r.equipment_type AS "equipmentType",r.third_position_open AS "thirdPositionOpen",(r.responsible_account_id=$3) AS "isResponsible" FROM reservation r JOIN preaching_point p ON p.id=r.point_id WHERE r.congregation_id=$1 AND substring(r.local_date,1,7)=ANY($2) AND r.cancelled_at IS NULL ORDER BY r.local_date,r.start_hour,r.id`,
+          `SELECT r.id,r.point_id AS "pointId",p.name AS "pointName",r.local_date AS date,r.start_hour AS "startHour",r.duration,r.equipment_type AS "equipmentType",r.third_position_open AS "thirdPositionOpen",(r.responsible_account_id=$3) AS "isResponsible",o.series_id AS "seriesId",s.stopped_at AS "seriesStoppedAt" FROM reservation r JOIN preaching_point p ON p.id=r.point_id LEFT JOIN recurrence_occurrence o ON o.reservation_id=r.id LEFT JOIN reservation_series s ON s.id=o.series_id WHERE r.congregation_id=$1 AND substring(r.local_date,1,7)=ANY($2) AND r.cancelled_at IS NULL ORDER BY r.local_date,r.start_hour,r.id`,
           [congregationId, months, accountId],
+        )
+      ).rows;
+      const recurrences = (
+        await client.query(
+          `SELECT s.id,s.source_reservation_id AS "sourceReservationId",s.stopped_at AS "stoppedAt",r.point_id AS "pointId",r.start_hour AS "startHour",r.equipment_type AS "equipmentType",extract(dow FROM r.local_date::date)::int AS weekday,(r.responsible_account_id=$2) AS "isResponsible",coalesce((SELECT jsonb_agg(jsonb_build_object('date',o.local_date,'message',o.error) ORDER BY o.local_date) FROM recurrence_occurrence o WHERE o.series_id=s.id AND o.error IS NOT NULL),'[]'::jsonb) AS conflicts FROM reservation_series s JOIN reservation r ON r.id=s.source_reservation_id WHERE r.congregation_id=$1 AND (r.responsible_account_id=$2 OR $3::boolean) ORDER BY s.created_at,s.id`,
+          [congregationId, accountId, membership.role === 'LOCAL_ADMIN'],
         )
       ).rows;
       await client.query('COMMIT');
@@ -142,6 +148,7 @@ export class MonthlyScheduleService {
         })),
         equipment,
         reservations,
+        recurrences,
       };
     } catch (error) {
       await client.query('ROLLBACK');

@@ -1,4 +1,10 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
+import { RecurrenceService } from '../recurrence.service.js';
 import { Pool } from 'pg';
 import { Auth0OidcClient } from '../auth/auth0-oidc.client.js';
 import { AuthService, type AuthConfig } from '../auth/auth.service.js';
@@ -124,7 +130,7 @@ export function validateIdentityEnvironment(): void {
 }
 
 @Injectable()
-export class IdentityRuntime implements OnModuleDestroy {
+export class IdentityRuntime implements OnModuleDestroy, OnModuleInit {
   readonly pool = new Pool({ connectionString: process.env.DATABASE_URL });
   readonly repository = new PgIdentityRepository(this.pool);
   readonly email = new CaptureEmailService();
@@ -143,8 +149,32 @@ export class IdentityRuntime implements OnModuleDestroy {
     appBaseUrl: process.env.APP_BASE_URL ?? 'http://127.0.0.1:5173',
     bootstrapSecret: process.env.BOOTSTRAP_SECRET ?? 'test-bootstrap-secret',
   });
+  private recurrenceTimer?: ReturnType<typeof setInterval>;
+  private recurrenceTask?: Promise<void>;
+
+  onModuleInit() {
+    const tick = () => {
+      if (this.recurrenceTask) return;
+      this.recurrenceTask = new RecurrenceService(this.pool)
+        .generateAll()
+        .catch(() =>
+          Logger.warn(
+            'Falha no processamento de recorrências. Nova tentativa no próximo ciclo.',
+            'Recurrence',
+          ),
+        )
+        .finally(() => {
+          this.recurrenceTask = undefined;
+        });
+    };
+    this.recurrenceTimer = setInterval(tick, 60_000);
+    this.recurrenceTimer.unref();
+    tick();
+  }
 
   async onModuleDestroy(): Promise<void> {
+    if (this.recurrenceTimer) clearInterval(this.recurrenceTimer);
+    await this.recurrenceTask;
     await this.pool.end();
   }
 }
