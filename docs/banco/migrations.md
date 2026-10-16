@@ -93,3 +93,20 @@ arquivo de backup não comprova recuperação.
 ## Inventário EQP-001
 
 `20261015000100_create_equipment` cria `equipment`, `equipment_state_history` e `equipment_type`. É aditiva, sem transformação de dados anteriores; volume inicial zero. Cria CHECKs de comprimento e índice único de expressão `(congregation_id, lower(name))`, não representado pelo Prisma; revisar pelo SQL. Os bloqueios limitam-se às novas estruturas e às referências das FKs. Aplicar por `migrate deploy` no job serializado; falha parcial interrompe promoção e exige diagnóstico antes de conciliar histórico. Reverter código preserva as tabelas e o histórico, sem exclusão automática.
+
+## Horários semanais PRG-001
+
+`20261016000100_create_weekly_hours` acrescenta `congregation.weekly_hours_version`
+(padrão zero), `weekly_hours_day` e `weekly_hours_history`. Preserva o fuso já
+existente e os demais cadastros; ausência de linhas significa 24 horas disponíveis
+em cada dia. As tabelas novas começam vazias. CHECKs SQL restringem dia, modo e
+formato geral dos intervalos JSON; a API valida cada intervalo e sobreposição.
+O modelo Prisma acompanha tabelas, coluna, chaves e índice do histórico.
+
+A coluna com default constante requer breve bloqueio DDL de `congregation`;
+as FKs também referenciam contas existentes. O salvamento da semana serializa
+pela linha da congregação e grava histórico na mesma transação. Aplicar somente
+por `migrate deploy` no job serializado autorizado; esta entrega aplica apenas
+em banco descartável, sem staging. Em falha, interromper promoção e diagnosticar
+o histórico antes de conciliar. Reverter o código preserva configuração e
+histórico; não remover tabelas ou coluna automaticamente.
