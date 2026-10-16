@@ -1442,6 +1442,21 @@ body {
   width: 100%;
   min-width: 0;
 }
+.equipment-panel fieldset {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+.equipment-panel fieldset label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+.equipment-panel input[type='checkbox'] {
+  width: auto;
+  accent-color: var(--accent);
+}
 .equipment-panel input,
 .equipment-panel select,
 .equipment-panel textarea {

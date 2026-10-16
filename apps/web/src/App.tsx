@@ -1,3 +1,4 @@
+import { PointsPanel } from './PointsPanel.js';
 import { EquipmentPanel, type EquipmentContext } from './EquipmentPanel.js';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
@@ -1212,35 +1213,49 @@ export function App({
             <>
               <div className="intro-row">
                 <p>
-                  Exemplos de locais, tipos permitidos e unidades. Alterações
-                  reais serão implementadas em outra etapa.
+                  {equipmentContext
+                    ? 'Cadastre os pontos e equipamentos da sua congregação. Horários permanecem demonstrativos.'
+                    : 'Exemplos de locais, tipos permitidos e unidades.'}
                 </p>
-                <span className="soft-badge">Congregação Exemplo</span>
+                <span className="soft-badge">
+                  {equipmentContext
+                    ? 'Congregação atual'
+                    : 'Congregação Exemplo'}
+                </span>
               </div>
-              <div className="section-heading">
-                <div>
-                  <p className="eyebrow">PONTOS DE PREGAÇÃO</p>
-                  <h2>Locais</h2>
-                </div>
-                <span className="soft-badge">3 locais</span>
-              </div>
-              <div className="resource-grid">
-                {places.map((item) => (
-                  <article className="panel resource-card" key={item.name}>
-                    <div className="resource-icon">⌖</div>
-                    <h3>{item.name}</h3>
-                    <p className="muted">{item.note}</p>
-                    <div className="summary-line">
-                      <span>Grupos simultâneos</span>
-                      <strong>{item.capacity}</strong>
+              {equipmentContext ? (
+                <PointsPanel
+                  key={equipmentContext.congregationId}
+                  context={equipmentContext}
+                />
+              ) : (
+                <>
+                  <div className="section-heading">
+                    <div>
+                      <p className="eyebrow">PONTOS DE PREGAÇÃO</p>
+                      <h2>Locais</h2>
                     </div>
-                    <div className="summary-line">
-                      <span>Tipos permitidos</span>
-                      <strong>{item.types.join(', ')}</strong>
-                    </div>
-                  </article>
-                ))}
-              </div>
+                    <span className="soft-badge">3 locais</span>
+                  </div>
+                  <div className="resource-grid">
+                    {places.map((item) => (
+                      <article className="panel resource-card" key={item.name}>
+                        <div className="resource-icon">⌖</div>
+                        <h3>{item.name}</h3>
+                        <p className="muted">{item.note}</p>
+                        <div className="summary-line">
+                          <span>Grupos simultâneos</span>
+                          <strong>{item.capacity}</strong>
+                        </div>
+                        <div className="summary-line">
+                          <span>Tipos permitidos</span>
+                          <strong>{item.types.join(', ')}</strong>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </>
+              )}
               <div className="two-column resource-bottom">
                 {equipmentContext ? (
                   <EquipmentPanel
