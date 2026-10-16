@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Pool } from 'pg';
 import {
@@ -328,7 +329,16 @@ describe('IDN-001B invitation and audit schema', () => {
           'SELECT id, migration_name, checksum, finished_at FROM _prisma_migrations ORDER BY migration_name',
         )
       ).rows;
-      expect(upgradedHistory).toHaveLength(2);
+      const expectedMigrations = readdirSync(
+        resolve(packageDir, 'prisma/migrations'),
+        { withFileTypes: true },
+      )
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+        .sort();
+      expect(upgradedHistory.map((row) => row.migration_name)).toEqual(
+        expectedMigrations,
+      );
       expect(upgradedHistory[0]).toEqual(initialHistory[0]);
       expect(upgradedHistory.every((row) => row.finished_at !== null)).toBe(
         true,
@@ -385,7 +395,7 @@ describe('IDN-001B invitation and audit schema', () => {
             'SELECT count(*)::int AS total FROM _prisma_migrations',
           )
         ).rows[0].total,
-      ).toBe(2);
+      ).toBe(expectedMigrations.length);
       expect(
         (
           await pool.query(
