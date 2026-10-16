@@ -1,8 +1,11 @@
 import { BadRequestException } from '@nestjs/common';
 
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
 export function localParts(instant: Date, timezone: string) {
-  const values = Object.fromEntries(
-    new Intl.DateTimeFormat('en-CA', {
+  let formatter = formatters.get(timezone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-CA', {
       timeZone: timezone,
       year: 'numeric',
       month: '2-digit',
@@ -11,9 +14,11 @@ export function localParts(instant: Date, timezone: string) {
       minute: '2-digit',
       second: '2-digit',
       hourCycle: 'h23',
-    })
-      .formatToParts(instant)
-      .map((part) => [part.type, part.value]),
+    });
+    formatters.set(timezone, formatter);
+  }
+  const values = Object.fromEntries(
+    formatter.formatToParts(instant).map((part) => [part.type, part.value]),
   );
   return {
     date: `${values.year}-${values.month}-${values.day}`,

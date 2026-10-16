@@ -1,6 +1,7 @@
 import { EquipmentService } from '../equipment.service.js';
 import { MonthlyScheduleService } from '../monthly-schedule.service.js';
 import { ReservationsService } from '../reservations.service.js';
+import { RecurrenceService } from '../recurrence.service.js';
 import { PointsService } from '../points.service.js';
 import { WeeklyHoursService } from '../weekly-hours.service.js';
 import {
@@ -517,6 +518,51 @@ export class IdentityController {
       id,
       body,
     );
+  }
+
+  @Post('congregations/:id/reservations/:reservationId/recurrence')
+  async recurrenceActivate(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('reservationId') reservationId: string,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new RecurrenceService(this.runtime.pool).activate(
+      account.accountId,
+      id,
+      reservationId,
+    );
+  }
+
+  @Post('congregations/:id/recurrences/:seriesId/stop')
+  async recurrenceStop(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('seriesId') seriesId: string,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new RecurrenceService(this.runtime.pool).stop(
+      account.accountId,
+      id,
+      seriesId,
+    );
+  }
+
+  @Post('congregations/:id/recurrences/:seriesId/retry/:date')
+  async recurrenceRetry(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('seriesId') seriesId: string,
+    @Param('date') date: string,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new RecurrenceService(this.runtime.pool).generate(seriesId, id, {
+      accountId: account.accountId,
+      retryDate: date,
+    });
   }
 
   @Post('congregations/:id/schedule/:month/:action')
