@@ -46,16 +46,45 @@ test('follows an operating system appearance change when selected', async ({
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 });
 
-test('navigates the fictional screens with a stable route and no horizontal overflow', async ({
+test('navigates the monthly schedule with a stable route and no horizontal overflow', async ({
   page,
 }) => {
+  await page.route(
+    '**/api/congregations/congregation-example/schedule',
+    async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          timezone: 'America/Sao_Paulo',
+          months: [
+            { month: '2026-10', state: 'open', canBook: true },
+            { month: '2026-11', state: 'finalized', canBook: false },
+          ],
+          equipment: [{ type: 'CART', units: 1 }],
+          points: [
+            {
+              id: 'example-point',
+              name: 'Ponto do teste',
+              capacity: 1,
+              allowedTypes: ['CART'],
+              days: Array.from({ length: 7 }, (_, day) => ({
+                day,
+                mode: 'unrestricted',
+                intervals: [],
+              })),
+            },
+          ],
+        }),
+      });
+    },
+  );
   const businessRequests: string[] = [];
   page.on('request', (request) => {
     if (request.url().includes('/api/')) businessRequests.push(request.url());
   });
   await page.goto('/');
   await expect(
-    page.getByText(/programação e reservas ainda usam dados fictícios/i),
+    page.getByText(/programação mensal e recursos usam dados reais/i),
   ).toBeVisible();
   await page.keyboard.press('Tab');
   await expect(
@@ -74,6 +103,13 @@ test('navigates the fictional screens with a stable route and no horizontal over
   await expect(
     page.getByRole('heading', { name: 'Programação' }),
   ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Ponto do teste' }),
+  ).toBeVisible();
+  await page
+    .getByRole('combobox', { name: 'Mês da programação' })
+    .selectOption('2026-11');
+  await expect(page.getByRole('status')).toContainText('Mês finalizado');
   await page.reload();
   await expect(
     page.getByRole('heading', { name: 'Programação' }),
@@ -90,8 +126,13 @@ test('navigates the fictional screens with a stable route and no horizontal over
     ),
   ).toBe(false);
   expect(
-    businessRequests.filter((url) => !url.endsWith('/api/session')),
+    businessRequests.filter(
+      (url) =>
+        !url.endsWith('/api/session') &&
+        !url.endsWith('/api/congregations/congregation-example/schedule'),
+    ),
   ).toEqual([]);
+  expect(businessRequests.some((url) => url.endsWith('/schedule'))).toBe(true);
 });
 
 test('walks through reservation and invitation examples', async ({ page }) => {
