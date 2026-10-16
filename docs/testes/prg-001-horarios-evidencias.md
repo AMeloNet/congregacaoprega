@@ -95,3 +95,37 @@ ESLint do teste e revisão de whitespace também aprovados.
 Limites: não verifica reservas, bloqueio por designados ou instantes em transições
 de fuso, pois dependem de funcionalidades ausentes nesta entrega. Não houve
 aplicação de migration nem publicação em staging.
+
+## Publicação em staging — 15/10/2026
+
+Após autorização posterior do mantenedor, o workflow
+[Deploy controlled staging](https://github.com/AMeloNet/congregacaoprega/actions/runs/38842842059)
+publicou o commit `5c9e133195cd6b7226f5503a82bc6aa7a47c23f4`, incorporado na
+`main` após a correção do teste de atualização pelo
+[PR #39](https://github.com/AMeloNet/congregacaoprega/pull/39).
+
+Os quatro checks do [Verify da main](https://github.com/AMeloNet/congregacaoprega/actions/runs/38842681258)
+passaram antes do acionamento: análise/unitários, PostgreSQL/migrations,
+Chromium e contêiner. O workflow de publicação validou o SHA, aplicou
+`20261016000100_create_weekly_hours` e acionou o Render para o mesmo commit;
+os três jobs concluíram com sucesso.
+
+Verificação pública após a implantação em
+[staging](https://congregacaoprega-staging.onrender.com):
+
+- Página inicial: 200, assets `index-C0PRowaY.js` e `index-DcKzzxvr.css`.
+- Bundle: 200, contendo o formulário “Salvar horários semanais”, opção “Fechado”
+  e rota `/weekly-hours`.
+- `GET /api/health/live` e `GET /api/health/ready`: 200 com status `ok`.
+- `GET /api/session` sem login: 200.
+- `GET /api/congregations/00000000-0000-0000-0000-000000000000/weekly-hours`
+  sem login: 401, confirmando a presença e proteção da rota.
+
+Antes da publicação, a prontidão do banco retornou 503; depois da migration e
+da implantação, retornou 200. Não foi necessário alterar credenciais ou
+configuração. Nenhuma configuração semanal ou dado fictício foi criado no banco
+persistente. A jornada autenticada de edição não foi executada em staging;
+persistência e permissões permanecem validadas no teste HTTP com PostgreSQL
+descartável. O deploy encerra sessões anteriores; pode ser necessário entrar
+novamente. A etapa inicial desta entrega permaneceu sem staging até a nova
+autorização registrada nesta conversa.
