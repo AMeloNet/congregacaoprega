@@ -323,7 +323,11 @@ describe('IDN-001B invitation and audit schema', () => {
             (await pool.query('SELECT * FROM ' + table + ' ORDER BY id')).rows,
         ),
       );
-      expect(upgradedRows).toEqual(previousRows);
+      // Preserve every original column while allowing additive migrations.
+      expect(upgradedRows).toMatchObject(previousRows);
+      expect(upgradedRows[1]!.map((row) => row.weekly_hours_version)).toEqual([
+        0, 0,
+      ]);
       const upgradedHistory = (
         await pool.query(
           'SELECT id, migration_name, checksum, finished_at FROM _prisma_migrations ORDER BY migration_name',
@@ -388,7 +392,7 @@ describe('IDN-001B invitation and audit schema', () => {
                 .rows,
           ),
         ),
-      ).toEqual(previousRows);
+      ).toEqual(upgradedRows);
       expect(
         (
           await pool.query(

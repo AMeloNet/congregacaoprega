@@ -77,6 +77,21 @@ recusou a diferença da versão pnpm fixada no projeto (11.19.0); as verificaç�
 foram executadas pelos comandos diretos acima, sem alterar versões/configuração
 do projeto. A CI mantém as versões fixadas.
 
+## Preparação da publicação autorizada
+
+A consulta ao CI após o PR #38 identificou uma expectativa antiga no teste de
+atualização populada de IDN-001A: a comparação exata de `SELECT *` rejeitava a
+nova coluna `weekly_hours_version`, embora os dados anteriores estivessem
+preservados. A comparação agora exige todos os valores originais e permite
+colunas aditivas; verifica separadamente o valor padrão zero da nova coluna.
+O teste representativo dessa correção é o cenário de atualização populada em
+`invitations.integration.spec.ts`, executado em PostgreSQL descartável antes da
+publicação. Nenhuma migration incorporada foi alterada.
+
+Resultado local da correção: **aprovado**, um cenário executado e dois não
+selecionados. Comando: `pnpm exec node --env-file=.env.database.local node_modules/vitest/vitest.mjs run --project database-integration packages/database/src/invitations.integration.spec.ts -t "upgrades populated" --maxWorkers=1 --no-file-parallelism`.
+ESLint do teste e revisão de whitespace também aprovados.
+
 Limites: não verifica reservas, bloqueio por designados ou instantes em transições
 de fuso, pois dependem de funcionalidades ausentes nesta entrega. Não houve
 aplicação de migration nem publicação em staging.
