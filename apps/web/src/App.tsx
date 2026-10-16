@@ -118,6 +118,7 @@ export function App({
   equipmentContext,
 }: { equipmentContext?: EquipmentContext } = {}) {
   const [screen, setScreen] = useState<Screen>(routeFromHash);
+  const [pointsRevision, setPointsRevision] = useState(0);
   const [role, setRole] = useState<Role>('publicador');
   const [monthState, setMonthState] = useState<MonthState>('liberado');
   const [version, setVersion] = useState(0);
@@ -1228,6 +1229,7 @@ export function App({
                 <PointsPanel
                   key={equipmentContext.congregationId}
                   context={equipmentContext}
+                  onChanged={() => setPointsRevision((value) => value + 1)}
                 />
               ) : (
                 <>
@@ -1289,6 +1291,7 @@ export function App({
                   <WeeklyHoursPanel
                     key={equipmentContext.congregationId}
                     context={equipmentContext}
+                    pointsRevision={pointsRevision}
                   />
                 ) : (
                   <section className="panel">

@@ -12,7 +12,7 @@ const apiRequire = createRequire(
 const { Test } = apiRequire('@nestjs/testing');
 
 describe('weekly preaching hours HTTP API and PostgreSQL', () => {
-  it('persists local weekly hours atomically, validates boundaries and isolates administrators with session and CSRF checks', async () => {
+  it('persists independent point schedules, ignores legacy restrictions and validates tenant access, timezone concurrency and intervals', async () => {
     await withDisposableDatabase(async (url, pool) => {
       expect(runPrisma(url, ['migrate', 'deploy'])).toBe(0);
       const sessions = new MemorySessionStore();
@@ -34,6 +34,18 @@ describe('weekly preaching hours HTTP API and PostgreSQL', () => {
         "INSERT INTO membership (id,account_id,congregation_id,role) VALUES ($1,$2,$3,'LOCAL_ADMIN'),($4,$2,$5,'PUBLISHER')",
         [randomUUID(), actor.accountId, a, randomUUID(), b],
       );
+      const first = randomUUID(),
+        second = randomUUID(),
+        foreign = randomUUID();
+      await pool.query(
+        "INSERT INTO preaching_point (id,congregation_id,name,allowed_types) VALUES ($1,$2,'Saturday market',ARRAY['CART']::equipment_type[]),($3,$2,'Other point',ARRAY['CART']::equipment_type[]),($4,$5,'Foreign point',ARRAY['CART']::equipment_type[])",
+        [first, a, second, foreign, b],
+      );
+      // Congregation-wide restrictions remain historical and are not inherited.
+      await pool.query(
+        "INSERT INTO weekly_hours_day (congregation_id,day,mode,intervals) VALUES ($1,6,'closed','[]')",
+        [a],
+      );
       const moduleRef = await Test.createTestingModule({
         controllers: [IdentityController],
         providers: [
@@ -54,8 +66,8 @@ describe('weekly preaching hours HTTP API and PostgreSQL', () => {
       await app.listen(0, '127.0.0.1');
       try {
         const origin = await app.getUrl();
-        const endpoint = (id = a) =>
-          `${origin}/api/congregations/${id}/weekly-hours`;
+        const endpoint = (id: string = a, pointId: string = first) =>
+          `${origin}/api/congregations/${id}/points/${pointId}/weekly-hours`;
         const headers = {
           cookie: `cp_session=${session.token}`,
           'content-type': 'application/json',
@@ -73,22 +85,33 @@ describe('weekly preaching hours HTTP API and PostgreSQL', () => {
         expect(initial).toEqual({
           timezone: 'America/Sao_Paulo',
           version: 0,
+          timezoneVersion: 0,
           days: Array.from({ length: 7 }, (_, day) => ({
             day,
             mode: 'unrestricted',
             intervals: [],
           })),
         });
+        expect((await fetch(endpoint(a, foreign), { headers })).status).toBe(
+          404,
+        );
+        expect(
+          (await fetch(endpoint(a, randomUUID()), { headers })).status,
+        ).toBe(404);
+        expect((await fetch(endpoint(a, 'invalid'), { headers })).status).toBe(
+          400,
+        );
         const input = structuredClone(initial);
         input.timezone = 'America/Manaus';
-        input.days[0] = { day: 0, mode: 'closed', intervals: [] };
-        input.days[1] = {
-          day: 1,
+        input.days = input.days.map((day: { day: number }) => ({
+          day: day.day,
+          mode: 'closed',
+          intervals: [],
+        }));
+        input.days[6] = {
+          day: 6,
           mode: 'intervals',
-          intervals: [
-            { start: '08:00', end: '12:00' },
-            { start: '14:00', end: '24:00' },
-          ],
+          intervals: [{ start: '06:00', end: '14:00' }],
         };
         expect(
           (
@@ -101,7 +124,10 @@ describe('weekly preaching hours HTTP API and PostgreSQL', () => {
         ).toBe(403);
         expect((await save(input)).status).toBe(200);
         const persisted = await (await get()).json();
-        expect(persisted).toEqual({ ...input, version: 1 });
+        expect(persisted).toEqual({ ...input, version: 1, timezoneVersion: 1 });
+        expect(
+          await (await fetch(endpoint(a, second), { headers })).json(),
+        ).toEqual({ ...initial, timezone: input.timezone, timezoneVersion: 1 });
         expect(await (await save(persisted)).json()).toEqual(persisted);
         expect((await save(input)).status).toBe(409);
         for (const intervals of [
@@ -115,7 +141,7 @@ describe('weekly preaching hours HTTP API and PostgreSQL', () => {
           ],
         ]) {
           const invalid = structuredClone(persisted);
-          invalid.days[1].intervals = intervals;
+          invalid.days[6].intervals = intervals;
           expect((await save(invalid)).status).toBe(400);
         }
         for (const invalid of [
@@ -144,9 +170,35 @@ describe('weekly preaching hours HTTP API and PostgreSQL', () => {
           "UPDATE membership SET role='LOCAL_ADMIN' WHERE congregation_id=$1",
           [b],
         );
-        expect(await (await get(b)).json()).toEqual(initial);
+        expect((await get(b)).status).toBe(404);
+        expect(
+          await (await fetch(endpoint(b, foreign), { headers })).json(),
+        ).toEqual(initial);
+        expect(
+          (
+            await fetch(endpoint(b, first), {
+              method: 'PUT',
+              headers,
+              body: JSON.stringify(persisted),
+            })
+          ).status,
+        ).toBe(404);
+        const otherInput = {
+          ...initial,
+          timezone: persisted.timezone,
+          timezoneVersion: 1,
+        };
+        expect(
+          (
+            await fetch(endpoint(a, second), {
+              method: 'PUT',
+              headers,
+              body: JSON.stringify(otherInput),
+            })
+          ).status,
+        ).toBe(200);
         const changed = structuredClone(persisted);
-        changed.days[1] = { day: 1, mode: 'unrestricted', intervals: [] };
+        changed.days[6] = { day: 6, mode: 'unrestricted', intervals: [] };
         const results = await Promise.all([
           save(changed),
           save({ ...changed, timezone: 'America/Rio_Branco' }),
@@ -155,12 +207,26 @@ describe('weekly preaching hours HTTP API and PostgreSQL', () => {
           200, 409,
         ]);
         const latest = await (await get()).json();
+        const other = await (
+          await fetch(endpoint(a, second), { headers })
+        ).json();
+        expect(other.days).toEqual(initial.days);
+        expect(other.version).toBe(0);
+        expect(
+          (
+            await fetch(endpoint(a, second), {
+              method: 'PUT',
+              headers,
+              body: JSON.stringify({ ...other, timezoneVersion: 0 }),
+            })
+          ).status,
+        ).toBe(409);
         expect(latest.version).toBe(2);
-        expect(latest.days[1]).toEqual(changed.days[1]);
+        expect(latest.days[6]).toEqual(changed.days[6]);
         expect((await save(latest)).status).toBe(200); // no-op does not create history
         const history = await pool.query(
-          'SELECT actor_account_id, previous, configuration FROM weekly_hours_history WHERE congregation_id=$1 ORDER BY created_at',
-          [a],
+          'SELECT actor_account_id, previous, configuration FROM point_weekly_hours_history WHERE point_id=$1 ORDER BY created_at',
+          [first],
         );
         expect(history.rows).toHaveLength(2);
         expect(history.rows[0]).toMatchObject({
@@ -170,8 +236,8 @@ describe('weekly preaching hours HTTP API and PostgreSQL', () => {
         });
         await expect(
           pool.query(
-            "INSERT INTO weekly_hours_day (congregation_id,day,mode,intervals) VALUES ($1,7,'closed','[]')",
-            [a],
+            "INSERT INTO point_weekly_hours_day (point_id,day,mode,intervals) VALUES ($1,7,'closed','[]')",
+            [first],
           ),
         ).rejects.toMatchObject({ code: '23514' });
         await pool.query(

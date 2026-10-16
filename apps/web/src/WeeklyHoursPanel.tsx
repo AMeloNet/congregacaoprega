@@ -15,15 +15,128 @@ type Day = {
   mode: 'unrestricted' | 'closed' | 'intervals';
   intervals: { start: string; end: string }[];
 };
-type Configuration = { timezone: string; version: number; days: Day[] };
+type Configuration = {
+  timezone: string;
+  version: number;
+  timezoneVersion: number;
+  days: Day[];
+};
+type Point = { id: string; name: string };
 
-export function WeeklyHoursPanel({ context }: { context: EquipmentContext }) {
+export function WeeklyHoursPanel({
+  context,
+  pointsRevision = 0,
+}: {
+  context: EquipmentContext;
+  pointsRevision?: number;
+}) {
+  const [points, setPoints] = useState<Point[]>([]);
+  const [selected, setSelected] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    if (!context.canManage) return;
+    const controller = new AbortController();
+    setError('');
+    setLoading(true);
+    void fetch(
+      `/api/congregations/${encodeURIComponent(context.congregationId)}/points`,
+      { signal: controller.signal },
+    )
+      .then(async (response) => {
+        if (!response.ok) throw new Error();
+        const value = (await response.json()) as Point[];
+        if (controller.signal.aborted) return;
+        setPoints(value);
+        setSelected((current) =>
+          value.some((point) => point.id === current)
+            ? current
+            : (value[0]?.id ?? ''),
+        );
+      })
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setError('Não foi possível carregar os locais.');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [context.congregationId, context.canManage, pointsRevision, retry]);
+  const point = points.find((value) => value.id === selected);
+  return (
+    <section
+      className="panel equipment-panel weekly-hours-panel"
+      aria-label="Horários semanais por local"
+    >
+      <p className="eyebrow">CONFIGURAÇÃO POR LOCAL</p>
+      <h2>Horários semanais</h2>
+      {!context.canManage ? (
+        <p>Acesso restrito ao administrador local.</p>
+      ) : (
+        <>
+          {error && (
+            <>
+              <p role="alert" className="feedback error">
+                {error}
+              </p>
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => setRetry((value) => value + 1)}
+              >
+                Tentar carregar locais novamente
+              </button>
+            </>
+          )}
+          {loading && <p role="status">Carregando locais…</p>}
+          {!loading && !error && points.length === 0 && (
+            <p>Cadastre um ponto de pregação para configurar seus horários.</p>
+          )}
+          {points.length > 0 && (
+            <>
+              <label htmlFor="weekly-point">Local dos horários semanais</label>
+              <select
+                id="weekly-point"
+                value={selected}
+                disabled={loading}
+                onChange={(event) => setSelected(event.target.value)}
+              >
+                {points.map((value) => (
+                  <option key={value.id} value={value.id}>
+                    {value.name}
+                  </option>
+                ))}
+              </select>
+              {point && (
+                <PointWeeklyHoursEditor
+                  key={point.id}
+                  context={context}
+                  point={point}
+                />
+              )}
+            </>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+function PointWeeklyHoursEditor({
+  context,
+  point,
+}: {
+  context: EquipmentContext;
+  point: Point;
+}) {
   const [config, setConfig] = useState<Configuration | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [conflict, setConflict] = useState(false);
-  const url = `/api/congregations/${encodeURIComponent(context.congregationId)}/weekly-hours`;
+  const url = `/api/congregations/${encodeURIComponent(context.congregationId)}/points/${encodeURIComponent(point.id)}/weekly-hours`;
 
   async function load(signal?: AbortSignal) {
     const response = await fetch(url, { signal });
@@ -94,12 +207,8 @@ export function WeeklyHoursPanel({ context }: { context: EquipmentContext }) {
     }
   }
   return (
-    <section
-      className="panel equipment-panel weekly-hours-panel"
-      aria-label="Horários semanais da congregação"
-    >
-      <p className="eyebrow">CONFIGURAÇÃO DA CONGREGAÇÃO</p>
-      <h2>Horários semanais</h2>
+    <div aria-label={`Horários de ${point.name}`}>
+      <h3>{point.name}</h3>
       {!context.canManage ? (
         <p>Acesso restrito ao administrador local.</p>
       ) : (
@@ -164,9 +273,10 @@ export function WeeklyHoursPanel({ context }: { context: EquipmentContext }) {
                   ))}
                 </datalist>
                 <p className="muted">
-                  Os horários são locais neste fuso. Alterar o fuso mantém as
-                  horas informadas. Sem restrição configurada, o dia oferece 24
-                  horas.
+                  O fuso é compartilhado por todos os locais da congregação.
+                  Alterá-lo mantém as horas locais informadas. Os intervalos
+                  abaixo valem somente para {point.name}. Sem restrição, o dia
+                  oferece 24 horas.
                 </p>
                 {config.days.map((day, index) => (
                   <fieldset key={day.day} className="weekly-day">
@@ -287,6 +397,6 @@ export function WeeklyHoursPanel({ context }: { context: EquipmentContext }) {
           )}
         </>
       )}
-    </section>
+    </div>
   );
 }

@@ -1,5 +1,9 @@
 # PRG-001 — Configuração dos horários semanais
 
+Registro da entrega original com configuração global. A evolução para horários
+independentes por local substitui esse contrato HTTP; consultar as
+[evidências por ponto](prg-001-horarios-por-ponto-evidencias.md).
+
 ## Critérios definidos antes da implementação
 
 1. Administrador local ativo e verificado consulta e altera somente sua congregação.

@@ -58,9 +58,11 @@ UI-001 continuam demonstrativos, exceto os cadastros reais em Recursos; identida
 de acesso usam a API. O inventário em Recursos também usa a API e PostgreSQL, com acesso exclusivo ao administrador local (EQP-001).
 
 Pontos e horários semanais em Recursos também usam API e PostgreSQL reais. A
-configuração semanal permite dias fechados, dias sem restrição (24 horas),
-múltiplos intervalos dentro do mesmo dia e escolha do fuso IANA. Contrato,
-concorrência e limites estão nas [evidências PRG-001](docs/testes/prg-001-horarios-evidencias.md).
+configuração semanal permite selecionar o ponto e definir dias fechados, dias
+sem restrição (24 horas) e múltiplos intervalos dentro do mesmo dia. O fuso IANA
+continua compartilhado pela congregação. Todos os pontos começam sem restrição,
+sem herdar horários globais anteriores. Contrato, concorrência e limites estão
+nas [evidências por ponto](docs/testes/prg-001-horarios-por-ponto-evidencias.md).
 
 ## Verificações
 

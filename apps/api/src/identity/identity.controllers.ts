@@ -459,27 +459,34 @@ export class IdentityController {
     );
   }
 
-  @Get('congregations/:id/weekly-hours')
-  async weeklyHoursGet(@Req() request: HttpRequest, @Param('id') id: string) {
+  @Get('congregations/:id/points/:pointId/weekly-hours')
+  async weeklyHoursGet(
+    @Req() request: HttpRequest,
+    @Param('id') id: string,
+    @Param('pointId') pointId: string,
+  ) {
     const { account } = await this.requireIdentity(request, undefined, false);
     return new WeeklyHoursService(this.runtime.pool).execute(
       account.accountId,
       id,
+      pointId,
       'get',
     );
   }
 
-  @Put('congregations/:id/weekly-hours')
+  @Put('congregations/:id/points/:pointId/weekly-hours')
   async weeklyHoursSave(
     @Req() request: HttpRequest,
     @Headers('x-csrf-token') csrf: string | undefined,
     @Param('id') id: string,
+    @Param('pointId') pointId: string,
     @Body() body: unknown,
   ) {
     const { account } = await this.requireIdentity(request, csrf);
     return new WeeklyHoursService(this.runtime.pool).execute(
       account.accountId,
       id,
+      pointId,
       'save',
       body,
     );

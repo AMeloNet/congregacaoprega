@@ -68,6 +68,7 @@ model IdentityAccount {
   createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   weeklyHoursHistory WeeklyHoursHistory[]
+  pointWeeklyHoursHistory PointWeeklyHoursHistory[]
   equipmentHistory EquipmentStateHistory[]
   memberships     Membership[]
   createdInvitations AccessInvitation[] @relation("InvitationCreator")
@@ -197,6 +198,9 @@ model PreachingPoint {
   description String @default("")
   capacity Int @default(1)
   allowedTypes EquipmentType[] @map("allowed_types")
+  weeklyHoursVersion Int @default(0) @map("weekly_hours_version")
+  weeklyHoursDays PointWeeklyHoursDay[]
+  weeklyHoursHistory PointWeeklyHoursHistory[]
   congregation Congregation @relation(fields: [congregationId], references: [id], onDelete: Restrict)
 
   @@map("preaching_point")
@@ -211,6 +215,31 @@ model WeeklyHoursDay {
 
   @@id([congregationId, day])
   @@map("weekly_hours_day")
+}
+
+model PointWeeklyHoursDay {
+  pointId String @map("point_id") @db.Uuid
+  day Int
+  mode String
+  intervals Json
+  point PreachingPoint @relation(fields: [pointId], references: [id], onDelete: Restrict)
+
+  @@id([pointId, day])
+  @@map("point_weekly_hours_day")
+}
+
+model PointWeeklyHoursHistory {
+  id String @id @default(uuid()) @db.Uuid
+  pointId String @map("point_id") @db.Uuid
+  actorAccountId String @map("actor_account_id") @db.Uuid
+  previous Json
+  configuration Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  point PreachingPoint @relation(fields: [pointId], references: [id], onDelete: Restrict)
+  actorAccount IdentityAccount @relation(fields: [actorAccountId], references: [id], onDelete: Restrict)
+
+  @@index([pointId, createdAt], map: "point_weekly_hours_history_point_created_idx")
+  @@map("point_weekly_hours_history")
 }
 
 model WeeklyHoursHistory {
