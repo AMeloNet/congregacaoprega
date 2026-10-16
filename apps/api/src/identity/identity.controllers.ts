@@ -1,4 +1,5 @@
 import { EquipmentService } from '../equipment.service.js';
+import { PointsService } from '../points.service.js';
 import {
   BadRequestException,
   Body,
@@ -410,6 +411,50 @@ export class IdentityController {
       'state',
       body,
       equipmentId,
+    );
+  }
+
+  @Get('congregations/:id/points')
+  async pointsList(@Req() request: HttpRequest, @Param('id') id: string) {
+    const { account } = await this.requireIdentity(request, undefined, false);
+    return new PointsService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      'list',
+    );
+  }
+
+  @Post('congregations/:id/points')
+  async pointsCreate(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new PointsService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      'create',
+      body,
+    );
+  }
+
+  @Put('congregations/:id/points/:pointId')
+  async pointsUpdate(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('pointId') pointId: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new PointsService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      'update',
+      body,
+      pointId,
     );
   }
 

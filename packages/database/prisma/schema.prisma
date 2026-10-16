@@ -84,6 +84,7 @@ model Congregation {
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   memberships Membership[]
   equipment Equipment[]
+  points PreachingPoint[]
   invitations AccessInvitation[]
   auditEvents IdentityAuditEvent[]
 
@@ -182,4 +183,17 @@ model EquipmentStateHistory {
 
   @@index([equipmentId, createdAt], map: "equipment_state_history_equipment_created_idx")
   @@map("equipment_state_history")
+}
+
+model PreachingPoint {
+  id String @id @default(uuid()) @db.Uuid
+  congregationId String @map("congregation_id") @db.Uuid
+  name String
+  address String @default("")
+  description String @default("")
+  capacity Int @default(1)
+  allowedTypes EquipmentType[] @map("allowed_types")
+  congregation Congregation @relation(fields: [congregationId], references: [id], onDelete: Restrict)
+
+  @@map("preaching_point")
 }
