@@ -32,6 +32,11 @@ export class PointsService {
         [accountId, congregationId],
       );
       if (!access.rowCount) throw new ForbiddenException('Acesso negado.');
+      if (action !== 'list')
+        await client.query(
+          'SELECT id FROM congregation WHERE id=$1 FOR UPDATE',
+          [congregationId],
+        );
       const columns =
         'id, name, address, description, capacity, allowed_types::text[] AS "allowedTypes"';
       let result;
@@ -107,6 +112,16 @@ export class PointsService {
           capacity,
           types,
         ];
+        if (action === 'update') {
+          const conflict = await client.query(
+            `SELECT 1 FROM reservation r WHERE r.congregation_id=$1 AND r.point_id=$2 AND r.cancelled_at IS NULL AND r.ends_at>now() AND (NOT r.equipment_type=ANY($3::equipment_type[]) OR (SELECT count(*) FROM reservation other WHERE other.point_id=$2 AND other.cancelled_at IS NULL AND other.starts_at<=greatest(r.starts_at,now()) AND other.ends_at>greatest(r.starts_at,now()))>$4) LIMIT 1`,
+            [congregationId, pointId, types, capacity],
+          );
+          if (conflict.rowCount)
+            throw new ConflictException(
+              'Existem reservas incompatíveis com a capacidade ou os tipos escolhidos. Resolva o conflito antes de alterar.',
+            );
+        }
         const query =
           action === 'create'
             ? `INSERT INTO preaching_point (id, congregation_id, name, address, description, capacity, allowed_types) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING ${columns}`

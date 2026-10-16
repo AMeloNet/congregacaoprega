@@ -114,6 +114,12 @@ export class MonthlyScheduleService {
           [congregationId],
         )
       ).rows;
+      const reservations = (
+        await client.query(
+          `SELECT r.id,r.point_id AS "pointId",p.name AS "pointName",r.local_date AS date,r.start_hour AS "startHour",r.duration,r.equipment_type AS "equipmentType",r.third_position_open AS "thirdPositionOpen",(r.responsible_account_id=$3) AS "isResponsible" FROM reservation r JOIN preaching_point p ON p.id=r.point_id WHERE r.congregation_id=$1 AND substring(r.local_date,1,7)=ANY($2) AND r.cancelled_at IS NULL ORDER BY r.local_date,r.start_hour,r.id`,
+          [congregationId, months, accountId],
+        )
+      ).rows;
       await client.query('COMMIT');
       return {
         timezone: congregation.timezone,
@@ -135,6 +141,7 @@ export class MonthlyScheduleService {
           }),
         })),
         equipment,
+        reservations,
       };
     } catch (error) {
       await client.query('ROLLBACK');

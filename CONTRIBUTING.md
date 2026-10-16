@@ -68,8 +68,10 @@ nas [evidências por ponto](docs/testes/prg-001-horarios-por-ponto-evidencias.md
 
 A tela autenticada de Programação consulta API e PostgreSQL reais para mês atual e
 seguinte no fuso da congregação, pontos, horários e inventário ativo. O administrador
-pode finalizar e reabrir o mês; reabertura mantém publicadores bloqueados. Reservas
-continuam demonstrativas e ainda não são gravadas. Contrato em PRG-001.
+pode finalizar e reabrir o mês; reabertura mantém publicadores bloqueados. Em
+Programação é possível registrar reservas reais com somente o responsável;
+as demais telas de exemplos permanecem demonstrativas. Contrato em PRG-001
+e RES-001. Recorrência é o próximo incremento, sem convites ou impressão.
 
 ```sh
 pnpm docs:check

@@ -139,6 +139,18 @@ body {
   }
 }
 button,
+.reservation-form fieldset {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+}
+.reservation-form select {
+  max-width: 100%;
+  min-width: 0;
+}
+
 input,
 select {
   font: inherit;

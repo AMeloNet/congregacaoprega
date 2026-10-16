@@ -1,5 +1,6 @@
 import { EquipmentService } from '../equipment.service.js';
 import { MonthlyScheduleService } from '../monthly-schedule.service.js';
+import { ReservationsService } from '../reservations.service.js';
 import { PointsService } from '../points.service.js';
 import { WeeklyHoursService } from '../weekly-hours.service.js';
 import {
@@ -500,6 +501,21 @@ export class IdentityController {
       account.accountId,
       id,
       'get',
+    );
+  }
+
+  @Post('congregations/:id/reservations')
+  async reservationCreate(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new ReservationsService(this.runtime.pool).create(
+      account.accountId,
+      id,
+      body,
     );
   }
 
