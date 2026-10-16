@@ -76,3 +76,26 @@ para dias afetados do próprio ponto e para o fuso da congregação. Não há
 homologação autenticada em staging nesta validação local. A publicação da
 atualização segue a autorização já dada pelo mantenedor e depende dos quatro
 checks do commit da main aprovados, conforme o procedimento de staging.
+
+## Publicação em staging — 16/10/2026
+
+Implementação integrada pelo [PR #41](https://github.com/AMeloNet/congregacaoprega/pull/41).
+Os quatro checks do [Verify da main](https://github.com/AMeloNet/congregacaoprega/actions/runs/38847246411)
+passaram antes da publicação do SHA `346a29a3bf89893bb257b5f80d7d3754da4ec78d`.
+O workflow [Deploy controlled staging](https://github.com/AMeloNet/congregacaoprega/actions/runs/38847389968)
+validou o SHA, aplicou `20261016000200_create_point_weekly_hours` e acionou o
+Render para o mesmo commit; os três jobs concluíram com sucesso.
+
+Verificação pública no [staging](https://congregacaoprega-staging.onrender.com):
+
+- Página inicial 200, assets `index-Cl1n1DL7.js` e `index-DcKzzxvr.css`.
+- Bundle 200 com seletor “Local dos horários semanais” e “CONFIGURAÇÃO POR LOCAL”.
+- `GET /api/health/live` e `GET /api/health/ready`: 200, status `ok`.
+- `GET /api/congregations/00000000-0000-0000-0000-000000000000/points/00000000-0000-0000-0000-000000000000/weekly-hours`
+  sem login: 401, confirmando a nova rota protegida.
+
+Nenhum horário de ponto foi preenchido nem dado de teste criado no banco
+persistente. Pontos existentes e novos permanecem sem restrição até configuração
+explícita. O fuso foi preservado. A jornada autenticada não foi executada em
+staging; API/PostgreSQL e interface foram validados pelos testes locais descritos
+acima. Pode ser necessário entrar novamente após o deploy.
