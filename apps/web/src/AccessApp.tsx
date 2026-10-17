@@ -490,6 +490,7 @@ export function AccessApp({
       <App
         equipmentContext={{
           congregationId: active,
+          congregationName: selected?.congregationName,
           csrfToken: session.csrfToken ?? '',
           canManage: selected?.role === 'LOCAL_ADMIN',
         }}

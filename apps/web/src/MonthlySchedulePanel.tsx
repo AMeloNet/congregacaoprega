@@ -236,21 +236,20 @@ export function MonthlySchedulePanel({
                 ? 'Reaberto somente para ajustes administrativos. Publicadores continuam bloqueados.'
                 : 'Mês finalizado. Alterações bloqueadas.'}
           </p>
-          {context.canManage && (
+          {context.canManage && month?.state === 'finalized' && (
             <button
               type="button"
               className="button outline"
               disabled={busy}
-              onClick={() =>
-                void change(
-                  month?.state === 'finalized' ? 'reopen' : 'finalize',
-                )
-              }
+              onClick={() => void change('reopen')}
             >
-              {month?.state === 'finalized'
-                ? 'Reabrir para ajustes administrativos'
-                : 'Finalizar mês'}
+              Reabrir para ajustes administrativos
             </button>
+          )}
+          {context.canManage && month?.state !== 'finalized' && (
+            <a className="button outline" href={`#relatorio?month=${selected}`}>
+              Finalizar e imprimir
+            </a>
           )}
           <p>
             As quantidades abaixo representam o inventário ativo. A

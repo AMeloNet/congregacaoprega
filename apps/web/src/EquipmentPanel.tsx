@@ -10,6 +10,7 @@ type Item = {
 const labels = { CART: 'Carrinho', KIOSK: 'Quiosque', DISPLAY: 'Display' };
 export type EquipmentContext = {
   congregationId: string;
+  congregationName?: string;
   csrfToken: string;
   canManage: boolean;
 };

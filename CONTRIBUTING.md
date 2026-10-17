@@ -69,8 +69,9 @@ nas [evidências por ponto](docs/testes/prg-001-horarios-por-ponto-evidencias.md
 A tela autenticada de Programação consulta API e PostgreSQL reais para mês atual e
 seguinte no fuso da congregação, pontos, horários e inventário ativo. O administrador
 pode finalizar e reabrir o mês; reabertura mantém publicadores bloqueados. Em
-Programação é possível registrar reservas reais com somente o responsável;
-as demais telas de exemplos permanecem demonstrativas. Contrato em PRG-001
+Programação é possível registrar reservas reais e formar grupos por ingresso
+ou convite. Nova reserva, detalhes, convites/avisos, administração e relatório
+autenticados usam a API real. Contrato em PRG-001
 e RES-001. Após criar uma reserva, “Repetir toda semana” ativa a recorrência
 somente do responsável. A API processa séries na inicialização e a cada 60 segundos;
 conflitos ficam explícitos e exigem nova tentativa manual. Encerrar preserva
@@ -78,7 +79,11 @@ reservas existentes. O botão “Participar” permite ocupar vaga aberta em nom
 próprio, com validação de agenda e bloqueio mensal no servidor; a consulta mostra
 confirmados, vagas e mínimo atendido. Participantes adicionais não são recorrentes.
 Datas/horas passadas são filtradas pelo relógio da API no fuso da congregação.
-Sem convites ou impressão e sem publicação automática em staging.
+Há controle da terceira vaga, cancelamento por data ou próximas da série,
+desistência com tempo decorrido, ajustes administrativos e nomes locais.
+O relatório finaliza e grava uma versão imutável antes de imprimir; reimpressão
+não emite novamente. Avisos persistem na transação, com retentativas em captura
+de teste. Captura não comprova entrega externa. Sem publicação automática em staging.
 
 ```sh
 pnpm docs:check

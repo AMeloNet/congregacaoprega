@@ -87,6 +87,7 @@ model IdentityAccount {
   attendance ReservationAttendance[]
   reservationCommands ReservationCommand[]
   alertRecipients ScheduleAlertRecipient[]
+  scheduleReports ScheduleReport[]
 
   @@unique([providerIssuer, providerSubject])
   @@map("identity_account")
@@ -283,6 +284,7 @@ model ScheduleMonth {
   state String @default("open")
   congregation Congregation @relation(fields: [congregationId], references: [id], onDelete: Restrict)
   history ScheduleMonthHistory[]
+  reports ScheduleReport[]
   @@id([congregationId, month])
   @@map("schedule_month")
 }
@@ -474,6 +476,22 @@ model ScheduleNotice {
   @@index([congregationId,recipientAccountId,createdAt],map:"schedule_notice_inbox_idx")
   @@index([mailState,nextAttemptAt],map:"schedule_notice_delivery_idx")
   @@map("schedule_notice")
+}
+
+model ScheduleReport {
+  id String @id @default(uuid()) @db.Uuid
+  congregationId String @map("congregation_id") @db.Uuid
+  month String
+  version Int
+  actorAccountId String @map("actor_account_id") @db.Uuid
+  requestKey String @map("request_key") @db.Uuid
+  snapshot Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  scheduleMonth ScheduleMonth @relation(fields:[congregationId,month],references:[congregationId,month],onDelete:Restrict,map:"schedule_report_month_fkey")
+  actor IdentityAccount @relation(fields:[actorAccountId],references:[id],onDelete:Restrict)
+  @@unique([congregationId,month,version],map:"schedule_report_version_key")
+  @@unique([congregationId,actorAccountId,requestKey],map:"schedule_report_request_key")
+  @@map("schedule_report")
 }
 
 model RecurrenceOccurrence {

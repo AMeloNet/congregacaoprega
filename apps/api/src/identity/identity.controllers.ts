@@ -8,6 +8,7 @@ import { ReservationChangesService } from '../reservation-changes.service.js';
 import { ScheduleAlertsService } from '../schedule-alerts.service.js';
 import { PublisherProfilesService } from '../publisher-profiles.service.js';
 import { ReservationAdministrationService } from '../reservation-administration.service.js';
+import { ScheduleReportsService } from '../schedule-reports.service.js';
 import { PointsService } from '../points.service.js';
 import { WeeklyHoursService } from '../weekly-hours.service.js';
 import {
@@ -805,6 +806,49 @@ export class IdentityController {
       accountId: account.accountId,
       retryDate: date,
     });
+  }
+
+  @Get('congregations/:id/schedule/:month/report-preview')
+  async scheduleReportPreview(
+    @Req() request: HttpRequest,
+    @Param('id') id: string,
+    @Param('month') month: string,
+  ) {
+    const { account } = await this.requireIdentity(request, undefined, false);
+    return new ScheduleReportsService(this.runtime.pool).preview(
+      account.accountId,
+      id,
+      month,
+    );
+  }
+  @Get('congregations/:id/schedule-reports/:reportId')
+  async scheduleReportGet(
+    @Req() request: HttpRequest,
+    @Param('id') id: string,
+    @Param('reportId') reportId: string,
+  ) {
+    const { account } = await this.requireIdentity(request, undefined, false);
+    return new ScheduleReportsService(this.runtime.pool).get(
+      account.accountId,
+      id,
+      reportId,
+    );
+  }
+  @Post('congregations/:id/schedule/:month/finalize-print')
+  async scheduleReportFinalize(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('month') month: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new ScheduleReportsService(this.runtime.pool).finalize(
+      account.accountId,
+      id,
+      month,
+      body,
+    );
   }
 
   @Post('congregations/:id/schedule/:month/:action')

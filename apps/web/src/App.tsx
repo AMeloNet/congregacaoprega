@@ -3,6 +3,7 @@ import { MonthlySchedulePanel } from './MonthlySchedulePanel.js';
 import { ReservationInboxPanel } from './ReservationInboxPanel.js';
 import { ReservationDetailPage } from './ReservationDetailsPanel.js';
 import { PublisherProfilePanel } from './PublisherProfilePanel.js';
+import { ScheduleReportPanel } from './ScheduleReportPanel.js';
 import { WeeklyHoursPanel } from './WeeklyHoursPanel.js';
 import { EquipmentPanel, type EquipmentContext } from './EquipmentPanel.js';
 import { useEffect, useLayoutEffect, useState } from 'react';
@@ -106,7 +107,7 @@ const places: [Place, ...Place[]] = [
 ];
 
 function routeFromHash(): Screen {
-  const route = window.location.hash.slice(1);
+  const route = window.location.hash.slice(1).split('?')[0];
   return navigation.some(({ id }) => id === route)
     ? (route as Screen)
     : 'inicio';
@@ -289,7 +290,13 @@ export function App({
         <div className="congregation-chip">
           <span className="chip-icon">C</span>
           <span>
-            Congregação Exemplo<small>Brasília · UTC−03</small>
+            {equipmentContext?.congregationName ??
+              (equipmentContext ? 'Congregação' : 'Congregação Exemplo')}
+            <small>
+              {equipmentContext
+                ? 'Fuso configurado em Recursos'
+                : 'Brasília · UTC−03'}
+            </small>
           </span>
         </div>
         <div className="sidebar-section-label">NAVEGAR</div>
@@ -312,17 +319,22 @@ export function App({
           ))}
         </nav>
         <div className="sidebar-foot">
-          <span className="demo-dot" /> Protótipo UI-001
+          <span className="demo-dot" />{' '}
+          {equipmentContext ? 'CongregaçãoPrega' : 'Protótipo UI-001'}
         </div>
       </aside>
 
       <div className="workspace">
         <header className="topbar">
           <div className="breadcrumbs">
-            Congregação Exemplo <span>/</span> <strong>{currentPage}</strong>
+            {equipmentContext?.congregationName ??
+              (equipmentContext ? 'Congregação' : 'Congregação Exemplo')}{' '}
+            <span>/</span> <strong>{currentPage}</strong>
           </div>
           <div className="topbar-right">
-            <span className="date-note">OUTUBRO 2026</span>
+            <span className="date-note">
+              {equipmentContext ? 'Conta autenticada' : 'OUTUBRO 2026'}
+            </span>
             <div className="appearance-control">
               <button
                 type="button"
@@ -393,40 +405,46 @@ export function App({
           <span className="demo-dot" />
           <span>
             {equipmentContext
-              ? 'Programação, Convites e avisos e Recursos usam dados reais. As demais telas de exemplos continuam demonstrativas.'
+              ? 'Programação, Convites e avisos e Recursos usam dados reais. Reservas, ajustes administrativos e relatório também usam os dados desta congregação.'
               : 'Programação e reservas ainda usam dados fictícios. Identidade e convites de acesso são tratados pela aplicação.'}
           </span>
         </div>
         <main id="main-content" className="content" tabIndex={-1}>
           <div className="page-top">
             <div>
-              <p className="eyebrow">UI-001 · VISUALIZAÇÃO</p>
+              <p className="eyebrow">
+                {equipmentContext
+                  ? 'CONGREGAÇÃOPREGA'
+                  : 'UI-001 · VISUALIZAÇÃO'}
+              </p>
               <h1>{currentPage}</h1>
             </div>
-            <div className="role-tools" aria-label="Perfil da demonstração">
-              <button
-                type="button"
-                className={role === 'publicador' ? 'role-active' : ''}
-                aria-pressed={role === 'publicador'}
-                onClick={() => {
-                  setRole('publicador');
-                  setMessage('Visão de publicador fictício.');
-                }}
-              >
-                Ver como publicador
-              </button>
-              <button
-                type="button"
-                className={role === 'administrador' ? 'role-active' : ''}
-                aria-pressed={role === 'administrador'}
-                onClick={() => {
-                  setRole('administrador');
-                  setMessage('Visão de administrador local fictício.');
-                }}
-              >
-                Ver como administrador
-              </button>
-            </div>
+            {!equipmentContext && (
+              <div className="role-tools" aria-label="Perfil da demonstração">
+                <button
+                  type="button"
+                  className={role === 'publicador' ? 'role-active' : ''}
+                  aria-pressed={role === 'publicador'}
+                  onClick={() => {
+                    setRole('publicador');
+                    setMessage('Visão de publicador fictício.');
+                  }}
+                >
+                  Ver como publicador
+                </button>
+                <button
+                  type="button"
+                  className={role === 'administrador' ? 'role-active' : ''}
+                  aria-pressed={role === 'administrador'}
+                  onClick={() => {
+                    setRole('administrador');
+                    setMessage('Visão de administrador local fictício.');
+                  }}
+                >
+                  Ver como administrador
+                </button>
+              </div>
+            )}
           </div>
 
           {message && (
@@ -440,7 +458,28 @@ export function App({
             </p>
           )}
 
-          {screen === 'inicio' && (
+          {screen === 'inicio' && equipmentContext && (
+            <section className="panel">
+              <h2>Organize suas designações</h2>
+              <p>
+                Consulte a agenda da congregação, reserve um ponto ou acompanhe
+                seus convites e avisos.
+              </p>
+              <button
+                className="button primary"
+                onClick={() => go('programacao')}
+              >
+                Abrir agenda
+              </button>
+              <button
+                className="button outline"
+                onClick={() => go('nova-reserva')}
+              >
+                Reservar ponto e equipamento
+              </button>
+            </section>
+          )}
+          {screen === 'inicio' && !equipmentContext && (
             <>
               <div className="hero-panel">
                 <div>
@@ -1352,7 +1391,10 @@ export function App({
             </>
           )}
 
-          {screen === 'relatorio' && (
+          {screen === 'relatorio' && equipmentContext && (
+            <ScheduleReportPanel context={equipmentContext} />
+          )}
+          {screen === 'relatorio' && !equipmentContext && (
             <>
               <div className="intro-row no-print">
                 <p>
