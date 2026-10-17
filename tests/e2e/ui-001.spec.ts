@@ -85,7 +85,9 @@ test('navigates the monthly schedule with a stable route and no horizontal overf
   });
   await page.goto('/');
   await expect(
-    page.getByText(/Programação, Convites e avisos e Recursos usam dados reais/i),
+    page.getByText(
+      /Programação, Convites e avisos e Recursos usam dados reais/i,
+    ),
   ).toBeVisible();
   await page.keyboard.press('Tab');
   await expect(
@@ -447,35 +449,104 @@ test('activates weekly recurrence, shows unavailable dates and stops without rem
   ).toBe(false);
 });
 
-test('finalizes before printing and blocks a publisher even after an administrative reopening', async ({
+test('keeps publishers blocked after an authenticated administrative reopening', async ({
   page,
 }) => {
-  await page.addInitScript(() => {
-    window.print = () => {
-      document.documentElement.dataset.printed = 'true';
-    };
+  let role = 'PUBLISHER',
+    state = 'finalized',
+    reopenings = 0;
+  await page.route('**/api/session', async (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        authenticated: true,
+        email: 'member@example.test',
+        emailVerified: true,
+        csrfToken: 'controlled-csrf',
+        activeCongregationId: 'congregation-example',
+        memberships: [
+          {
+            congregationId: 'congregation-example',
+            congregationName: 'Congregação Exemplo',
+            role,
+          },
+        ],
+      }),
+    }),
+  );
+  const schedule = () => ({
+    timezone: 'America/Sao_Paulo',
+    serverNow: '2026-10-16T12:00:00Z',
+    months: [{ month: '2026-10', state, canBook: false }],
+    equipment: [{ type: 'CART', units: 1 }],
+    reservations: [],
+    recurrences: [],
+    points: [
+      {
+        id: 'example-point',
+        name: 'Ponto do teste',
+        capacity: 1,
+        allowedTypes: ['CART'],
+        days: Array.from({ length: 7 }, (_, day) => ({
+          day,
+          mode: 'unrestricted',
+          intervals: [],
+        })),
+      },
+    ],
   });
-  await page.goto('/#administracao');
-  await page.getByRole('button', { name: 'Ver como administrador' }).click();
-  await page.getByRole('button', { name: 'Finalizar e imprimir' }).click();
-  await expect(page.getByRole('heading', { name: 'Relatório' })).toBeVisible();
-  await expect(page.locator('html')).toHaveAttribute('data-printed', 'true');
-  await expect(page.getByText('Versão 1').first()).toBeVisible();
-  await page.getByRole('link', { name: 'Administração' }).click();
-  await page.getByRole('button', { name: 'Reabrir para ajustes' }).click();
-  await page
-    .getByRole('button', { name: 'Adicionar participante fictício' })
-    .click();
-  await page.getByRole('button', { name: 'Finalizar e imprimir' }).click();
-  await expect(page.getByText('Versão 2').first()).toBeVisible();
-  await expect(page.getByText('Teresa; Joaquim')).toBeVisible();
-  await page.emulateMedia({ media: 'print' });
-  await expect(page.locator('.sidebar')).toBeHidden();
-  await expect(page.locator('.print-sheet')).toBeVisible();
-  await page.emulateMedia({ media: 'screen' });
-  await page.getByRole('button', { name: 'Ver como publicador' }).click();
-  await page.getByRole('link', { name: 'Nova reserva' }).click();
+  await page.route(
+    '**/api/congregations/congregation-example/schedule',
+    async (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify(schedule()),
+      }),
+  );
+  await page.route(
+    '**/api/congregations/congregation-example/schedule/2026-10/reopen',
+    async (route) => {
+      expect(route.request().method()).toBe('POST');
+      expect(route.request().headers()['x-csrf-token']).toBe('controlled-csrf');
+      expect(role).toBe('LOCAL_ADMIN');
+      reopenings++;
+      state = 'reopened';
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify(schedule()),
+      });
+    },
+  );
+  await page.goto('/#programacao');
+  await expect(page.getByRole('status')).toContainText('Mês finalizado');
   await expect(
-    page.getByRole('button', { name: 'Revisar reserva' }),
-  ).toBeDisabled();
+    page.getByRole('button', { name: 'Confirmar reserva' }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Reabrir para ajustes administrativos' }),
+  ).toHaveCount(0);
+  role = 'LOCAL_ADMIN';
+  await page.reload();
+  await page
+    .getByRole('button', { name: 'Reabrir para ajustes administrativos' })
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Confirmar reserva' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Finalizar e imprimir' }),
+  ).toBeVisible();
+  role = 'PUBLISHER';
+  await page.reload();
+  await expect(page.getByRole('status')).toContainText(
+    'Publicadores continuam bloqueados',
+  );
+  await expect(
+    page.getByRole('button', { name: 'Confirmar reserva' }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('link', { name: 'Finalizar e imprimir' }),
+  ).toHaveCount(0);
+  expect(reopenings).toBe(1);
 });
