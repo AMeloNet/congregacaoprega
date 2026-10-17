@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { EquipmentContext } from './EquipmentPanel.js';
 import { ReservationForm } from './ReservationForm.js';
+import {
+  ReservationInvitationsForm,
+  type ManagedReservationInvitation,
+} from './ReservationInvitationsForm.js';
 
 type Schedule = {
   timezone: string;
@@ -8,6 +12,7 @@ type Schedule = {
   observedAt?: number;
   months: { month: string; state: string; canBook: boolean }[];
   equipment: { type: string; units: number }[];
+  managedInvitations?: ManagedReservationInvitation[];
   reservations?: {
     id: string;
     pointName: string;
@@ -23,6 +28,7 @@ type Schedule = {
     canJoin?: boolean;
     canManageReservation?: boolean;
     thirdPositionVacant?: boolean;
+    pendingCount?: number;
     seriesId?: string | null;
     seriesStoppedAt?: string | null;
   }[];
@@ -308,6 +314,8 @@ export function MonthlySchedulePanel({
                         (item.thirdPositionOpen ? 2 : 1)}{' '}
                       vaga(s) aberta(s)
                       {!item.thirdPositionOpen && ' · Terceira vaga bloqueada'}
+                      {!!item.pendingCount &&
+                        ` · ${item.pendingCount} convite(s) pendente(s)`}
                     </p>
                     {item.canJoin && (
                       <button
@@ -332,6 +340,16 @@ export function MonthlySchedulePanel({
                           ? 'Bloquear terceira vaga'
                           : 'Abrir terceira vaga'}
                       </button>
+                    )}
+                    {item.canManageReservation && (
+                      <ReservationInvitationsForm
+                        context={context}
+                        reservationId={item.id}
+                        invitations={(data.managedInvitations ?? []).filter(
+                          (i) => i.reservationId === item.id,
+                        )}
+                        onSaved={() => setRevision((value) => value + 1)}
+                      />
                     )}
                     {item.seriesId ? (
                       <p>

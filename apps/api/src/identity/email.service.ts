@@ -6,7 +6,8 @@ export type CapturedEmail = {
     | 'master-bootstrap'
     | 'membership-invitation'
     | 'membership-revoked'
-    | 'membership-reactivated';
+    | 'membership-reactivated'
+    | 'schedule-notice';
   parameters: Record<string, string>;
 };
 

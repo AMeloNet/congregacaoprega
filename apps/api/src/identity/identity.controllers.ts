@@ -2,6 +2,8 @@ import { EquipmentService } from '../equipment.service.js';
 import { MonthlyScheduleService } from '../monthly-schedule.service.js';
 import { ReservationsService } from '../reservations.service.js';
 import { RecurrenceService } from '../recurrence.service.js';
+import { ReservationInvitationsService } from '../reservation-invitations.service.js';
+import { ScheduleNoticesService } from '../schedule-notices.service.js';
 import { PointsService } from '../points.service.js';
 import { WeeklyHoursService } from '../weekly-hours.service.js';
 import {
@@ -552,6 +554,70 @@ export class IdentityController {
       reservationId,
       body,
     );
+  }
+
+  @Get('congregations/:id/reservation-inbox')
+  async reservationInbox(@Req() request: HttpRequest, @Param('id') id: string) {
+    const { account } = await this.requireIdentity(request, undefined, false);
+    return new ReservationInvitationsService(this.runtime.pool).inbox(
+      account.accountId,
+      id,
+    );
+  }
+
+  @Post('congregations/:id/reservations/:reservationId/invitations')
+  async reservationInvite(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('reservationId') reservationId: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new ReservationInvitationsService(this.runtime.pool).send(
+      account.accountId,
+      id,
+      reservationId,
+      body,
+    );
+  }
+
+  @Post('congregations/:id/reservation-invitations/:invitationId/:action')
+  async reservationInvitationAction(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('invitationId') invitationId: string,
+    @Param('action') action: string,
+  ) {
+    if (
+      action !== 'accept' &&
+      action !== 'decline' &&
+      action !== 'revoke' &&
+      action !== 'resend'
+    )
+      throw new NotFoundException();
+    const { account } = await this.requireIdentity(request, csrf);
+    return new ReservationInvitationsService(this.runtime.pool).act(
+      account.accountId,
+      id,
+      invitationId,
+      action,
+    );
+  }
+
+  @Post('congregations/:id/schedule-notices/:noticeId/read')
+  async scheduleNoticeRead(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('noticeId') noticeId: string,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new ScheduleNoticesService(
+      this.runtime.pool,
+      this.runtime.email,
+    ).read(account.accountId, id, noticeId);
   }
 
   @Post('congregations/:id/reservations/:reservationId/recurrence')

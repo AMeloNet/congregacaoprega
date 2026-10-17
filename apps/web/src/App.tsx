@@ -1,5 +1,6 @@
 import { PointsPanel } from './PointsPanel.js';
 import { MonthlySchedulePanel } from './MonthlySchedulePanel.js';
+import { ReservationInboxPanel } from './ReservationInboxPanel.js';
 import { WeeklyHoursPanel } from './WeeklyHoursPanel.js';
 import { EquipmentPanel, type EquipmentContext } from './EquipmentPanel.js';
 import { useEffect, useLayoutEffect, useState } from 'react';
@@ -390,7 +391,7 @@ export function App({
           <span className="demo-dot" />
           <span>
             {equipmentContext
-              ? 'Programação mensal e Recursos usam dados reais, incluindo marcações em Programação. Demais exemplos continuam demonstrativos.'
+              ? 'Programação, Convites e avisos e Recursos usam dados reais. As demais telas de exemplos continuam demonstrativas.'
               : 'Programação e reservas ainda usam dados fictícios. Identidade e convites de acesso são tratados pela aplicação.'}
           </span>
         </div>
@@ -981,7 +982,10 @@ export function App({
             </>
           )}
 
-          {screen === 'convites' && (
+          {screen === 'convites' && equipmentContext && (
+            <ReservationInboxPanel context={equipmentContext} />
+          )}
+          {screen === 'convites' && !equipmentContext && (
             <>
               <div className="intro-row">
                 <p>
