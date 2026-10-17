@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useEffect, useState, useRef } from 'react';
 import { App } from './App.js';
 
 type Membership = {
@@ -40,6 +40,7 @@ export function AccessApp({
   const [session, setSession] = useState<Session | null>(null);
   const [error, setError] = useState('');
   const [active, setActive] = useState('');
+  const activeSelection = useRef('');
   const [publisherEmail, setPublisherEmail] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminCongregation, setAdminCongregation] = useState('');
@@ -60,6 +61,10 @@ export function AccessApp({
       .then((value) => {
         if (!mounted) return;
         setSession(value);
+        activeSelection.current =
+          value.activeCongregationId ??
+          value.memberships?.[0]?.congregationId ??
+          '';
         setActive(
           value.activeCongregationId ??
             value.memberships?.[0]?.congregationId ??
@@ -207,6 +212,10 @@ export function AccessApp({
       if (!sessionResponse.ok) throw new Error('Session refresh failed.');
       const updatedSession = (await sessionResponse.json()) as Session;
       setSession(updatedSession);
+      activeSelection.current =
+        updatedSession.activeCongregationId ??
+        updatedSession.memberships?.[0]?.congregationId ??
+        '';
       setActive(
         updatedSession.activeCongregationId ??
           updatedSession.memberships?.[0]?.congregationId ??
@@ -224,6 +233,7 @@ export function AccessApp({
   ): Promise<void> {
     event.preventDefault();
     setError('');
+    const requestedCongregation = active;
     const response = await fetch(
       `/api/congregations/${encodeURIComponent(active)}/invitations/publisher`,
       {
@@ -235,6 +245,7 @@ export function AccessApp({
         body: JSON.stringify({ email: publisherEmail }),
       },
     );
+    if (activeSelection.current !== requestedCongregation) return;
     if (!response.ok) {
       setError(
         'Não foi possível enviar o convite. Confira o endereço e tente novamente.',
@@ -273,19 +284,24 @@ export function AccessApp({
 
   async function loadMemberships(): Promise<void> {
     setError('');
+    const requestedCongregation = active;
     const response = await fetch(
       `/api/congregations/${encodeURIComponent(active)}/memberships`,
     );
+    if (activeSelection.current !== requestedCongregation) return;
     if (!response.ok) {
       setError('Não foi possível consultar os vínculos desta congregação.');
       return;
     }
-    setManagedMemberships((await response.json()) as ManagedMembership[]);
+    const result = (await response.json()) as ManagedMembership[];
+    if (activeSelection.current === requestedCongregation)
+      setManagedMemberships(result);
   }
 
   async function changeManagedMembership(
     membership: ManagedMembership,
   ): Promise<void> {
+    const requestedCongregation = active;
     const action = membership.status === 'ACTIVE' ? 'revoke' : 'reactivate';
     const response = await fetch(
       `/api/memberships/${encodeURIComponent(membership.id)}/${action}`,
@@ -294,6 +310,7 @@ export function AccessApp({
         headers: { 'x-csrf-token': session!.csrfToken ?? '' },
       },
     );
+    if (activeSelection.current !== requestedCongregation) return;
     if (!response.ok) {
       setError('Não foi possível alterar esse vínculo.');
       return;
@@ -329,6 +346,10 @@ export function AccessApp({
       setError('Não foi possível selecionar essa congregação.');
       return;
     }
+    activeSelection.current = congregationId;
+    setManagedMemberships([]);
+    setPublisherEmail('');
+    setMessage('');
     setActive(congregationId);
   }
 
@@ -363,9 +384,7 @@ export function AccessApp({
         </strong>
         <a href="/api/auth/logout">Sair</a>
       </div>
-      {(invitationAvailable ||
-        selected?.role === 'LOCAL_ADMIN' ||
-        session.isMaster) && (
+      {(invitationAvailable || message || error) && (
         <section className="identity-actions" aria-label="Acesso e convites">
           {message && (
             <p className="feedback success" role="status">
@@ -382,114 +401,126 @@ export function AccessApp({
               {invitationContent(false)}
             </div>
           )}
-          {selected?.role === 'LOCAL_ADMIN' && (
-            <>
-              <form
-                className="panel compact-panel"
-                onSubmit={(event) => void invitePublisher(event)}
-              >
-                <h2>Convidar publicador</h2>
-                <label htmlFor="publisher-email">
-                  E-mail do novo publicador
-                </label>
-                <input
-                  id="publisher-email"
-                  type="email"
-                  required
-                  value={publisherEmail}
-                  onChange={(event) => setPublisherEmail(event.target.value)}
-                />
-                <button className="button" type="submit">
-                  Enviar convite
-                </button>
-              </form>
-              <div className="panel compact-panel">
-                <h2>Vínculos da congregação</h2>
-                <button
-                  className="button outline"
-                  type="button"
-                  onClick={() => void loadMemberships()}
-                >
-                  Consultar vínculos
-                </button>
-                {managedMemberships.length === 0 ? (
-                  <p>Nenhum vínculo carregado.</p>
-                ) : (
-                  <ul className="membership-list">
-                    {managedMemberships.map((membership) => (
-                      <li key={membership.id}>
-                        <span>
-                          <strong>{membership.email}</strong>{' '}
-                          <span>
-                            {membership.status === 'ACTIVE'
-                              ? 'Ativo'
-                              : 'Revogado'}
-                          </span>
-                        </span>
-                        {membership.role === 'PUBLISHER' && (
-                          <button
-                            className="text-button"
-                            type="button"
-                            onClick={() =>
-                              void changeManagedMembership(membership)
-                            }
-                            aria-label={`${
-                              membership.status === 'ACTIVE'
-                                ? 'Revogar'
-                                : 'Reativar'
-                            } ${membership.email}`}
-                          >
-                            {membership.status === 'ACTIVE'
-                              ? 'Revogar'
-                              : 'Reativar'}
-                          </button>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </>
-          )}
-          {session.isMaster && (
-            <form
-              className="panel compact-panel"
-              onSubmit={(event) => void inviteAdministrator(event)}
-            >
-              <h2>Convidar administrador local</h2>
-              <label htmlFor="admin-congregation">
-                Congregação para administrar
-              </label>
-              <select
-                id="admin-congregation"
-                required
-                value={adminCongregation}
-                onChange={(event) => setAdminCongregation(event.target.value)}
-              >
-                {(session.adminCongregations ?? []).map((congregation) => (
-                  <option key={congregation.id} value={congregation.id}>
-                    {congregation.name}
-                  </option>
-                ))}
-              </select>
-              <label htmlFor="admin-email">E-mail do administrador local</label>
-              <input
-                id="admin-email"
-                type="email"
-                required
-                value={adminEmail}
-                onChange={(event) => setAdminEmail(event.target.value)}
-              />
-              <button className="button" type="submit">
-                Enviar convite de administrador
-              </button>
-            </form>
-          )}
         </section>
       )}
       <App
+        key={`${active}:${selected?.role}:${session.isMaster}`}
+        isMaster={session.isMaster}
+        publisherManagement={
+          <>
+            {selected?.role === 'LOCAL_ADMIN' && (
+              <>
+                <form
+                  className="panel compact-panel"
+                  onSubmit={(event) => void invitePublisher(event)}
+                >
+                  <h2>Convidar publicador</h2>
+                  <label htmlFor="publisher-email">
+                    E-mail do novo publicador
+                  </label>
+                  <input
+                    id="publisher-email"
+                    type="email"
+                    required
+                    value={publisherEmail}
+                    onChange={(event) => setPublisherEmail(event.target.value)}
+                  />
+                  <button className="button" type="submit">
+                    Enviar convite
+                  </button>
+                </form>
+                <div className="panel compact-panel">
+                  <h2>Vínculos da congregação</h2>
+                  <button
+                    className="button outline"
+                    type="button"
+                    onClick={() => void loadMemberships()}
+                  >
+                    Consultar vínculos
+                  </button>
+                  {managedMemberships.length === 0 ? (
+                    <p>Nenhum vínculo carregado.</p>
+                  ) : (
+                    <ul className="membership-list">
+                      {managedMemberships.map((membership) => (
+                        <li key={membership.id}>
+                          <span>
+                            <strong>{membership.email}</strong>{' '}
+                            <span>
+                              {membership.status === 'ACTIVE'
+                                ? 'Ativo'
+                                : 'Revogado'}
+                            </span>
+                          </span>
+                          {membership.role === 'PUBLISHER' && (
+                            <button
+                              className="text-button"
+                              type="button"
+                              onClick={() =>
+                                void changeManagedMembership(membership)
+                              }
+                              aria-label={`${
+                                membership.status === 'ACTIVE'
+                                  ? 'Revogar'
+                                  : 'Reativar'
+                              } ${membership.email}`}
+                            >
+                              {membership.status === 'ACTIVE'
+                                ? 'Revogar'
+                                : 'Reativar'}
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </>
+            )}
+          </>
+        }
+        masterManagement={
+          <>
+            {session.isMaster && (
+              <form
+                className="panel compact-panel"
+                onSubmit={(event) => void inviteAdministrator(event)}
+              >
+                <h2>Convidar administrador local</h2>
+                <label htmlFor="admin-congregation">
+                  Congregação para administrar
+                </label>
+                <select
+                  id="admin-congregation"
+                  required
+                  value={adminCongregation}
+                  onChange={(event) => setAdminCongregation(event.target.value)}
+                >
+                  {(session.adminCongregations ?? []).map((congregation) => (
+                    <option key={congregation.id} value={congregation.id}>
+                      {congregation.name}
+                    </option>
+                  ))}
+                </select>
+                <label htmlFor="admin-email">
+                  E-mail do administrador local
+                </label>
+                <input
+                  id="admin-email"
+                  type="email"
+                  required
+                  value={adminEmail}
+                  onChange={(event) => setAdminEmail(event.target.value)}
+                />
+                <button className="button" type="submit">
+                  Enviar convite de administrador
+                </button>
+              </form>
+            )}{' '}
+          </>
+        }
         equipmentContext={{
-          congregationId: active,
+          congregationId: selected?.congregationId ?? '',
           congregationName: selected?.congregationName,
           csrfToken: session.csrfToken ?? '',
           canManage: selected?.role === 'LOCAL_ADMIN',

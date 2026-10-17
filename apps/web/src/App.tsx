@@ -6,19 +6,18 @@ import { PublisherProfilePanel } from './PublisherProfilePanel.js';
 import { ScheduleReportPanel } from './ScheduleReportPanel.js';
 import { WeeklyHoursPanel } from './WeeklyHoursPanel.js';
 import { EquipmentPanel, type EquipmentContext } from './EquipmentPanel.js';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import {
+  GroupedMenu,
+  canOpenScreen,
+  screenLabels,
+  type MenuScreen,
+} from './GroupedMenu.js';
+import { ScheduleAlertsPanel } from './ScheduleAlertsPanel.js';
+import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import './styles.css';
 
-type Screen =
-  | 'inicio'
-  | 'programacao'
-  | 'nova-reserva'
-  | 'detalhe'
-  | 'convites'
-  | 'administracao'
-  | 'recursos'
-  | 'relatorio';
+type Screen = MenuScreen;
 type Role = 'publicador' | 'administrador';
 type MonthState = 'liberado' | 'finalizado' | 'reaberto';
 type InvitationState = 'pendente' | 'aceito' | 'recusado';
@@ -108,7 +107,7 @@ const places: [Place, ...Place[]] = [
 
 function routeFromHash(): Screen {
   const route = window.location.hash.slice(1).split('?')[0];
-  return navigation.some(({ id }) => id === route)
+  return Object.hasOwn(screenLabels, route ?? '')
     ? (route as Screen)
     : 'inicio';
 }
@@ -121,8 +120,25 @@ function stateLabel(state: MonthState): string {
 
 export function App({
   equipmentContext,
-}: { equipmentContext?: EquipmentContext } = {}) {
-  const [screen, setScreen] = useState<Screen>(routeFromHash);
+  publisherManagement,
+  masterManagement,
+  isMaster = false,
+}: {
+  equipmentContext?: EquipmentContext;
+  publisherManagement?: ReactNode;
+  masterManagement?: ReactNode;
+  isMaster?: boolean;
+} = {}) {
+  const [requestedScreen, setScreen] = useState<Screen>(routeFromHash);
+  const permitted =
+    !equipmentContext ||
+    canOpenScreen(
+      requestedScreen,
+      equipmentContext.canManage,
+      !!equipmentContext.congregationId,
+      isMaster,
+    );
+  const screen = permitted ? requestedScreen : 'inicio';
   const [pointsRevision, setPointsRevision] = useState(0);
   const [role, setRole] = useState<Role>('publicador');
   const [monthState, setMonthState] = useState<MonthState>('liberado');
@@ -212,8 +228,9 @@ export function App({
   const publisherCanEdit = monthState === 'liberado';
   const canEdit =
     role === 'administrador' ? monthState !== 'finalizado' : publisherCanEdit;
-  const currentPage =
-    navigation.find(({ id }) => id === screen)?.label ?? 'Início';
+  const currentPage = equipmentContext
+    ? screenLabels[screen]
+    : (navigation.find(({ id }) => id === screen)?.label ?? 'Início');
   const reportLabel =
     monthState === 'finalizado'
       ? `Versão ${version}`
@@ -272,60 +289,78 @@ export function App({
   const detailHour = detailIsNew ? hour : '08:00–10:00';
 
   return (
-    <div className="app-shell">
+    <div
+      className={`app-shell${equipmentContext ? ' authenticated-shell' : ''}`}
+    >
       <a className="skip-link" href="#main-content">
         Pular para o conteúdo
       </a>
-      <aside className="sidebar" aria-label="Menu principal">
-        <div className="brand">
-          <div className="brand-mark" aria-hidden="true">
-            ✦
+      {!equipmentContext && (
+        <aside className="sidebar" aria-label="Menu principal">
+          <div className="brand">
+            <div className="brand-mark" aria-hidden="true">
+              ✦
+            </div>
+            <div>
+              <strong>congregacaoprega</strong>
+              <span>Testemunho Público</span>
+            </div>
           </div>
-          <div>
-            <strong>congregacaoprega</strong>
-            <span>Testemunho Público</span>
+          <div className="sidebar-section-label">CONGREGAÇÃO</div>
+          <div className="congregation-chip">
+            <span className="chip-icon">C</span>
+            <span>
+              Congregação Exemplo
+              <small>
+                {equipmentContext
+                  ? 'Fuso configurado em Recursos'
+                  : 'Brasília · UTC−03'}
+              </small>
+            </span>
           </div>
-        </div>
-        <div className="sidebar-section-label">CONGREGAÇÃO</div>
-        <div className="congregation-chip">
-          <span className="chip-icon">C</span>
-          <span>
-            {equipmentContext?.congregationName ??
-              (equipmentContext ? 'Congregação' : 'Congregação Exemplo')}
-            <small>
-              {equipmentContext
-                ? 'Fuso configurado em Recursos'
-                : 'Brasília · UTC−03'}
-            </small>
-          </span>
-        </div>
-        <div className="sidebar-section-label">NAVEGAR</div>
-        <nav aria-label="Telas do protótipo" className="nav-list">
-          {navigation.map(({ id, label, marker }) => (
-            <a
-              key={id}
-              href={`#${id}`}
-              onClick={(event) => {
-                event.preventDefault();
-                go(id);
-              }}
-              aria-current={screen === id ? 'page' : undefined}
-            >
-              <span className="nav-marker" aria-hidden="true">
-                {marker}
-              </span>
-              {label}
-            </a>
-          ))}
-        </nav>
-        <div className="sidebar-foot">
-          <span className="demo-dot" />{' '}
-          {equipmentContext ? 'CongregaçãoPrega' : 'Protótipo UI-001'}
-        </div>
-      </aside>
+          <div className="sidebar-section-label">NAVEGAR</div>
+          <nav aria-label="Telas do protótipo" className="nav-list">
+            {navigation.map(({ id, label, marker }) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  go(id);
+                }}
+                aria-current={screen === id ? 'page' : undefined}
+              >
+                <span className="nav-marker" aria-hidden="true">
+                  {marker}
+                </span>
+                {label}
+              </a>
+            ))}
+          </nav>
+          <div className="sidebar-foot">
+            <span className="demo-dot" />{' '}
+            {equipmentContext ? 'CongregaçãoPrega' : 'Protótipo UI-001'}
+          </div>
+        </aside>
+      )}
 
       <div className="workspace">
         <header className="topbar">
+          {equipmentContext && (
+            <GroupedMenu
+              key={`${equipmentContext.congregationId}:${equipmentContext.canManage}:${isMaster}`}
+              screen={screen}
+              onNavigate={go}
+              onAppearance={() => {
+                go('conta');
+                setAppearanceOpen(true);
+              }}
+              congregationName={equipmentContext.congregationName}
+              canManage={equipmentContext.canManage}
+              hasMembership={!!equipmentContext.congregationId}
+              isMaster={isMaster}
+            />
+          )}
           <div className="breadcrumbs">
             {equipmentContext?.congregationName ??
               (equipmentContext ? 'Congregação' : 'Congregação Exemplo')}{' '}
@@ -447,6 +482,50 @@ export function App({
             )}
           </div>
 
+          {!permitted && (
+            <p role="alert">
+              Esta opção não está disponível para seu perfil nesta congregação.
+            </p>
+          )}
+          {equipmentContext && screen === 'conta' && (
+            <>
+              {!!equipmentContext.congregationId && (
+                <PublisherProfilePanel context={equipmentContext} />
+              )}
+              <p>
+                Use Aparência na barra superior para escolher seu tema e cor.
+              </p>
+              <a className="button outline" href="/api/auth/logout">
+                Sair da conta
+              </a>
+            </>
+          )}
+          {equipmentContext && screen === 'publicadores' && (
+            <>
+              {publisherManagement}
+              <PublisherProfilePanel context={equipmentContext} manage />
+            </>
+          )}
+          {equipmentContext && screen === 'administradores' && masterManagement}
+          {equipmentContext && screen === 'alertas' && (
+            <ScheduleAlertsPanel context={equipmentContext} />
+          )}
+          {equipmentContext && screen === 'pontos' && (
+            <PointsPanel
+              context={equipmentContext}
+              onChanged={() => setPointsRevision((value) => value + 1)}
+            />
+          )}
+          {equipmentContext && screen === 'equipamentos' && (
+            <EquipmentPanel context={equipmentContext} />
+          )}
+          {equipmentContext && screen === 'horarios' && (
+            <WeeklyHoursPanel
+              context={equipmentContext}
+              pointsRevision={pointsRevision}
+            />
+          )}
+
           {message && (
             <p className="feedback success" role="status" aria-live="polite">
               {message}
@@ -465,18 +544,22 @@ export function App({
                 Consulte a agenda da congregação, reserve um ponto ou acompanhe
                 seus convites e avisos.
               </p>
-              <button
-                className="button primary"
-                onClick={() => go('programacao')}
-              >
-                Abrir agenda
-              </button>
-              <button
-                className="button outline"
-                onClick={() => go('nova-reserva')}
-              >
-                Reservar ponto e equipamento
-              </button>
+              {equipmentContext.congregationId && (
+                <>
+                  <button
+                    className="button primary"
+                    onClick={() => go('programacao')}
+                  >
+                    Abrir agenda
+                  </button>
+                  <button
+                    className="button outline"
+                    onClick={() => go('nova-reserva')}
+                  >
+                    Reservar ponto e equipamento
+                  </button>
+                </>
+              )}
             </section>
           )}
           {screen === 'inicio' && !equipmentContext && (
@@ -1143,11 +1226,7 @@ export function App({
             equipmentContext &&
             (equipmentContext.canManage ? (
               <>
-                <PublisherProfilePanel context={equipmentContext} manage />
-                <p>
-                  Os ajustes administrativos de designações ficam em Programação
-                  ou Detalhe da reserva.
-                </p>
+                <MonthlySchedulePanel context={equipmentContext} />
               </>
             ) : (
               <p>Acesso restrito ao administrador local.</p>
@@ -1478,12 +1557,14 @@ export function App({
             </>
           )}
 
-          <footer className="page-footer no-print">
-            <span>UI-001 · Módulos de programação ainda demonstrativos</span>
-            <button type="button" className="text-button" onClick={reset}>
-              Restaurar demonstração
-            </button>
-          </footer>
+          {!equipmentContext && (
+            <footer className="page-footer no-print">
+              <span>UI-001 · Módulos de programação ainda demonstrativos</span>
+              <button type="button" className="text-button" onClick={reset}>
+                Restaurar demonstração
+              </button>
+            </footer>
+          )}
         </main>
       </div>
     </div>
