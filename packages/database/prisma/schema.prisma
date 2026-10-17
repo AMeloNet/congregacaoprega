@@ -83,6 +83,9 @@ model IdentityAccount {
   receivedReservationInvitations ReservationInvitation[] @relation("ReservationInvitee")
   sentReservationInvitations ReservationInvitation[] @relation("ReservationInviter")
   scheduleNotices ScheduleNotice[]
+  attendance ReservationAttendance[]
+  reservationCommands ReservationCommand[]
+  alertRecipients ScheduleAlertRecipient[]
 
   @@unique([providerIssuer, providerSubject])
   @@map("identity_account")
@@ -105,6 +108,8 @@ model Congregation {
   reservations Reservation[]
 
   scheduleNotices ScheduleNotice[]
+  reservationCommands ReservationCommand[]
+  alertRecipients ScheduleAlertRecipient[]
 
   @@map("congregation")
 }
@@ -316,6 +321,9 @@ model Reservation {
   participations ReservationParticipation[]
   history ReservationHistory[]
   invitations ReservationInvitation[]
+  attendance ReservationAttendance[]
+  commands ReservationCommand[]
+  alert ReservationAlert?
   @@unique([congregationId, responsibleAccountId, requestKey], map: "reservation_request_key")
   @@index([congregationId, startsAt, endsAt], map: "reservation_congregation_interval_idx")
   @@index([responsibleAccountId, startsAt, endsAt], map: "reservation_responsible_interval_idx")
@@ -385,6 +393,51 @@ model ReservationInvitation {
   @@unique([reservationId,requestKey],map:"reservation_invitation_request_key")
   @@index([recipientAccountId,expiresAt],map:"reservation_invitation_recipient_idx")
   @@map("reservation_invitation")
+}
+
+model ReservationAttendance {
+  id String @id @default(uuid()) @db.Uuid
+  reservationId String @map("reservation_id") @db.Uuid
+  accountId String @map("account_id") @db.Uuid
+  startsAt DateTime @map("starts_at") @db.Timestamptz(6)
+  endsAt DateTime @map("ends_at") @db.Timestamptz(6)
+  reservation Reservation @relation(fields:[reservationId],references:[id],onDelete:Restrict)
+  account IdentityAccount @relation(fields:[accountId],references:[id],onDelete:Restrict)
+  @@index([accountId,startsAt,endsAt],map:"reservation_attendance_account_interval_idx")
+  @@map("reservation_attendance")
+}
+
+model ReservationCommand {
+  congregationId String @map("congregation_id") @db.Uuid
+  actorAccountId String @map("actor_account_id") @db.Uuid
+  requestKey String @map("request_key") @db.Uuid
+  reservationId String @map("reservation_id") @db.Uuid
+  action String
+  payload Json
+  result Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  congregation Congregation @relation(fields:[congregationId],references:[id],onDelete:Restrict)
+  actor IdentityAccount @relation(fields:[actorAccountId],references:[id],onDelete:Restrict)
+  reservation Reservation @relation(fields:[reservationId],references:[id],onDelete:Restrict)
+  @@id([congregationId,actorAccountId,requestKey])
+  @@map("reservation_command")
+}
+
+model ScheduleAlertRecipient {
+  congregationId String @map("congregation_id") @db.Uuid
+  accountId String @map("account_id") @db.Uuid
+  congregation Congregation @relation(fields:[congregationId],references:[id],onDelete:Restrict)
+  account IdentityAccount @relation(fields:[accountId],references:[id],onDelete:Restrict)
+  @@id([congregationId,accountId])
+  @@map("schedule_alert_recipient")
+}
+
+model ReservationAlert {
+  reservationId String @id @map("reservation_id") @db.Uuid
+  confirmedAtStart Int @map("confirmed_at_start")
+  raisedAt DateTime @default(now()) @map("raised_at") @db.Timestamptz(6)
+  reservation Reservation @relation(fields:[reservationId],references:[id],onDelete:Restrict)
+  @@map("reservation_alert")
 }
 
 model ScheduleNotice {

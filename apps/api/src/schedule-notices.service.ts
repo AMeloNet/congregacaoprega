@@ -3,6 +3,7 @@ import type { Pool } from 'pg';
 import type { EmailService } from './identity/email.service.js';
 import { reservationAccess, uuidPattern } from './reservations.service.js';
 import { expireInvitations } from './reservation-groups.js';
+import { ScheduleAlertsService } from './schedule-alerts.service.js';
 
 export class ScheduleNoticesService {
   constructor(
@@ -104,6 +105,7 @@ export class ScheduleNoticesService {
   }
   async process() {
     await this.expire();
+    await new ScheduleAlertsService(this.pool, this.now).process();
     await this.deliver();
   }
 }

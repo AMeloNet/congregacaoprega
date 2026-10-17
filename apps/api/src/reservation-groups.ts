@@ -1,6 +1,18 @@
 import { randomUUID } from 'node:crypto';
 import type { PoolClient } from 'pg';
 
+export async function alertRecipients(
+  client: PoolClient,
+  congregationId: string,
+) {
+  return (
+    await client.query(
+      "SELECT s.account_id FROM schedule_alert_recipient s JOIN membership m ON m.account_id=s.account_id AND m.congregation_id=s.congregation_id JOIN identity_account a ON a.id=s.account_id WHERE s.congregation_id=$1 AND m.status='ACTIVE' AND m.role='LOCAL_ADMIN' AND a.email_verified",
+      [congregationId],
+    )
+  ).rows.map((row) => row.account_id as string);
+}
+
 export async function recordReservationEvent(
   client: PoolClient,
   reservationId: string,

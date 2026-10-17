@@ -33,6 +33,17 @@ de reservas até restaurar a validação, preservando tabelas, avisos e históri
 
 ## Antes da primeira migration
 
+`20261017000300_reservation_exits_attendance` cria períodos efetivos de participação,
+comandos idempotentes, seleção de destinatários administrativos e verificações de
+mínimo no início. O backfill copia responsável e participantes existentes, limitando
+o intervalo ao cancelamento já persistido, sem criar ou cancelar designações.
+Volume linear no total de reservas/participações; FKs e leitura do backfill podem
+aguardar gravações concorrentes. Aplicar serializado antes do código novo; falha
+interrompe promoção e requer diagnóstico, sem reset nem conciliação automática.
+Código anterior ignora períodos encerrados e não é seguro após desistências ou
+cancelamento parcial: suspender gravações antes de eventual rollback e preservar
+as novas tabelas. A comparação de schema e os testes usam bancos descartáveis.
+
 1. Aprovar por ADR a ferramenta que será a autoridade do histórico, sua versão
    e a versão principal do PostgreSQL.
 2. Definir diretório, formato, identificadores únicos e nomes em inglês.

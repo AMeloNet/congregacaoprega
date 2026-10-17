@@ -198,6 +198,16 @@ export class MonthlyScheduleService {
               confirmedCount,
               openPositions,
               canJoin,
+              canLeave:
+                reservation.isParticipant &&
+                !reservation.isResponsible &&
+                new Date(reservation.endsAt) > now &&
+                touched.every(
+                  (month) =>
+                    months.includes(month) &&
+                    (states.find((row) => row.month === month)?.state ??
+                      'open') === 'open',
+                ),
               canManageReservation,
               thirdPositionVacant:
                 !occupiedPositions.includes(3) && !pendingPositions.includes(3),
