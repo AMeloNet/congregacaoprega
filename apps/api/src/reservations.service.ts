@@ -8,6 +8,11 @@ import {
 import type { Pool, PoolClient } from 'pg';
 import { reservationTimes } from './reservation-time.js';
 import {
+  expireInvitations,
+  groupPositions,
+  notice,
+} from './reservation-groups.js';
+import {
   assertPublishedMonths,
   assertReservationResources,
   assertParticipantAgenda,
@@ -85,6 +90,122 @@ export async function lockReservationOwner(client: PoolClient, owner: string) {
   await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [
     `reservation:${owner}`,
   ]);
+}
+
+export type ReservationRecord = {
+  id: string;
+  starts_at: Date | string;
+  ends_at: Date | string;
+  cancelled_at: Date | null;
+  responsible_account_id: string;
+  third_position_open: boolean;
+  local_date: string;
+  start_hour: number;
+  duration: number;
+  point_id: string;
+  equipment_type: string;
+};
+export async function confirmParticipant(
+  client: PoolClient,
+  accountId: string,
+  congregationId: string,
+  reservation: ReservationRecord,
+  timezone: string,
+  now: Date,
+  invitation?: { id: string; position: number },
+  administrative = false,
+) {
+  const start = new Date(reservation.starts_at),
+    end = new Date(reservation.ends_at),
+    reservationId = reservation.id;
+  if (reservation.cancelled_at || end <= now)
+    throw unavailable('reserva cancelada ou encerrada.');
+  await assertPublishedMonths(
+    client,
+    congregationId,
+    timezone,
+    start,
+    end,
+    now,
+    administrative,
+  );
+  await expireInvitations(client, reservationId, now);
+  const participants = (
+    await client.query(
+      'SELECT account_id,position,starts_at FROM reservation_participation WHERE reservation_id=$1',
+      [reservationId],
+    )
+  ).rows;
+  const existing = participants.find((p) => p.account_id === accountId);
+  if (reservation.responsible_account_id === accountId || existing)
+    return {
+      reservationId,
+      position: existing?.position ?? 1,
+      startsAt: existing?.starts_at ?? start,
+      confirmedCount: participants.length + 1,
+    };
+  const positions = await groupPositions(client, reservationId, now);
+  if (
+    !invitation &&
+    positions.some((p) => p.kind === 'pending' && p.account_id === accountId)
+  )
+    throw unavailable(
+      'há um convite destinado a você; aceite ou recuse o convite.',
+    );
+  const position =
+    invitation?.position ??
+    [2, ...(reservation.third_position_open ? [3] : [])].find(
+      (p) => !positions.some((o) => o.position === p),
+    );
+  if (
+    !position ||
+    positions.some(
+      (p) =>
+        p.position === position &&
+        (!invitation || p.kind === 'confirmed' || p.account_id !== accountId),
+    )
+  )
+    throw unavailable('não há posição aberta disponível.');
+  const effectiveStart = start > now ? start : now;
+  const times = reservationTimes(
+    reservation.local_date,
+    reservation.start_hour,
+    reservation.duration,
+    timezone,
+  );
+  await assertReservationResources(
+    client,
+    congregationId,
+    reservation.point_id,
+    reservation.equipment_type,
+    { ...times, start: effectiveStart },
+    reservationId,
+  );
+  await assertParticipantAgenda(
+    client,
+    accountId,
+    effectiveStart,
+    end,
+    timezone,
+  );
+  await client.query(
+    'INSERT INTO reservation_participation (reservation_id,account_id,position,joined_at,starts_at) VALUES ($1,$2,$3,$4,$5)',
+    [reservationId, accountId, position, now, effectiveStart],
+  );
+  await notice(
+    client,
+    congregationId,
+    [reservation.responsible_account_id, accountId],
+    `participation:${reservationId}:${accountId}`,
+    'Participação confirmada na designação.',
+    now,
+  );
+  return {
+    reservationId,
+    position,
+    startsAt: effectiveStart,
+    confirmedCount: participants.length + 2,
+  };
 }
 
 export async function createReservation(
@@ -227,13 +348,16 @@ export class ReservationsService {
         now,
         member.role === 'LOCAL_ADMIN',
       );
+      await expireInvitations(client, reservationId, now);
       if (reservation.third_position_open !== open) {
         const occupied = await client.query(
-          'SELECT 1 FROM reservation_participation WHERE reservation_id=$1 AND position=3',
-          [reservationId],
+          `SELECT 1 FROM reservation_participation WHERE reservation_id=$1 AND position=3 UNION ALL SELECT 1 FROM reservation_invitation WHERE reservation_id=$1 AND position=3 AND state='pending' AND expires_at>$2`,
+          [reservationId, now],
         );
         if (occupied.rowCount)
-          throw unavailable('a terceira vaga já contém um participante.');
+          throw unavailable(
+            'a terceira vaga já contém participante ou convite pendente.',
+          );
         await client.query(
           'UPDATE reservation SET third_position_open=$2 WHERE id=$1',
           [reservationId, open],
@@ -294,80 +418,16 @@ export class ReservationsService {
         )
       ).rows[0];
       if (!reservation) throw new NotFoundException('Reserva não encontrada.');
-      const now = this.now(),
-        start = new Date(reservation.starts_at),
-        end = new Date(reservation.ends_at);
-      if (reservation.cancelled_at || end <= now)
-        throw unavailable('reserva cancelada ou encerrada.');
-      // This is spontaneous self-admission, including when the caller is an admin.
-      // Administrative inclusion after reopening is a separate, future operation.
-      await assertPublishedMonths(
-        client,
-        congregationId,
-        congregation.timezone,
-        start,
-        end,
-        now,
-      );
-      const participants = (
-        await client.query(
-          'SELECT account_id,position,joined_at,starts_at FROM reservation_participation WHERE reservation_id=$1 ORDER BY position',
-          [reservationId],
-        )
-      ).rows;
-      const existing = participants.find((row) => row.account_id === accountId);
-      if (reservation.responsible_account_id === accountId || existing) {
-        await client.query('COMMIT');
-        return {
-          reservationId,
-          position: existing?.position ?? 1,
-          startsAt: existing?.starts_at ?? start,
-          confirmedCount: 1 + participants.length,
-        };
-      }
-      const position = [
-        2,
-        ...(reservation.third_position_open ? [3] : []),
-      ].find((value) => !participants.some((row) => row.position === value));
-      if (!position)
-        throw unavailable(
-          reservation.third_position_open
-            ? 'grupo cheio.'
-            : 'terceira vaga bloqueada.',
-        );
-      const times = reservationTimes(
-        reservation.local_date,
-        reservation.start_hour,
-        reservation.duration,
-        congregation.timezone,
-      );
-      const effectiveStart = start > now ? start : now;
-      await assertReservationResources(
-        client,
-        congregationId,
-        reservation.point_id,
-        reservation.equipment_type,
-        { ...times, start: effectiveStart },
-        reservationId,
-      );
-      await assertParticipantAgenda(
+      const result = await confirmParticipant(
         client,
         accountId,
-        effectiveStart,
-        end,
+        congregationId,
+        reservation,
         congregation.timezone,
-      );
-      await client.query(
-        'INSERT INTO reservation_participation (reservation_id,account_id,position,joined_at,starts_at) VALUES ($1,$2,$3,$4,$5)',
-        [reservationId, accountId, position, now, effectiveStart],
+        this.now(),
       );
       await client.query('COMMIT');
-      return {
-        reservationId,
-        position,
-        startsAt: effectiveStart,
-        confirmedCount: 2 + participants.length,
-      };
+      return result;
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;

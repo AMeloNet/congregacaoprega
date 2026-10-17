@@ -5,6 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { RecurrenceService } from '../recurrence.service.js';
+import { ScheduleNoticesService } from '../schedule-notices.service.js';
 import { Pool } from 'pg';
 import { Auth0OidcClient } from '../auth/auth0-oidc.client.js';
 import { AuthService, type AuthConfig } from '../auth/auth.service.js';
@@ -151,6 +152,8 @@ export class IdentityRuntime implements OnModuleDestroy, OnModuleInit {
   });
   private recurrenceTimer?: ReturnType<typeof setInterval>;
   private recurrenceTask?: Promise<void>;
+  private noticesTimer?: ReturnType<typeof setInterval>;
+  private noticesTask?: Promise<void>;
 
   onModuleInit() {
     const tick = () => {
@@ -170,11 +173,30 @@ export class IdentityRuntime implements OnModuleDestroy, OnModuleInit {
     this.recurrenceTimer = setInterval(tick, 60_000);
     this.recurrenceTimer.unref();
     tick();
+    const noticesTick = () => {
+      if (this.noticesTask) return;
+      this.noticesTask = new ScheduleNoticesService(this.pool, this.email)
+        .process()
+        .catch(() =>
+          Logger.warn(
+            'Falha no processamento de avisos. Nova tentativa no próximo ciclo.',
+            'ScheduleNotices',
+          ),
+        )
+        .finally(() => {
+          this.noticesTask = undefined;
+        });
+    };
+    this.noticesTimer = setInterval(noticesTick, 30_000);
+    this.noticesTimer.unref();
+    noticesTick();
   }
 
   async onModuleDestroy(): Promise<void> {
     if (this.recurrenceTimer) clearInterval(this.recurrenceTimer);
+    if (this.noticesTimer) clearInterval(this.noticesTimer);
     await this.recurrenceTask;
+    await this.noticesTask;
     await this.pool.end();
   }
 }

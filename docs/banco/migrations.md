@@ -8,7 +8,7 @@ acesso e auditoria conforme [IDN-001B](../requisitos/IDN-001B.md). O histórico 
 `tests/migration-fixtures/` só pode ser aplicado a bancos descartáveis `_test`.
 A política obrigatória está no [AGENTS.md](../../AGENTS.md).
 
-## Antes da primeira migration
+## Incrementos recentes
 
 O incremento de gestão adiciona `20261017000100_reservation_management_history`:
 histórico de alterações da reserva e cópia JSON do modelo das séries existentes,
@@ -19,6 +19,19 @@ Aplicar pelo job serializado, após teste em PostgreSQL descartável; falha inte
 promoção e exige inspeção do histórico e catálogo. Rollback preserva dados, mas
 código antigo volta a ler o modelo da reserva mutável e não é seguro após ajustes
 na origem. Sem reset, exclusão ou edição de migrations incorporadas.
+
+`20261017000200_reservation_invitations_notices` cria convites de designação e
+avisos/caixa de saída, sem backfill. Índices parciais garantem uma posição e um
+destinatário por convite pendente na reserva; o serviço serializa também com
+participações confirmadas. Expiração é validada nas consultas e operações,
+independentemente do processamento periódico. Índices de caixa de entrada e
+retentativas não incluem conteúdo das mensagens. DDL se limita às novas tabelas,
+índices e referências das FKs. Aplicar somente por migration serializada; falha
+exige diagnóstico, sem reset nem marcação manual. Código anterior não considera
+convites como ocupação: rollback após criar convites exige suspender alterações
+de reservas até restaurar a validação, preservando tabelas, avisos e histórico.
+
+## Antes da primeira migration
 
 1. Aprovar por ADR a ferramenta que será a autoridade do histórico, sua versão
    e a versão principal do PostgreSQL.

@@ -117,8 +117,14 @@ export class MonthlyScheduleService {
       ).rows;
       const reservations = (
         await client.query(
-          `SELECT r.id,r.point_id AS "pointId",p.name AS "pointName",r.local_date AS date,r.start_hour AS "startHour",r.duration,r.ends_at AS "endsAt",r.equipment_type AS "equipmentType",r.third_position_open AS "thirdPositionOpen",(r.responsible_account_id=$3) AS "isResponsible",(r.responsible_account_id=$3 OR EXISTS(SELECT 1 FROM reservation_participation mine WHERE mine.reservation_id=r.id AND mine.account_id=$3)) AS "isParticipant",ARRAY(SELECT position FROM reservation_participation occupied WHERE occupied.reservation_id=r.id) AS "occupiedPositions",o.series_id AS "seriesId",s.stopped_at AS "seriesStoppedAt" FROM reservation r JOIN preaching_point p ON p.id=r.point_id LEFT JOIN recurrence_occurrence o ON o.reservation_id=r.id LEFT JOIN reservation_series s ON s.id=o.series_id WHERE r.congregation_id=$1 AND substring(r.local_date,1,7)=ANY($2) AND r.cancelled_at IS NULL ORDER BY r.local_date,r.start_hour,r.id`,
-          [congregationId, months, accountId],
+          `SELECT r.id,r.point_id AS "pointId",p.name AS "pointName",r.local_date AS date,r.start_hour AS "startHour",r.duration,r.ends_at AS "endsAt",r.equipment_type AS "equipmentType",r.third_position_open AS "thirdPositionOpen",(r.responsible_account_id=$3) AS "isResponsible",(r.responsible_account_id=$3 OR EXISTS(SELECT 1 FROM reservation_participation mine WHERE mine.reservation_id=r.id AND mine.account_id=$3)) AS "isParticipant",ARRAY(SELECT position FROM reservation_participation occupied WHERE occupied.reservation_id=r.id) AS "occupiedPositions",ARRAY(SELECT i.position FROM reservation_invitation i WHERE i.reservation_id=r.id AND i.state='pending' AND i.expires_at>$4) AS "pendingPositions",o.series_id AS "seriesId",s.stopped_at AS "seriesStoppedAt" FROM reservation r JOIN preaching_point p ON p.id=r.point_id LEFT JOIN recurrence_occurrence o ON o.reservation_id=r.id LEFT JOIN reservation_series s ON s.id=o.series_id WHERE r.congregation_id=$1 AND substring(r.local_date,1,7)=ANY($2) AND r.cancelled_at IS NULL ORDER BY r.local_date,r.start_hour,r.id`,
+          [congregationId, months, accountId, now],
+        )
+      ).rows;
+      const managedInvitations = (
+        await client.query(
+          `SELECT i.id,i.reservation_id AS "reservationId",a.email AS "recipientEmail",i.expires_at AS "expiresAt",CASE WHEN i.state='pending' AND i.expires_at<=$4 THEN 'expired' ELSE i.state END AS state FROM reservation_invitation i JOIN reservation r ON r.id=i.reservation_id JOIN identity_account a ON a.id=i.recipient_account_id WHERE r.congregation_id=$1 AND (r.responsible_account_id=$2 OR $3::boolean) ORDER BY i.created_at DESC,i.id`,
+          [congregationId, accountId, membership.role === 'LOCAL_ADMIN', now],
         )
       ).rows;
       const recurrences = (
@@ -150,13 +156,15 @@ export class MonthlyScheduleService {
         })),
         equipment,
         reservations: reservations.map(
-          ({ occupiedPositions, ...reservation }) => {
+          ({ occupiedPositions, pendingPositions, ...reservation }) => {
             const confirmedCount = 1 + occupiedPositions.length;
             const openPositions = [
               2,
               ...(reservation.thirdPositionOpen ? [3] : []),
             ].filter(
-              (position) => !occupiedPositions.includes(position),
+              (position) =>
+                !occupiedPositions.includes(position) &&
+                !pendingPositions.includes(position),
             ).length;
             const touched = [
               reservation.date.slice(0, 7),
@@ -191,11 +199,14 @@ export class MonthlyScheduleService {
               openPositions,
               canJoin,
               canManageReservation,
-              thirdPositionVacant: !occupiedPositions.includes(3),
+              thirdPositionVacant:
+                !occupiedPositions.includes(3) && !pendingPositions.includes(3),
+              pendingCount: pendingPositions.length,
             };
           },
         ),
         recurrences,
+        managedInvitations,
       };
     } catch (error) {
       await client.query('ROLLBACK');

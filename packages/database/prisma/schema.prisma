@@ -80,6 +80,9 @@ model IdentityAccount {
   startedSeries ReservationSeries[] @relation("SeriesStarter")
   stoppedSeries ReservationSeries[] @relation("SeriesStopper")
   reservationHistory ReservationHistory[]
+  receivedReservationInvitations ReservationInvitation[] @relation("ReservationInvitee")
+  sentReservationInvitations ReservationInvitation[] @relation("ReservationInviter")
+  scheduleNotices ScheduleNotice[]
 
   @@unique([providerIssuer, providerSubject])
   @@map("identity_account")
@@ -100,6 +103,8 @@ model Congregation {
   auditEvents IdentityAuditEvent[]
   scheduleMonths ScheduleMonth[]
   reservations Reservation[]
+
+  scheduleNotices ScheduleNotice[]
 
   @@map("congregation")
 }
@@ -310,6 +315,7 @@ model Reservation {
   occurrence RecurrenceOccurrence? @relation("OccurrenceReservation")
   participations ReservationParticipation[]
   history ReservationHistory[]
+  invitations ReservationInvitation[]
   @@unique([congregationId, responsibleAccountId, requestKey], map: "reservation_request_key")
   @@index([congregationId, startsAt, endsAt], map: "reservation_congregation_interval_idx")
   @@index([responsibleAccountId, startsAt, endsAt], map: "reservation_responsible_interval_idx")
@@ -357,6 +363,50 @@ model ReservationHistory {
   actorAccount IdentityAccount @relation(fields: [actorAccountId], references: [id], onDelete: Restrict)
   @@index([reservationId,createdAt], map: "reservation_history_reservation_created_idx")
   @@map("reservation_history")
+}
+
+model ReservationInvitation {
+  id String @id @default(uuid()) @db.Uuid
+  reservationId String @map("reservation_id") @db.Uuid
+  recipientAccountId String @map("recipient_account_id") @db.Uuid
+  createdByAccountId String @map("created_by_account_id") @db.Uuid
+  requestKey String @map("request_key") @db.Uuid
+  position Int
+  state String @default("pending")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  replacedById String? @map("replaced_by_id") @db.Uuid
+  replacement ReservationInvitation? @relation("ReservationInvitationReplacement",fields:[replacedById],references:[id],onDelete:Restrict)
+  replaces ReservationInvitation[] @relation("ReservationInvitationReplacement")
+  reservation Reservation @relation(fields:[reservationId],references:[id],onDelete:Restrict)
+  recipient IdentityAccount @relation("ReservationInvitee",fields:[recipientAccountId],references:[id],onDelete:Restrict)
+  creator IdentityAccount @relation("ReservationInviter",fields:[createdByAccountId],references:[id],onDelete:Restrict)
+  @@unique([reservationId,requestKey],map:"reservation_invitation_request_key")
+  @@index([recipientAccountId,expiresAt],map:"reservation_invitation_recipient_idx")
+  @@map("reservation_invitation")
+}
+
+model ScheduleNotice {
+  id String @id @default(uuid()) @db.Uuid
+  congregationId String @map("congregation_id") @db.Uuid
+  recipientAccountId String @map("recipient_account_id") @db.Uuid
+  eventKey String @map("event_key")
+  message String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  readAt DateTime? @map("read_at") @db.Timestamptz(6)
+  mailState String @default("pending") @map("mail_state")
+  mailAttempts Int @default(0) @map("mail_attempts")
+  nextAttemptAt DateTime @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  lastError String? @map("last_error")
+  providerId String? @map("provider_id")
+  deliveredAt DateTime? @map("delivered_at") @db.Timestamptz(6)
+  congregation Congregation @relation(fields:[congregationId],references:[id],onDelete:Restrict)
+  recipient IdentityAccount @relation(fields:[recipientAccountId],references:[id],onDelete:Restrict)
+  @@unique([eventKey,recipientAccountId],map:"schedule_notice_event_key")
+  @@index([congregationId,recipientAccountId,createdAt],map:"schedule_notice_inbox_idx")
+  @@index([mailState,nextAttemptAt],map:"schedule_notice_delivery_idx")
+  @@map("schedule_notice")
 }
 
 model RecurrenceOccurrence {
