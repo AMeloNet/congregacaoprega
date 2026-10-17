@@ -79,6 +79,7 @@ model IdentityAccount {
   reservationParticipations ReservationParticipation[]
   startedSeries ReservationSeries[] @relation("SeriesStarter")
   stoppedSeries ReservationSeries[] @relation("SeriesStopper")
+  reservationHistory ReservationHistory[]
 
   @@unique([providerIssuer, providerSubject])
   @@map("identity_account")
@@ -308,6 +309,7 @@ model Reservation {
   series ReservationSeries? @relation("SeriesSource")
   occurrence RecurrenceOccurrence? @relation("OccurrenceReservation")
   participations ReservationParticipation[]
+  history ReservationHistory[]
   @@unique([congregationId, responsibleAccountId, requestKey], map: "reservation_request_key")
   @@index([congregationId, startsAt, endsAt], map: "reservation_congregation_interval_idx")
   @@index([responsibleAccountId, startsAt, endsAt], map: "reservation_responsible_interval_idx")
@@ -333,6 +335,7 @@ model ReservationSeries {
   sourceReservationId String @unique(map: "reservation_series_source_key") @map("source_reservation_id") @db.Uuid
   startedByAccountId String @map("started_by_account_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  configuration Json
   stoppedAt DateTime? @map("stopped_at") @db.Timestamptz(6)
   stoppedByAccountId String? @map("stopped_by_account_id") @db.Uuid
   source Reservation @relation("SeriesSource", fields: [sourceReservationId], references: [id], onDelete: Restrict)
@@ -340,6 +343,20 @@ model ReservationSeries {
   stopper IdentityAccount? @relation("SeriesStopper", fields: [stoppedByAccountId], references: [id], onDelete: Restrict)
   occurrences RecurrenceOccurrence[]
   @@map("reservation_series")
+}
+
+model ReservationHistory {
+  id String @id @default(uuid()) @db.Uuid
+  reservationId String @map("reservation_id") @db.Uuid
+  actorAccountId String @map("actor_account_id") @db.Uuid
+  action String
+  previous Json
+  configuration Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+  actorAccount IdentityAccount @relation(fields: [actorAccountId], references: [id], onDelete: Restrict)
+  @@index([reservationId,createdAt], map: "reservation_history_reservation_created_idx")
+  @@map("reservation_history")
 }
 
 model RecurrenceOccurrence {

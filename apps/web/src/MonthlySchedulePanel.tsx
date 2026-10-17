@@ -21,6 +21,8 @@ type Schedule = {
     confirmedCount?: number;
     openPositions?: number;
     canJoin?: boolean;
+    canManageReservation?: boolean;
+    thirdPositionVacant?: boolean;
     seriesId?: string | null;
     seriesStoppedAt?: string | null;
   }[];
@@ -164,6 +166,39 @@ export function MonthlySchedulePanel({
       setBusy(false);
     }
   }
+  async function thirdPosition(id: string, open: boolean) {
+    setBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      const response = await fetch(
+        `/api/congregations/${encodeURIComponent(context.congregationId)}/reservations/${id}/third-position`,
+        {
+          method: 'PUT',
+          headers: {
+            'x-csrf-token': context.csrfToken,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({ open }),
+        },
+      );
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(
+          result.message ?? 'Não foi possível alterar a terceira vaga.',
+        );
+      setMessage(
+        open
+          ? 'Terceira vaga aberta nesta designação.'
+          : 'Terceira vaga bloqueada nesta designação.',
+      );
+      setRevision((value) => value + 1);
+    } catch (failure) {
+      setError((failure as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <section aria-label="Programação mensal">
       {error && <p role="alert">{error}</p>}
@@ -282,6 +317,20 @@ export function MonthlySchedulePanel({
                         onClick={() => void join(item.id)}
                       >
                         Participar
+                      </button>
+                    )}
+                    {item.canManageReservation && item.thirdPositionVacant && (
+                      <button
+                        type="button"
+                        className="button outline"
+                        disabled={busy}
+                        onClick={() =>
+                          void thirdPosition(item.id, !item.thirdPositionOpen)
+                        }
+                      >
+                        {item.thirdPositionOpen
+                          ? 'Bloquear terceira vaga'
+                          : 'Abrir terceira vaga'}
                       </button>
                     )}
                     {item.seriesId ? (

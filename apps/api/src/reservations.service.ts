@@ -173,6 +173,92 @@ export class ReservationsService {
     private readonly pool: Pool,
     private readonly now = () => new Date(),
   ) {}
+  async thirdPosition(
+    accountId: string,
+    congregationId: string,
+    reservationId: string,
+    input: unknown,
+  ) {
+    if (
+      !uuidPattern.test(reservationId) ||
+      !input ||
+      typeof input !== 'object' ||
+      Array.isArray(input) ||
+      Object.keys(input).length !== 1 ||
+      typeof (input as { open?: unknown }).open !== 'boolean'
+    )
+      throw new BadRequestException(
+        'Informe somente a escolha de abertura da terceira vaga.',
+      );
+    const open = (input as { open: boolean }).open;
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const member = await reservationAccess(client, accountId, congregationId);
+      const congregation = (
+        await client.query(
+          'SELECT timezone FROM congregation WHERE id=$1 FOR UPDATE',
+          [congregationId],
+        )
+      ).rows[0];
+      const reservation = (
+        await client.query(
+          'SELECT * FROM reservation WHERE id=$1 AND congregation_id=$2',
+          [reservationId, congregationId],
+        )
+      ).rows[0];
+      if (!reservation) throw new NotFoundException('Reserva não encontrada.');
+      if (
+        reservation.responsible_account_id !== accountId &&
+        member.role !== 'LOCAL_ADMIN'
+      )
+        throw new ForbiddenException(
+          'Somente o responsável ou administrador pode alterar a terceira vaga.',
+        );
+      const now = this.now();
+      if (reservation.cancelled_at || new Date(reservation.ends_at) <= now)
+        throw unavailable('reserva cancelada ou encerrada.');
+      await assertPublishedMonths(
+        client,
+        congregationId,
+        congregation.timezone,
+        new Date(reservation.starts_at),
+        new Date(reservation.ends_at),
+        now,
+        member.role === 'LOCAL_ADMIN',
+      );
+      if (reservation.third_position_open !== open) {
+        const occupied = await client.query(
+          'SELECT 1 FROM reservation_participation WHERE reservation_id=$1 AND position=3',
+          [reservationId],
+        );
+        if (occupied.rowCount)
+          throw unavailable('a terceira vaga já contém um participante.');
+        await client.query(
+          'UPDATE reservation SET third_position_open=$2 WHERE id=$1',
+          [reservationId, open],
+        );
+        await client.query(
+          'INSERT INTO reservation_history (id,reservation_id,actor_account_id,action,previous,configuration) VALUES ($1,$2,$3,$4,$5,$6)',
+          [
+            randomUUID(),
+            reservationId,
+            accountId,
+            'third-position',
+            JSON.stringify({ open: reservation.third_position_open }),
+            JSON.stringify({ open }),
+          ],
+        );
+      }
+      await client.query('COMMIT');
+      return { reservationId, thirdPositionOpen: open };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
   async join(
     accountId: string,
     congregationId: string,
