@@ -6,6 +6,7 @@ import {
   IdentityController,
 } from './identity/identity.controllers.js';
 import { IdentityRuntime } from './identity/identity.runtime.js';
+import { ScheduleEmailController } from './schedule-email.controller.js';
 
 @Module({
   controllers: [
@@ -13,6 +14,7 @@ import { IdentityRuntime } from './identity/identity.runtime.js';
     AuthController,
     IdentityController,
     CaptureController,
+    ScheduleEmailController,
   ],
   providers: [DatabaseHealth, IdentityRuntime],
 })

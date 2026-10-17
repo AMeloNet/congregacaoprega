@@ -6,6 +6,10 @@ import {
 } from '@nestjs/common';
 import { RecurrenceService } from '../recurrence.service.js';
 import { ScheduleNoticesService } from '../schedule-notices.service.js';
+import {
+  scheduleEmailConfiguration,
+  ResendScheduleTransport,
+} from '../schedule-email.transport.js';
 import { Pool } from 'pg';
 import { Auth0OidcClient } from '../auth/auth0-oidc.client.js';
 import { AuthService, type AuthConfig } from '../auth/auth.service.js';
@@ -33,6 +37,7 @@ function authConfig(): AuthConfig & { clientSecret: string } {
 }
 
 export function validateIdentityEnvironment(): void {
+  scheduleEmailConfiguration();
   const required = [
     'DATABASE_URL',
     'AUTH0_ISSUER',
@@ -53,9 +58,7 @@ export function validateIdentityEnvironment(): void {
     );
   }
   if (process.env.EMAIL_TRANSPORT !== 'capture') {
-    throw new Error(
-      'EMAIL_TRANSPORT must be capture until an external transport is implemented.',
-    );
+    throw new Error('EMAIL_TRANSPORT must be capture for identity messages.');
   }
   if (process.env.SESSION_SECRET!.length < 32) {
     throw new Error('SESSION_SECRET must contain at least 32 characters.');
@@ -135,6 +138,14 @@ export class IdentityRuntime implements OnModuleDestroy, OnModuleInit {
   readonly pool = new Pool({ connectionString: process.env.DATABASE_URL });
   readonly repository = new PgIdentityRepository(this.pool);
   readonly email = new CaptureEmailService();
+  readonly scheduleEmailConfig = scheduleEmailConfiguration();
+  readonly scheduleEmail =
+    this.scheduleEmailConfig.transport === 'resend'
+      ? new ResendScheduleTransport(
+          this.scheduleEmailConfig.apiKey,
+          this.scheduleEmailConfig.from,
+        )
+      : this.email;
   readonly captureAccess = new CaptureAccessService(
     process.env.CAPTURE_OPERATOR_SECRET ??
       'test-capture-operator-secret'.padEnd(32, '-'),
@@ -175,7 +186,10 @@ export class IdentityRuntime implements OnModuleDestroy, OnModuleInit {
     tick();
     const noticesTick = () => {
       if (this.noticesTask) return;
-      this.noticesTask = new ScheduleNoticesService(this.pool, this.email)
+      this.noticesTask = new ScheduleNoticesService(
+        this.pool,
+        this.scheduleEmail,
+      )
         .process()
         .catch(() =>
           Logger.warn(

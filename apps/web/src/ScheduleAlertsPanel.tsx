@@ -16,6 +16,8 @@ type Settings = {
     mailState: string;
     attempts: number;
     overdue: boolean;
+    lastError?: string | null;
+    nextAttemptAt?: string | null;
   }[];
 };
 export function ScheduleAlertsPanel({
@@ -147,10 +149,15 @@ export function ScheduleAlertsPanel({
               {issue.mailState === 'captured'
                 ? 'Capturado, sem entrega externa'
                 : issue.mailState === 'failed'
-                  ? 'Falha de transporte'
+                  ? 'Falha de e-mail'
                   : 'Entrega não confirmada'}{' '}
               · {issue.attempts} tentativa(s)
               {issue.overdue ? ' · Prazo de uma hora ultrapassado' : ''}
+              {issue.mailState === 'failed' &&
+                (issue.nextAttemptAt
+                  ? ' · Nova tentativa programada'
+                  : ' · Reenvio automático interrompido')}
+              {issue.lastError && ` · ${issue.lastError}`}
             </p>
           ))}
         </>

@@ -83,7 +83,9 @@ Há controle da terceira vaga, cancelamento por data ou próximas da série,
 desistência com tempo decorrido, ajustes administrativos e nomes locais.
 O relatório finaliza e grava uma versão imutável antes de imprimir; reimpressão
 não emite novamente. Avisos persistem na transação, com retentativas em captura
-de teste. Captura não comprova entrega externa. Sem publicação automática em staging.
+de teste. Captura não comprova entrega externa. O transporte Resend está preparado,
+mas desativado por padrão; configuração e limites em
+[avisos Resend](docs/operacao/avisos-resend.md). Sem publicação automática em staging.
 
 ```sh
 pnpm docs:check

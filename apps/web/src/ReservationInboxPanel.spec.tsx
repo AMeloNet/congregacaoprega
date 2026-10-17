@@ -31,6 +31,20 @@ describe('reservation inbox', () => {
               readAt: '2026-10-16T12:00:00Z',
               mailState: 'captured',
             },
+            {
+              id: 'accepted-mail',
+              message: 'Aceitação simulada.',
+              readAt: '2026-10-16T12:00:00Z',
+              mailState: 'sent',
+              deliveredAt: null,
+            },
+            {
+              id: 'delivered-mail',
+              message: 'Entrega simulada.',
+              readAt: '2026-10-16T12:00:00Z',
+              mailState: 'sent',
+              deliveredAt: '2026-10-16T12:01:00Z',
+            },
           ],
         }),
       );
@@ -53,6 +67,14 @@ describe('reservation inbox', () => {
       await screen.findByText(
         'Convite aceito. Convites conflitantes foram recusados automaticamente.',
       ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'E-mail aceito pelo provedor; entrega ainda não confirmada.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Entrega ao servidor de e-mail confirmada.'),
     ).toBeInTheDocument();
     expect(await screen.findByText(/2 hora\(s\) · Aceito/)).toBeInTheDocument();
     expect(

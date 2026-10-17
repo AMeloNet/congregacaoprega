@@ -8,7 +8,9 @@ import { configureWebAssets } from './web-assets.js';
 
 async function bootstrap(): Promise<void> {
   validateIdentityEnvironment();
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+  });
   app.setGlobalPrefix('api');
   configureWebAssets(app, resolve(import.meta.dirname, 'public'));
   const port = Number.parseInt(process.env.PORT ?? '3000', 10);

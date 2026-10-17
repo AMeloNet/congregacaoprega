@@ -466,9 +466,12 @@ model ScheduleNotice {
   readAt DateTime? @map("read_at") @db.Timestamptz(6)
   mailState String @default("pending") @map("mail_state")
   mailAttempts Int @default(0) @map("mail_attempts")
-  nextAttemptAt DateTime @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  nextAttemptAt DateTime? @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  mailTransport String? @map("mail_transport")
+  mailPayload Json? @map("mail_payload")
+  firstAttemptAt DateTime? @map("first_attempt_at") @db.Timestamptz(6)
   lastError String? @map("last_error")
-  providerId String? @map("provider_id")
+  providerId String? @unique(map:"schedule_notice_provider_id_key") @map("provider_id")
   deliveredAt DateTime? @map("delivered_at") @db.Timestamptz(6)
   congregation Congregation @relation(fields:[congregationId],references:[id],onDelete:Restrict)
   recipient IdentityAccount @relation(fields:[recipientAccountId],references:[id],onDelete:Restrict)
@@ -476,6 +479,16 @@ model ScheduleNotice {
   @@index([congregationId,recipientAccountId,createdAt],map:"schedule_notice_inbox_idx")
   @@index([mailState,nextAttemptAt],map:"schedule_notice_delivery_idx")
   @@map("schedule_notice")
+}
+
+model ScheduleMailEvent {
+  id String @id
+  providerId String @map("provider_id")
+  eventType String @map("event_type")
+  occurredAt DateTime @map("occurred_at") @db.Timestamptz(6)
+  receivedAt DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  @@index([providerId],map:"schedule_mail_event_provider_idx")
+  @@map("schedule_mail_event")
 }
 
 model ScheduleReport {

@@ -3,6 +3,9 @@ import { randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
 import { IdentityController } from '../../../../apps/api/src/identity/identity.controllers.js';
 import { IdentityRuntime } from '../../../../apps/api/src/identity/identity.runtime.js';
+import { CaptureEmailService } from '../../../../apps/api/src/identity/email.service.js';
+import { ScheduleEmailController } from '../../../../apps/api/src/schedule-email.controller.js';
+import type { scheduleEmailConfiguration } from '../../../../apps/api/src/schedule-email.transport.js';
 import { PgIdentityRepository } from '../../../../apps/api/src/identity/pg-identity.repository.js';
 import { MemorySessionStore } from '../../../../apps/api/src/auth/session.store.js';
 import {
@@ -13,7 +16,12 @@ const { Test } = createRequire(
   new URL('../../../../apps/api/package.json', import.meta.url),
 )('@nestjs/testing');
 
-export async function reservationApp(pool: Pool) {
+export async function reservationApp(
+  pool: Pool,
+  scheduleEmailConfig: ReturnType<typeof scheduleEmailConfiguration> = {
+    transport: 'capture',
+  },
+) {
   const sessions = new MemorySessionStore(),
     repository = new PgIdentityRepository(pool);
   const congregation = randomUUID(),
@@ -59,12 +67,14 @@ export async function reservationApp(pool: Pool) {
     [randomUUID(), congregation],
   );
   const moduleRef = await Test.createTestingModule({
-    controllers: [IdentityController],
+    controllers: [IdentityController, ScheduleEmailController],
     providers: [
       {
         provide: IdentityRuntime,
         useValue: {
           pool,
+          email: new CaptureEmailService(),
+          scheduleEmailConfig,
           repository,
           auth: {
             currentSession: async (token: string) => sessions.get(token),
@@ -73,7 +83,7 @@ export async function reservationApp(pool: Pool) {
       },
     ],
   }).compile();
-  const app = moduleRef.createNestApplication();
+  const app = moduleRef.createNestApplication({ rawBody: true });
   app.setGlobalPrefix('api');
   await app.listen(0, '127.0.0.1');
   const base = `${await app.getUrl()}/api/congregations/${congregation}`;
