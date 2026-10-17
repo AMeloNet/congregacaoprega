@@ -8,6 +8,7 @@ import {
 import type { Pool, PoolClient } from 'pg';
 import { reservationTimes } from './reservation-time.js';
 import {
+  recordReservationEvent,
   expireInvitations,
   groupPositions,
   notice,
@@ -22,6 +23,7 @@ import {
 export const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export type ReservationInput = {
+  responsibleAccountId?: string;
   requestKey: string;
   pointId: string;
   date: string;
@@ -40,6 +42,7 @@ export function validateReservation(input: unknown): ReservationInput {
       (key) =>
         ![
           'requestKey',
+          'responsibleAccountId',
           'pointId',
           'date',
           'startHour',
@@ -48,6 +51,9 @@ export function validateReservation(input: unknown): ReservationInput {
           'thirdPositionOpen',
         ].includes(key),
     ) ||
+    (body.responsibleAccountId !== undefined &&
+      (typeof body.responsibleAccountId !== 'string' ||
+        !uuidPattern.test(body.responsibleAccountId))) ||
     !uuidPattern.test(body.requestKey ?? '') ||
     !uuidPattern.test(body.pointId ?? '') ||
     typeof body.date !== 'string' ||
@@ -232,15 +238,25 @@ export async function createReservation(
   timezone: string,
   input: ReservationInput,
   now: Date,
+  creator = owner,
 ) {
   const previous = (
     await client.query(
       'SELECT * FROM reservation WHERE congregation_id=$1 AND created_by_account_id=$2 AND request_key=$3',
-      [congregationId, owner, input.requestKey],
+      [congregationId, creator, input.requestKey],
     )
   ).rows[0];
   if (previous) {
+    const initial =
+      (
+        await client.query(
+          "SELECT configuration FROM reservation_history WHERE reservation_id=$1 AND action='created-for' ORDER BY created_at,id LIMIT 1",
+          [previous.id],
+        )
+      ).rows[0]?.configuration?.responsibleAccountId ??
+      previous.created_by_account_id;
     if (
+      initial !== owner ||
       previous.point_id !== input.pointId ||
       previous.local_date !== input.date ||
       previous.start_hour !== input.startHour ||
@@ -286,7 +302,7 @@ export async function createReservation(
   );
   const created = (
     await client.query(
-      'INSERT INTO reservation (id,congregation_id,point_id,responsible_account_id,request_key,local_date,start_hour,duration,equipment_type,third_position_open,starts_at,ends_at,created_by_account_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$4) RETURNING *',
+      'INSERT INTO reservation (id,congregation_id,point_id,responsible_account_id,request_key,local_date,start_hour,duration,equipment_type,third_position_open,starts_at,ends_at,created_by_account_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *',
       [
         randomUUID(),
         congregationId,
@@ -300,6 +316,7 @@ export async function createReservation(
         input.thirdPositionOpen,
         times.start,
         times.end,
+        creator,
       ],
     )
   ).rows[0];
@@ -307,6 +324,15 @@ export async function createReservation(
     'INSERT INTO reservation_attendance (id,reservation_id,account_id,starts_at,ends_at) VALUES ($1,$2,$3,$4,$5)',
     [randomUUID(), created.id, owner, times.start, times.end],
   );
+  if (owner !== creator)
+    await recordReservationEvent(
+      client,
+      created.id,
+      creator,
+      'created-for',
+      {},
+      { responsibleAccountId: owner },
+    );
   return created;
 }
 
@@ -462,7 +488,13 @@ export class ReservationsService {
     try {
       await client.query('BEGIN');
       const member = await reservationAccess(client, accountId, congregationId);
-      await lockReservationOwner(client, accountId);
+      const owner = body.responsibleAccountId ?? accountId;
+      if (owner !== accountId && member.role !== 'LOCAL_ADMIN')
+        throw new ForbiddenException(
+          'Somente o administrador pode reservar para outra pessoa.',
+        );
+      await reservationAccess(client, owner, congregationId);
+      await lockReservationOwner(client, owner);
       const congregation = (
         await client.query(
           'SELECT timezone FROM congregation WHERE id=$1 FOR UPDATE',
@@ -471,13 +503,24 @@ export class ReservationsService {
       ).rows[0];
       const result = await createReservation(
         client,
-        accountId,
+        owner,
         congregationId,
         member.role,
         congregation.timezone,
         body,
         this.now(),
+        accountId,
       );
+      if (owner !== accountId)
+        await notice(
+          client,
+          congregationId,
+          [owner],
+          `directed-reservation:${result.id}`,
+          'O administrador criou uma reserva com você como responsável.',
+          this.now(),
+          result.id,
+        );
       await client.query('COMMIT');
       return {
         id: result.id,

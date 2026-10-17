@@ -47,14 +47,16 @@ export async function assertParticipantAgenda(
   start: Date,
   end: Date,
   timezone: string,
+  excludeReservationId: string | null = null,
 ) {
   const own = (
     await client.query(
-      `SELECT a.starts_at,least(a.ends_at,coalesce(r.cancelled_at,a.ends_at)) AS ends_at FROM reservation_attendance a JOIN reservation r ON r.id=a.reservation_id WHERE a.account_id=$1 AND a.starts_at<$3 AND a.ends_at>$2 AND least(a.ends_at,coalesce(r.cancelled_at,a.ends_at))>a.starts_at`,
+      `SELECT a.starts_at,least(a.ends_at,coalesce(r.cancelled_at,a.ends_at)) AS ends_at FROM reservation_attendance a JOIN reservation r ON r.id=a.reservation_id WHERE a.account_id=$1 AND ($4::uuid IS NULL OR a.reservation_id<>$4) AND a.starts_at<$3 AND a.ends_at>$2 AND least(a.ends_at,coalesce(r.cancelled_at,a.ends_at))>a.starts_at`,
       [
         accountId,
         new Date(start.getTime() - 48 * 3600000),
         new Date(end.getTime() + 48 * 3600000),
+        excludeReservationId,
       ],
     )
   ).rows;

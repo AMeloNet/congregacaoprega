@@ -1,3 +1,4 @@
+import { validatePointPhoto } from './point-photo.js';
 import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
@@ -13,7 +14,7 @@ export class PointsService {
   async execute(
     accountId: string,
     congregationId: string,
-    action: 'list' | 'create' | 'update',
+    action: 'list' | 'create' | 'update' | 'photo',
     input?: unknown,
     pointId?: string,
   ) {
@@ -28,19 +29,28 @@ export class PointsService {
     try {
       await client.query('BEGIN');
       const access = await client.query(
-        "SELECT m.id FROM membership m JOIN identity_account a ON a.id=m.account_id WHERE m.account_id=$1 AND m.congregation_id=$2 AND m.role='LOCAL_ADMIN' AND m.status='ACTIVE' AND a.email_verified=true FOR SHARE OF m, a",
-        [accountId, congregationId],
+        "SELECT m.id FROM membership m JOIN identity_account a ON a.id=m.account_id WHERE m.account_id=$1 AND m.congregation_id=$2 AND ($3::boolean OR m.role='LOCAL_ADMIN') AND m.status='ACTIVE' AND a.email_verified=true FOR SHARE OF m, a",
+        [accountId, congregationId, action === 'photo'],
       );
       if (!access.rowCount) throw new ForbiddenException('Acesso negado.');
-      if (action !== 'list')
+      if (action !== 'list' && action !== 'photo')
         await client.query(
           'SELECT id FROM congregation WHERE id=$1 FOR UPDATE',
           [congregationId],
         );
       const columns =
-        'id, name, address, description, capacity, allowed_types::text[] AS "allowedTypes"';
+        'id, name, address, description, capacity, photo, allowed_types::text[] AS "allowedTypes"';
       let result;
-      if (action === 'list') {
+      if (action === 'photo') {
+        const row = (
+          await client.query(
+            'SELECT photo FROM preaching_point WHERE id=$1 AND congregation_id=$2',
+            [pointId, congregationId],
+          )
+        ).rows[0];
+        if (!row) throw new NotFoundException('Ponto não encontrado.');
+        result = row;
+      } else if (action === 'list') {
         result = (
           await client.query(
             `SELECT ${columns} FROM preaching_point WHERE congregation_id=$1 ORDER BY lower(name), id`,
@@ -60,10 +70,15 @@ export class PointsService {
                 'description',
                 'capacity',
                 'allowedTypes',
+                'photo',
               ].includes(key),
           )
         )
           throw new BadRequestException('Campo inválido.');
+        const photo =
+          action === 'update' && body.photo === undefined
+            ? null
+            : validatePointPhoto(body.photo);
         const name = typeof body.name === 'string' ? body.name.trim() : '';
         if (!name || [...name].length > 80)
           throw new BadRequestException('Informe nome de 1 a 80 caracteres.');
@@ -111,6 +126,7 @@ export class PointsService {
           description,
           capacity,
           types,
+          photo,
         ];
         if (action === 'update') {
           const conflict = await client.query(
@@ -124,8 +140,8 @@ export class PointsService {
         }
         const query =
           action === 'create'
-            ? `INSERT INTO preaching_point (id, congregation_id, name, address, description, capacity, allowed_types) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING ${columns}`
-            : `UPDATE preaching_point SET name=$3,address=$4,description=$5,capacity=$6,allowed_types=$7 WHERE id=$1 AND congregation_id=$2 RETURNING ${columns}`;
+            ? `INSERT INTO preaching_point (id, congregation_id, name, address, description, capacity, allowed_types, photo) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING ${columns}`
+            : `UPDATE preaching_point SET name=$3,address=$4,description=$5,capacity=$6,allowed_types=$7,photo=coalesce($8,photo) WHERE id=$1 AND congregation_id=$2 RETURNING ${columns}`;
         result = (await client.query(query, values)).rows[0];
         if (!result) throw new NotFoundException('Ponto não encontrado.');
       }

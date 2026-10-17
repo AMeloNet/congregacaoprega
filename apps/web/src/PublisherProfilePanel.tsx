@@ -7,16 +7,20 @@ export type PublisherOption = {
   role: string;
   status: string;
   verified: boolean;
+  phone?: string;
 };
 function NameEditor({
   context,
   initialName,
   target,
+  initialPhone = '',
 }: {
   context: EquipmentContext;
   initialName: string;
+  initialPhone?: string;
   target?: PublisherOption;
 }) {
+  const [phone, setPhone] = useState(initialPhone);
   const [name, setName] = useState(initialName),
     [message, setMessage] = useState(''),
     [error, setError] = useState(''),
@@ -35,7 +39,7 @@ function NameEditor({
             'x-csrf-token': context.csrfToken,
             'content-type': 'application/json',
           },
-          body: JSON.stringify({ displayName: name }),
+          body: JSON.stringify({ displayName: name, phone }),
         },
       );
       const result = await response.json();
@@ -68,6 +72,16 @@ function NameEditor({
         onChange={(event) => setName(event.target.value)}
         disabled={busy}
       />
+      <label htmlFor={`publisher-phone-${target?.id ?? 'self'}`}>
+        Telefone do publicador
+      </label>
+      <input
+        id={`publisher-phone-${target?.id ?? 'self'}`}
+        type="tel"
+        maxLength={30}
+        value={phone}
+        onChange={(event) => setPhone(event.target.value)}
+      />
       <button className="button outline" disabled={busy}>
         Salvar nome
       </button>
@@ -83,7 +97,10 @@ export function PublisherProfilePanel({
   context: EquipmentContext;
   manage?: boolean;
 }) {
-  const [self, setSelf] = useState<{ displayName: string } | null>(null),
+  const [self, setSelf] = useState<{
+      displayName: string;
+      phone?: string;
+    } | null>(null),
     [people, setPeople] = useState<PublisherOption[]>([]),
     [error, setError] = useState('');
   const base = `/api/congregations/${encodeURIComponent(context.congregationId)}`;
@@ -121,16 +138,31 @@ export function PublisherProfilePanel({
       </p>
       {error && <p role="alert">{error}</p>}
       {self && (
-        <NameEditor context={context} initialName={self.displayName} />
-      )}{' '}
-      {people.map((p) => (
         <NameEditor
-          key={p.id}
           context={context}
-          target={p}
-          initialName={p.displayName ?? ''}
+          initialName={self.displayName}
+          initialPhone={self.phone}
         />
-      ))}
+      )}{' '}
+      <div className="resource-grid">
+        {people.map((p) => (
+          <article className="panel" key={p.id}>
+            <h3>{p.displayName || 'Nome não informado'}</h3>
+            <p>{p.email}</p>
+            <p>{p.status === 'ACTIVE' ? 'Ativo' : 'Revogado'}</p>
+            <details>
+              <summary>Ver detalhes de {p.displayName || p.email}</summary>
+              <NameEditor
+                key={p.id}
+                context={context}
+                target={p}
+                initialName={p.displayName ?? ''}
+                initialPhone={p.phone ?? ''}
+              />
+            </details>
+          </article>
+        ))}
+      </div>
     </section>
   );
 }

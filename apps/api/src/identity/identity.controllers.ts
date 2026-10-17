@@ -1,3 +1,5 @@
+import { ReservationEditService } from '../reservation-edit.service.js';
+import { PublisherRegistrationService } from '../publisher-registration.service.js';
 import { EquipmentService } from '../equipment.service.js';
 import { MonthlyScheduleService } from '../monthly-schedule.service.js';
 import { ReservationsService } from '../reservations.service.js';
@@ -142,7 +144,9 @@ export class AuthController {
         maxAge: 12 * 60 * 60 * 1000,
         path: '/',
       });
-      response.redirect(this.runtime.config.logoutUrl);
+      const destination = new URL(this.runtime.config.logoutUrl);
+      destination.hash = 'inicio';
+      response.redirect(destination.toString());
     } catch (error) {
       if (error instanceof AuthDiagnosticError) stage = error.stage;
       const reason =
@@ -184,6 +188,71 @@ export class AuthController {
 @Controller()
 export class IdentityController {
   constructor(private readonly runtime: IdentityRuntime) {}
+
+  @Put('congregations/:id/reservations/:reservationId/configuration')
+  async editReservation(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('reservationId') reservationId: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new ReservationEditService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      reservationId,
+      body,
+    );
+  }
+  @Get('registration')
+  async registration(@Req() request: HttpRequest) {
+    const { account } = await this.requireIdentity(request, undefined, false);
+    return new PublisherRegistrationService(this.runtime.pool).profile(
+      account.accountId,
+    );
+  }
+  @Put('registration')
+  async register(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new PublisherRegistrationService(this.runtime.pool).profile(
+      account.accountId,
+      body,
+    );
+  }
+  @Post('congregations/:id/approve-code')
+  async approveCode(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new PublisherRegistrationService(this.runtime.pool).approve(
+      account.accountId,
+      id,
+      body,
+    );
+  }
+  @Get('congregations/:id/points/:pointId/photo')
+  async pointPhoto(
+    @Req() request: HttpRequest,
+    @Param('id') id: string,
+    @Param('pointId') pointId: string,
+  ) {
+    const { account } = await this.requireIdentity(request, undefined, false);
+    return new PointsService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      'photo',
+      undefined,
+      pointId,
+    );
+  }
 
   @Get('session')
   async session(@Req() request: HttpRequest) {

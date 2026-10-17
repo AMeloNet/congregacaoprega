@@ -116,6 +116,7 @@ test('navigates the monthly schedule with a stable route and no horizontal overf
   await expect(
     page.getByRole('heading', { name: 'Ponto do teste' }),
   ).toBeVisible();
+  await page.locator('summary').filter({ hasText: 'Nova reserva' }).click();
   await expect(
     page.getByRole('combobox', { name: 'Dia da semana' }),
   ).toBeVisible();
@@ -543,6 +544,7 @@ test('keeps publishers blocked after an authenticated administrative reopening',
   await page
     .getByRole('button', { name: 'Reabrir para ajustes administrativos' })
     .click();
+  await page.locator('summary').filter({ hasText: 'Nova reserva' }).click();
   await expect(
     page.getByRole('button', { name: 'Confirmar reserva' }),
   ).toBeVisible();

@@ -122,7 +122,8 @@ describe('IDN-001C access interface', () => {
           { status: 200 },
         ),
       )
-      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValue(new Response('null', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     render(<AccessApp invitationToken="first-invite" />);
 
@@ -227,6 +228,9 @@ describe('IDN-001C access interface', () => {
     await user.click(screen.getByRole('button', { name: 'Menu' }));
     await user.click(screen.getByText('Cadastros', { selector: 'summary' }));
     await user.click(screen.getByRole('link', { name: 'Publicadores' }));
+    await user.click(
+      screen.getByText('Convidar publicador', { selector: 'summary' }),
+    );
     await user.type(
       screen.getByRole('textbox', { name: 'E-mail do novo publicador' }),
       'novo@example.test',

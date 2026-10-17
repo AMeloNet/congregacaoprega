@@ -39,13 +39,17 @@ describe('equipment interface', () => {
     expect(
       await screen.findByText('Nenhum equipamento cadastrado.'),
     ).toBeInTheDocument();
+    expect(screen.queryByLabelText('Nome da unidade')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Novo equipamento' }));
     await user.type(screen.getByLabelText('Nome da unidade'), 'Test cart');
     await user.click(
       screen.getByRole('button', { name: 'Cadastrar equipamento' }),
     );
     await user.click(
-      await screen.findByRole('button', { name: 'Inativar Test cart' }),
+      await screen.findByRole('button', { name: 'Ver detalhes de Test cart' }),
     );
+    await user.click(screen.getByText('Inativar Test cart'));
+    await user.click(screen.getByRole('button', { name: 'Alterar estado' }));
     await user.type(
       screen.getByLabelText('Observação da mudança (opcional)'),
       'Maintenance',

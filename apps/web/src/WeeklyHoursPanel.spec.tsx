@@ -47,6 +47,12 @@ describe('point weekly hours interface', () => {
     expect(
       await screen.findByRole('heading', { name: 'Feira de Sábado' }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Salvar horários semanais' }),
+    ).not.toBeInTheDocument();
+    await user.click(
+      screen.getByRole('button', { name: 'Ver horários de Feira de Sábado' }),
+    );
     await screen.findByRole('button', { name: 'Salvar horários semanais' });
     for (const day of [
       'Domingo',

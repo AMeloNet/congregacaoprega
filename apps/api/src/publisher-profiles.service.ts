@@ -17,19 +17,24 @@ export class PublisherProfilesService {
       throw new BadRequestException('Publicador inválido.');
     let name: string | undefined;
     if (input !== undefined) {
-      const body = input as { displayName: string };
+      const body = input as { displayName: string; phone?: unknown };
       if (
         !body ||
         typeof body !== 'object' ||
         Array.isArray(body) ||
-        Object.keys(body).length !== 1 ||
+        Object.keys(body).some((k) => !['displayName', 'phone'].includes(k)) ||
+        (body.phone !== undefined &&
+          (typeof body.phone !== 'string' ||
+            (body.phone !== '' &&
+              (!/^[+()\d .-]{8,30}$/.test(body.phone.trim()) ||
+                body.phone.replace(/\D/g, '').length < 8)))) ||
         typeof body.displayName !== 'string' ||
         body.displayName.trim().length < 1 ||
         body.displayName.trim().length > 120 ||
         /[\p{Cc}\p{Cf}]/u.test(body.displayName)
       )
         throw new BadRequestException(
-          'Informe somente o nome, com 1 a 120 caracteres.',
+          'Informe nome de 1 a 120 caracteres e telefone válido.',
         );
       name = body.displayName.trim();
     }
@@ -74,8 +79,45 @@ export class PublisherProfilesService {
             ]),
           ],
         );
+      if (
+        input !== undefined &&
+        (input as { phone?: unknown }).phone !== undefined
+      ) {
+        const phone = (input as { phone: string }).phone.trim();
+        const old =
+          (
+            await client.query(
+              'SELECT phone FROM publisher_profile WHERE account_id=$1 AND congregation_id=$2',
+              [target, congregationId],
+            )
+          ).rows[0]?.phone ?? '';
+        if (phone !== old)
+          await client.query(
+            'UPDATE publisher_profile SET phone=$3,changes=changes||$4::jsonb WHERE account_id=$1 AND congregation_id=$2',
+            [
+              target,
+              congregationId,
+              phone,
+              JSON.stringify([
+                {
+                  actorAccountId: accountId,
+                  at: new Date().toISOString(),
+                  previousPhone: old,
+                  phone,
+                },
+              ]),
+            ],
+          );
+      }
+      const phone =
+        (
+          await client.query(
+            'SELECT phone FROM publisher_profile WHERE account_id=$1 AND congregation_id=$2',
+            [target, congregationId],
+          )
+        ).rows[0]?.phone ?? '';
       await client.query('COMMIT');
-      return { accountId: target, displayName: name ?? previous };
+      return { accountId: target, displayName: name ?? previous, phone };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -92,7 +134,7 @@ export class PublisherProfilesService {
         throw new ForbiddenException('Acesso restrito ao administrador local.');
       const result = (
         await client.query(
-          'SELECT a.id,a.email,p.display_name AS "displayName",m.role,m.status,a.email_verified AS verified FROM membership m JOIN identity_account a ON a.id=m.account_id LEFT JOIN publisher_profile p ON p.account_id=m.account_id AND p.congregation_id=m.congregation_id WHERE m.congregation_id=$1 ORDER BY lower(coalesce(p.display_name,a.email)),a.id',
+          'SELECT a.id,a.email,p.phone,p.display_name AS "displayName",m.role,m.status,a.email_verified AS verified FROM membership m JOIN identity_account a ON a.id=m.account_id LEFT JOIN publisher_profile p ON p.account_id=m.account_id AND p.congregation_id=m.congregation_id WHERE m.congregation_id=$1 ORDER BY lower(coalesce(p.display_name,a.email)),a.id',
           [congregationId],
         )
       ).rows;

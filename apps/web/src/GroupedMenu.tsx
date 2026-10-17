@@ -17,7 +17,7 @@ export type MenuScreen =
   | 'conta'
   | 'administradores';
 type MenuEntry = { screen: MenuScreen; label: string; icon: string };
-function MenuIcon({ icon }: { icon: string }) {
+export function MenuIcon({ icon }: { icon: string }) {
   const paths: Record<string, string> = {
     '⌂': 'M3 10 12 3l9 7M5 9v12h5v-7h4v7h5V9',
     '▦': 'M4 5h16v16H4zM4 10h16M8 3v4M16 3v4M8 14h2M14 14h2M8 18h2',

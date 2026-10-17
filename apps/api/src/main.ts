@@ -11,6 +11,7 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
   });
+  app.useBodyParser('json', { limit: '3mb' });
   app.setGlobalPrefix('api');
   configureWebAssets(app, resolve(import.meta.dirname, 'public'));
   const port = Number.parseInt(process.env.PORT ?? '3000', 10);
