@@ -23,7 +23,20 @@ describe('reservation dates in congregation timezone', () => {
         month="2026-10"
         timezone="America/Sao_Paulo"
         clock={{ instant: '2026-10-17T00:30:00Z', observedAt: 0 }}
-        points={[]}
+        points={[
+          { id: 'point', name: 'Ponto de teste', allowedTypes: ['CART'] },
+        ]}
+        equipment={[{ type: 'CART', units: 1 }]}
+        reservations={[
+          {
+            pointId: 'point',
+            date: '2026-10-16',
+            startHour: 22,
+            duration: 1,
+            equipmentType: 'CART',
+            isResponsible: false,
+          },
+        ]}
         onSaved={() => {}}
       />,
     );
@@ -35,13 +48,14 @@ describe('reservation dates in congregation timezone', () => {
         .map((option) => option.getAttribute('value')),
     ).toEqual(['', '2026-10-16', '2026-10-23', '2026-10-30']);
     await user.selectOptions(dates, '2026-10-16');
+    await user.selectOptions(screen.getByLabelText('Ponto'), 'point');
     const hours = screen.getByLabelText('Hora inicial');
     expect(
       within(hours)
         .getAllByRole('option')
         .map((option) => option.getAttribute('value')),
-    ).toEqual(['', '22', '23']);
-    await user.selectOptions(hours, '22');
+    ).toEqual(['', '23']);
+    await user.selectOptions(hours, '23');
     await act(async () => {
       elapsed = 3 * 3600000;
       vi.advanceTimersByTime(30_000);

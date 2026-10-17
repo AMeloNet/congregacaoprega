@@ -3,7 +3,26 @@ import type { PublisherOption } from './PublisherProfilePanel.js';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { EquipmentContext } from './EquipmentPanel.js';
 
-export type BookingPoint = { id: string; name: string; allowedTypes: string[] };
+export type BookingPoint = {
+  id: string;
+  name: string;
+  capacity?: number;
+  allowedTypes: string[];
+  days?: {
+    day: number;
+    mode: string;
+    intervals: { start: string; end: string }[];
+  }[];
+};
+type ExistingReservation = {
+  pointId: string;
+  date: string;
+  startHour: number;
+  duration: number;
+  equipmentType: string;
+  isResponsible: boolean;
+  isParticipant?: boolean;
+};
 const labels: Record<string, string> = {
   CART: 'Carrinho',
   KIOSK: 'Quiosque',
@@ -22,6 +41,8 @@ export function ReservationForm({
   context,
   month,
   points,
+  reservations = [],
+  equipment = [],
   onSaved,
   timezone,
   clock,
@@ -29,6 +50,8 @@ export function ReservationForm({
   context: EquipmentContext;
   month: string;
   points: BookingPoint[];
+  reservations?: ExistingReservation[];
+  equipment?: { type: string; units: number }[];
   onSaved: () => void;
   timezone: string;
   clock: { instant: string; observedAt: number };
@@ -95,6 +118,73 @@ export function ReservationForm({
   const [message, setMessage] = useState('');
   const request = useRef({ fingerprint: '', key: '' });
   const point = points.find((item) => item.id === pointId);
+  const equipmentUnits = (type: string) =>
+    equipment.find((item) => item.type === type)?.units ?? 0;
+  const overlaps = (
+    leftDate: string,
+    leftHour: number,
+    leftDuration: number,
+    rightDate: string,
+    rightHour: number,
+    rightDuration: number,
+  ) => {
+    const left = Date.parse(
+      `${leftDate}T${String(leftHour).padStart(2, '0')}:00:00Z`,
+    );
+    const right = Date.parse(
+      `${rightDate}T${String(rightHour).padStart(2, '0')}:00:00Z`,
+    );
+    return (
+      left < right + rightDuration * 3_600_000 &&
+      right < left + leftDuration * 3_600_000
+    );
+  };
+  const inPointHours = (
+    candidate: BookingPoint,
+    date: string,
+    start: number,
+    length: number,
+  ) => {
+    const day = new Date(`${date}T12:00:00Z`).getUTCDay();
+    const rule = candidate.days?.find((item) => item.day === day);
+    if (!rule || rule.mode === 'unrestricted') return true;
+    if (rule.mode === 'closed') return false;
+    return rule.intervals.some((interval) => {
+      const [from] = interval.start.split(':').map(Number);
+      const [to] = interval.end.split(':').map(Number);
+      return start >= from! && start + length <= to!;
+    });
+  };
+  const available = (
+    candidate: BookingPoint,
+    start: number,
+    length: number,
+    type: string,
+  ) => {
+    if (
+      !selectedDate ||
+      !candidate.allowedTypes.includes(type) ||
+      !inPointHours(candidate, selectedDate, start, length)
+    )
+      return false;
+    const concurrent = reservations.filter((item) =>
+      overlaps(
+        selectedDate,
+        start,
+        length,
+        item.date,
+        item.startHour,
+        item.duration,
+      ),
+    );
+    return (
+      !concurrent.some((item) => item.isResponsible || item.isParticipant) &&
+      concurrent.filter((item) => item.pointId === candidate.id).length <
+        (candidate.capacity ?? 1) &&
+      concurrent.filter((item) => item.equipmentType === type).length <
+        equipmentUnits(type)
+    );
+  };
   const dates = Array.from(
     { length: 31 },
     (_, index) => `${month}-${String(index + 1).padStart(2, '0')}`,
@@ -107,10 +197,50 @@ export function ReservationForm({
     );
   });
   const selectedDate = dates.includes(date) ? date : '';
+  const usablePoints = points.filter(
+    (candidate) =>
+      !selectedDate ||
+      candidate.allowedTypes.some((type) =>
+        [1, 2].some((length) =>
+          Array.from({ length: 24 }, (_, start) => start).some(
+            (start) =>
+              (selectedDate > today || start > currentHour) &&
+              available(candidate, start, length, type),
+          ),
+        ),
+      ),
+  );
   const hours = Array.from({ length: 24 }, (_, index) => index).filter(
-    (value) => selectedDate && (selectedDate > today || value > currentHour),
+    (value) =>
+      selectedDate &&
+      (selectedDate > today || value > currentHour) &&
+      !!point &&
+      point.allowedTypes.some((type) =>
+        [1, 2].some((length) => available(point, value, length, type)),
+      ),
   );
   const selectedHour = hour !== '' && hours.includes(Number(hour)) ? hour : '';
+  const durations = [1, 2].filter(
+    (length) =>
+      !!point &&
+      selectedHour !== '' &&
+      point.allowedTypes.some((type) =>
+        available(point, Number(selectedHour), length, type),
+      ),
+  );
+  const selectedDuration =
+    duration !== '' && durations.includes(Number(duration)) ? duration : '';
+  const usableTypes = (point?.allowedTypes ?? []).filter(
+    (type) =>
+      selectedDuration !== '' &&
+      available(point!, Number(selectedHour), Number(selectedDuration), type),
+  );
+  const usableTypeKey = usableTypes.join(',');
+  useEffect(() => {
+    setEquipmentType((current) =>
+      usableTypes.includes(current) ? current : (usableTypes[0] ?? ''),
+    );
+  }, [usableTypeKey]);
   async function save(event: FormEvent) {
     event.preventDefault();
     setError('');
@@ -121,7 +251,7 @@ export function ReservationForm({
       pointId,
       date: selectedDate,
       startHour: Number(selectedHour),
-      duration: Number(duration),
+      duration: Number(selectedDuration),
       equipmentType,
       thirdPositionOpen: third === 'open',
     };
@@ -158,8 +288,11 @@ export function ReservationForm({
       className="panel reservation-form"
       onSubmit={(event) => void save(event)}
     >
-      <h2>Reservar ponto e equipamento</h2>
-      <p>Escolha o dia da semana e a data deste mês.</p>
+      <h2>Reservar ponto e horário</h2>
+      <p>
+        Escolha o dia da semana, a data, o ponto e o horário. Só aparecem opções
+        com capacidade disponível.
+      </p>
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
       <fieldset disabled={busy}>
@@ -195,6 +328,10 @@ export function ReservationForm({
           onChange={(event) => {
             setWeekday(event.target.value);
             setDate('');
+            setPointId('');
+            setHour('');
+            setDuration('');
+            setEquipmentType('');
           }}
         >
           <option value="">Selecione</option>
@@ -211,7 +348,10 @@ export function ReservationForm({
           value={selectedDate}
           onChange={(event) => {
             setDate(event.target.value);
+            setPointId('');
             setHour('');
+            setDuration('');
+            setEquipmentType('');
           }}
         >
           <option value="">Selecione</option>
@@ -228,37 +368,29 @@ export function ReservationForm({
           value={pointId}
           onChange={(event) => {
             setPointId(event.target.value);
+            setHour('');
+            setDuration('');
             setEquipmentType('');
           }}
         >
           <option value="">Selecione</option>
-          {points.map((item) => (
+          {usablePoints.map((item) => (
             <option key={item.id} value={item.id}>
               {item.name}
             </option>
           ))}
         </select>
         {pointId && <PointPhoto context={context} pointId={pointId} />}
-        <label htmlFor="booking-equipment">Tipo de equipamento</label>
-        <select
-          id="booking-equipment"
-          required
-          value={equipmentType}
-          onChange={(event) => setEquipmentType(event.target.value)}
-        >
-          <option value="">Selecione</option>
-          {point?.allowedTypes.map((type) => (
-            <option key={type} value={type}>
-              {labels[type]}
-            </option>
-          ))}
-        </select>
         <label htmlFor="booking-hour">Hora inicial</label>
         <select
           id="booking-hour"
           required
           value={selectedHour}
-          onChange={(event) => setHour(event.target.value)}
+          onChange={(event) => {
+            setHour(event.target.value);
+            setDuration('');
+            setEquipmentType('');
+          }}
         >
           <option value="">Selecione</option>
           {hours.map((index) => (
@@ -272,15 +404,24 @@ export function ReservationForm({
           id="booking-duration"
           required
           value={duration}
-          onChange={(event) => setDuration(event.target.value)}
+          onChange={(event) => {
+            setDuration(event.target.value);
+            setEquipmentType('');
+          }}
         >
           <option value="">Selecione</option>
-          <option value="1">Uma hora</option>
-          <option value="2">Duas horas</option>
+          {durations.includes(1) && <option value="1">Uma hora</option>}
+          {durations.includes(2) && <option value="2">Duas horas</option>}
         </select>
+        {selectedDuration && (
+          <p>
+            Equipamento compatível disponível:{' '}
+            {usableTypes.map((type) => labels[type]).join(' ou ') || 'nenhum'}.
+          </p>
+        )}
         {hour !== '' &&
-          duration !== '' &&
-          Number(hour) + Number(duration) >= 24 && (
+          selectedDuration !== '' &&
+          Number(hour) + Number(selectedDuration) >= 24 && (
             <p role="alert">
               Atenção: a reserva termina no dia seguinte e deve respeitar os
               horários e bloqueios das duas datas.

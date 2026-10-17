@@ -3,6 +3,7 @@ import { MenuIcon } from './GroupedMenu.js';
 import { PointsPanel } from './PointsPanel.js';
 import { MonthlySchedulePanel } from './MonthlySchedulePanel.js';
 import { ReservationInboxPanel } from './ReservationInboxPanel.js';
+import { PublisherHomePanel } from './PublisherHomePanel.js';
 import { ReservationDetailPage } from './ReservationDetailsPanel.js';
 import { PublisherProfilePanel } from './PublisherProfilePanel.js';
 import { ScheduleReportPanel } from './ScheduleReportPanel.js';
@@ -546,78 +547,7 @@ export function App({
           )}
 
           {screen === 'inicio' && equipmentContext && (
-            <section className="panel">
-              <h2>Organize suas designações</h2>
-              <p>
-                Consulte a agenda da congregação, reserve um ponto ou acompanhe
-                seus convites e avisos.
-              </p>
-              <div className="home-categories">
-                {(
-                  [
-                    { screen: 'programacao', label: 'Programação', icon: '▦' },
-                    {
-                      screen: 'nova-reserva',
-                      label: 'Reservar ponto e equipamento',
-                      icon: '+',
-                    },
-                    {
-                      screen: 'convites',
-                      label: 'Convites e avisos',
-                      icon: '✉',
-                    },
-                    ...(equipmentContext.canManage
-                      ? [
-                          {
-                            screen: 'publicadores',
-                            label: 'Publicadores',
-                            icon: '♧',
-                          },
-                          {
-                            screen: 'recursos',
-                            label: 'Equipamentos, pontos e horários',
-                            icon: '⌖',
-                          },
-                          {
-                            screen: 'relatorio',
-                            label: 'Relatório',
-                            icon: '▥',
-                          },
-                        ]
-                      : [{ screen: 'conta', label: 'Minha conta', icon: '○' }]),
-                    ...(isMaster
-                      ? [
-                          {
-                            screen: 'administradores',
-                            label: 'Administradores',
-                            icon: '◇',
-                          },
-                        ]
-                      : []),
-                  ] as { screen: Screen; label: string; icon: string }[]
-                )
-                  .filter((item) =>
-                    canOpenScreen(
-                      item.screen,
-                      equipmentContext.canManage,
-                      !!equipmentContext.congregationId,
-                      isMaster,
-                    ),
-                  )
-                  .map((item) => (
-                    <button
-                      className="home-category"
-                      key={item.screen}
-                      onClick={() => go(item.screen)}
-                    >
-                      <span className="category-art">
-                        <MenuIcon icon={item.icon} />
-                      </span>
-                      <strong>{item.label}</strong>
-                    </button>
-                  ))}
-              </div>
-            </section>
+            <PublisherHomePanel context={equipmentContext} onNavigate={go} />
           )}
           {screen === 'inicio' && !equipmentContext && (
             <>
