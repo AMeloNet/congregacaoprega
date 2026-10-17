@@ -1,7 +1,12 @@
+import {
+  ReservationConfigurationForm,
+  type ReservationConfiguration,
+} from './ReservationConfigurationForm.js';
+import { PointPhoto } from './PointPhoto.js';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { EquipmentContext } from './EquipmentPanel.js';
 import type { PublisherOption } from './PublisherProfilePanel.js';
-type Detail = {
+type Detail = ReservationConfiguration & {
   id: string;
   pointName: string;
   date: string;
@@ -133,6 +138,7 @@ export function ReservationDetailsPanel({
           <h3>
             {data.date.split('-').reverse().join('/')} · {data.pointName}
           </h3>
+          <PointPhoto context={context} pointId={data.pointId} />
           {data.cancelledAt && <p>Reserva cancelada.</p>}
           <ul>
             {data.participants.map((p) => (
@@ -143,74 +149,96 @@ export function ReservationDetailsPanel({
             ))}
           </ul>
           {context.canManage && !data.cancelledAt && (
-            <form onSubmit={(event) => void submit(event)}>
-              <p>
-                Para mudar ponto, horário ou equipamento, cancele a reserva e
-                crie outra.
-              </p>
-              <label htmlFor={`admin-action-${reservationId}`}>
-                Ajuste administrativo
-              </label>
-              <select
-                required
-                id={`admin-action-${reservationId}`}
-                value={action}
-                disabled={busy}
-                onChange={(event) => {
-                  setAction(event.target.value);
-                  setTarget('');
-                  setKey(crypto.randomUUID());
-                }}
-              >
-                <option value="">Selecione</option>
-                <option value="include">Incluir participante</option>
-                <option value="remove">Retirar participante</option>
-                <option value="responsible">Trocar responsável</option>
-              </select>
-              {action && (
-                <>
-                  <label htmlFor={`admin-person-${reservationId}`}>
-                    Publicador
+            <>
+              <details>
+                <summary>Editar dados da reserva</summary>
+                <ReservationConfigurationForm
+                  key={data.revision}
+                  context={context}
+                  reservationId={reservationId}
+                  initial={{
+                    pointId: data.pointId,
+                    date: data.date,
+                    startHour: data.startHour,
+                    duration: data.duration,
+                    equipmentType: data.equipmentType,
+                    thirdPositionOpen: data.thirdPositionOpen,
+                    revision: data.revision,
+                  }}
+                  onSaved={() => {
+                    setRevision((r) => r + 1);
+                    onSaved();
+                  }}
+                />
+              </details>
+              <details>
+                <summary>Ajustar participantes</summary>
+                <form onSubmit={(event) => void submit(event)}>
+                  <label htmlFor={`admin-action-${reservationId}`}>
+                    Ajuste administrativo
                   </label>
                   <select
                     required
-                    id={`admin-person-${reservationId}`}
+                    id={`admin-action-${reservationId}`}
+                    value={action}
                     disabled={busy}
-                    value={target}
                     onChange={(event) => {
-                      setTarget(event.target.value);
+                      setAction(event.target.value);
+                      setTarget('');
                       setKey(crypto.randomUUID());
                     }}
                   >
                     <option value="">Selecione</option>
-                    {candidates.map((p) => (
-                      <option value={p.id} key={p.id}>
-                        {p.displayName || p.email || 'Nome não informado'}
-                      </option>
-                    ))}
+                    <option value="include">Incluir participante</option>
+                    <option value="remove">Retirar participante</option>
+                    <option value="responsible">Trocar responsável</option>
                   </select>
-                </>
-              )}
-              {action === 'responsible' && (
-                <p>
-                  O responsável anterior sairá do grupo. O participante
-                  escolhido assumirá esta data; a série original não será
-                  transferida.
-                </p>
-              )}
-              {action === 'remove' && (
-                <p>
-                  O participante sairá do grupo e será avisado. O tempo
-                  decorrido será conservado.
-                </p>
-              )}
-              <button
-                className="button outline"
-                disabled={busy || !action || !target}
-              >
-                Confirmar ajuste
-              </button>
-            </form>
+                  {action && (
+                    <>
+                      <label htmlFor={`admin-person-${reservationId}`}>
+                        Publicador
+                      </label>
+                      <select
+                        required
+                        id={`admin-person-${reservationId}`}
+                        disabled={busy}
+                        value={target}
+                        onChange={(event) => {
+                          setTarget(event.target.value);
+                          setKey(crypto.randomUUID());
+                        }}
+                      >
+                        <option value="">Selecione</option>
+                        {candidates.map((p) => (
+                          <option value={p.id} key={p.id}>
+                            {p.displayName || p.email || 'Nome não informado'}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  )}
+                  {action === 'responsible' && (
+                    <p>
+                      O responsável anterior sairá do grupo. O participante
+                      escolhido assumirá esta data; a série original não será
+                      transferida.
+                    </p>
+                  )}
+                  {action === 'remove' && (
+                    <p>
+                      O participante sairá do grupo e será avisado. O tempo
+                      decorrido será conservado.
+                    </p>
+                  )}
+                  <button
+                    className="button outline"
+                    disabled={busy || !action || !target}
+                  >
+                    Confirmar ajuste
+                  </button>
+                </form>
+              </details>
+            </>
           )}
           {data.history.length > 0 && (
             <details>
@@ -221,6 +249,9 @@ export function ReservationDetailsPanel({
                     {h.createdAt} ·{' '}
                     {(
                       {
+                        'created-for': 'Reserva criada pelo administrador',
+                        'admin-edited':
+                          'Dados da reserva alterados pelo administrador',
                         'admin-included':
                           'Participante incluído pelo administrador',
                         'admin-removed':

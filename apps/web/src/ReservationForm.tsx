@@ -1,3 +1,5 @@
+import { PointPhoto } from './PointPhoto.js';
+import type { PublisherOption } from './PublisherProfilePanel.js';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { EquipmentContext } from './EquipmentPanel.js';
 
@@ -60,6 +62,27 @@ export function ReservationForm({
   );
   const today = `${parts.year}-${parts.month}-${parts.day}`,
     currentHour = Number(parts.hour);
+  const [people, setPeople] = useState<PublisherOption[]>([]),
+    [responsible, setResponsible] = useState(''),
+    [directoryError, setDirectoryError] = useState('');
+  useEffect(() => {
+    if (!context.canManage) return;
+    const controller = new AbortController();
+    void fetch(
+      `/api/congregations/${encodeURIComponent(context.congregationId)}/reservation-publishers`,
+      { signal: controller.signal },
+    )
+      .then(async (response) => {
+        if (!response.ok) throw new Error();
+        const result = await response.json();
+        if (!controller.signal.aborted) setPeople(result);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setDirectoryError('Não foi possível carregar os responsáveis.');
+      });
+    return () => controller.abort();
+  }, [context.congregationId, context.canManage]);
   const [weekday, setWeekday] = useState('');
   const [date, setDate] = useState('');
   const [pointId, setPointId] = useState('');
@@ -94,6 +117,7 @@ export function ReservationForm({
     setMessage('');
     setBusy(true);
     const body = {
+      ...(responsible ? { responsibleAccountId: responsible } : {}),
       pointId,
       date: selectedDate,
       startHour: Number(selectedHour),
@@ -139,6 +163,30 @@ export function ReservationForm({
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
       <fieldset disabled={busy}>
+        {context.canManage && (
+          <>
+            <label htmlFor="booking-responsible">
+              Responsável pela reserva
+            </label>
+            <select
+              id="booking-responsible"
+              value={responsible}
+              onChange={(event) => setResponsible(event.target.value)}
+            >
+              <option value="">Eu mesmo</option>
+              {people
+                .filter(
+                  (person) => person.status === 'ACTIVE' && person.verified,
+                )
+                .map((person) => (
+                  <option value={person.id} key={person.id}>
+                    {person.displayName || person.email}
+                  </option>
+                ))}
+            </select>
+            {directoryError && <p role="alert">{directoryError}</p>}
+          </>
+        )}
         <label htmlFor="booking-weekday">Dia da semana</label>
         <select
           id="booking-weekday"
@@ -190,6 +238,7 @@ export function ReservationForm({
             </option>
           ))}
         </select>
+        {pointId && <PointPhoto context={context} pointId={pointId} />}
         <label htmlFor="booking-equipment">Tipo de equipamento</label>
         <select
           id="booking-equipment"
@@ -249,7 +298,9 @@ export function ReservationForm({
           <option value="blocked">Bloqueada</option>
         </select>
         <p>
-          Você será o responsável por esta reserva. O grupo começa em formação.
+          {responsible
+            ? 'O publicador escolhido será o responsável. O administrador não é incluído automaticamente.'
+            : 'Você será o responsável por esta reserva. O grupo começa em formação.'}
         </p>
         <button className="button primary" type="submit">
           {busy ? 'Reservando…' : 'Confirmar reserva'}

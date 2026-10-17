@@ -1447,6 +1447,10 @@ body {
   gap: 1rem;
 }
 .equipment-list li {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
   display: grid;
   gap: 0.5rem;
   overflow-wrap: anywhere;
@@ -1527,10 +1531,92 @@ body {
   display: block;
 }
 .authenticated-shell .topbar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  position: sticky;
+  top: 0;
+  z-index: 40;
   gap: 1rem;
   min-height: 64px;
   height: auto;
   padding-block: 0.65rem;
+}
+.home-categories {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.home-categories:has(> :nth-child(4):last-child) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.home-category {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 180px;
+  padding: 1.5rem;
+  border: 1px solid var(--border, #d9e3dc);
+  border-radius: 20px;
+  color: inherit;
+  background: var(--surface, #fff);
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+}
+.home-category:hover,
+.home-category:focus-visible {
+  outline: 3px solid var(--accent, #7552bb);
+  outline-offset: 2px;
+}
+.category-art {
+  display: grid;
+  place-items: center;
+  width: 86px;
+  height: 76px;
+  border-radius: 24px;
+  background: color-mix(in srgb, currentColor 9%, transparent);
+}
+.category-art svg {
+  width: 44px;
+  height: 44px;
+}
+.point-photo {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  max-height: 320px;
+  object-fit: contain;
+  border-radius: 14px;
+  margin-block: 1rem;
+}
+.registration-code {
+  display: block;
+  font: bold 1.8rem monospace;
+  letter-spacing: 0.15em;
+  overflow-wrap: anywhere;
+}
+details.panel {
+  margin-bottom: 1rem;
+}
+details > summary {
+  cursor: pointer;
+  padding-block: 0.7rem;
+  font-weight: 700;
+}
+@media (max-width: 740px) {
+  .home-categories {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-category {
+    min-height: 155px;
+    padding: 1rem;
+  }
+  .authenticated-shell .topbar .breadcrumbs {
+    flex-basis: calc(100% - 110px);
+  }
 }
 .authenticated-shell .breadcrumbs {
   flex: 1;
@@ -1684,11 +1770,14 @@ body {
 }
 @media (max-width: 740px) {
   .authenticated-shell .topbar {
+    grid-template-columns: auto minmax(0, 1fr);
     padding-inline: 1rem;
     flex-wrap: wrap;
     gap: 0.6rem;
   }
   .authenticated-shell .topbar-right {
+    grid-column: 1 / -1;
+    justify-self: end;
     gap: 0.5rem;
   }
   .authenticated-shell .breadcrumbs {

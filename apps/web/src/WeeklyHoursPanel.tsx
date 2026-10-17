@@ -50,9 +50,7 @@ export function WeeklyHoursPanel({
         if (controller.signal.aborted) return;
         setPoints(value);
         setSelected((current) =>
-          value.some((point) => point.id === current)
-            ? current
-            : (value[0]?.id ?? ''),
+          value.some((point) => point.id === current) ? current : '',
         );
       })
       .catch(() => {
@@ -96,6 +94,30 @@ export function WeeklyHoursPanel({
           )}
           {points.length > 0 && (
             <>
+              {!selected && (
+                <div className="resource-grid">
+                  {points.map((value) => (
+                    <article key={value.id} className="panel">
+                      <h3>{value.name}</h3>
+                      <p>Horários semanais por local</p>
+                      <button
+                        className="button outline"
+                        onClick={() => setSelected(value.id)}
+                      >
+                        Ver horários de {value.name}
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              )}
+              {selected && (
+                <button
+                  className="button outline"
+                  onClick={() => setSelected('')}
+                >
+                  Voltar à lista de horários
+                </button>
+              )}
               <label htmlFor="weekly-point">Local dos horários semanais</label>
               <select
                 id="weekly-point"
@@ -103,6 +125,7 @@ export function WeeklyHoursPanel({
                 disabled={loading}
                 onChange={(event) => setSelected(event.target.value)}
               >
+                <option value="">Selecione um local</option>
                 {points.map((value) => (
                   <option key={value.id} value={value.id}>
                     {value.name}

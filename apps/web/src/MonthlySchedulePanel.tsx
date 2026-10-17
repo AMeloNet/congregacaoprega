@@ -260,18 +260,21 @@ export function MonthlySchedulePanel({
           {(month?.canBook ||
             (context.canManage && month?.state === 'reopened')) &&
             data.points.length > 0 && (
-              <ReservationForm
-                key={selected}
-                context={context}
-                month={selected}
-                points={data.points}
-                onSaved={() => setRevision((value) => value + 1)}
-                timezone={data.timezone}
-                clock={{
-                  instant: data.serverNow,
-                  observedAt: data.observedAt!,
-                }}
-              />
+              <details key={selected}>
+                <summary>Nova reserva</summary>
+                <ReservationForm
+                  key={selected}
+                  context={context}
+                  month={selected}
+                  points={data.points}
+                  onSaved={() => setRevision((value) => value + 1)}
+                  timezone={data.timezone}
+                  clock={{
+                    instant: data.serverNow,
+                    observedAt: data.observedAt!,
+                  }}
+                />
+              </details>
             )}
           <h2>Designações do mês</h2>
           {!(data.reservations ?? []).some((item) =>

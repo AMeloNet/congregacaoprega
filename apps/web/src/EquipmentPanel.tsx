@@ -16,6 +16,10 @@ export type EquipmentContext = {
 };
 
 export function EquipmentPanel({ context }: { context: EquipmentContext }) {
+  const [view, setView] = useState<'list' | 'new' | 'detail'>(() =>
+    window.location.hash.includes('novo=1') ? 'new' : 'list',
+  );
+  const [selected, setSelected] = useState<Item | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -83,6 +87,7 @@ export function EquipmentPanel({ context }: { context: EquipmentContext }) {
         setName('');
         setObservation('');
       }
+      setView('list');
       setMessage('Equipamento salvo.');
       await load();
     } catch (failure) {
@@ -119,32 +124,73 @@ export function EquipmentPanel({ context }: { context: EquipmentContext }) {
           {message}
         </p>
       )}
-      {loading ? (
-        <p role="status">Carregando equipamentos…</p>
-      ) : items.length === 0 ? (
-        <p>Nenhum equipamento cadastrado.</p>
+      {view === 'list' ? (
+        <button className="button" onClick={() => setView('new')}>
+          Novo equipamento
+        </button>
       ) : (
-        <ul className="equipment-list">
-          {items.map((item) => (
-            <li key={item.id}>
-              <strong>{item.name}</strong>
-              <span>
-                {labels[item.type]} · {item.active ? 'Ativo' : 'Inativo'}
-              </span>
-              {item.observation && <p>{item.observation}</p>}
-              <button
-                className="button outline"
-                disabled={busy}
-                onClick={() => {
-                  setEditing(item);
-                  setReason('');
-                }}
-              >
-                {item.active ? 'Inativar' : 'Reativar'} {item.name}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <button
+          className="button outline"
+          disabled={busy}
+          onClick={() => {
+            setView('list');
+            setEditing(null);
+          }}
+        >
+          Voltar à lista de equipamentos
+        </button>
+      )}
+      {view === 'list' &&
+        (loading ? (
+          <p role="status">Carregando equipamentos…</p>
+        ) : items.length === 0 ? (
+          <p>Nenhum equipamento cadastrado.</p>
+        ) : (
+          <ul className="equipment-list">
+            {items.map((item) => (
+              <li key={item.id}>
+                <strong>{item.name}</strong>
+                <span>
+                  {labels[item.type]} · {item.active ? 'Ativo' : 'Inativo'}
+                </span>
+
+                <button
+                  className="button outline"
+                  disabled={busy}
+                  onClick={() => {
+                    setSelected(item);
+                    setView('detail');
+                    setReason('');
+                  }}
+                >
+                  Ver detalhes de {item.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ))}
+      {view === 'detail' && selected && (
+        <article className="panel">
+          <h3>{selected.name}</h3>
+          <p>
+            {labels[selected.type]} · {selected.active ? 'Ativo' : 'Inativo'}
+          </p>
+          <p>{selected.observation}</p>
+          <details>
+            <summary>
+              {selected.active ? 'Inativar' : 'Reativar'} {selected.name}
+            </summary>
+            <button
+              className="button outline"
+              onClick={() => {
+                setEditing(selected);
+                setReason('');
+              }}
+            >
+              Alterar estado
+            </button>
+          </details>
+        </article>
       )}
       {error && (
         <button
@@ -191,39 +237,41 @@ export function EquipmentPanel({ context }: { context: EquipmentContext }) {
           </div>
         </form>
       )}
-      <form onSubmit={(event) => void save(event, false)}>
-        <h3>Cadastrar equipamento</h3>
-        <label htmlFor="equipment-name">Nome da unidade</label>
-        <input
-          id="equipment-name"
-          required
-          maxLength={80}
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-        />
-        <label htmlFor="equipment-type">Tipo</label>
-        <select
-          id="equipment-type"
-          value={type}
-          onChange={(event) => setType(event.target.value)}
-        >
-          {Object.entries(labels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <label htmlFor="equipment-observation">Observação (opcional)</label>
-        <textarea
-          id="equipment-observation"
-          maxLength={250}
-          value={observation}
-          onChange={(event) => setObservation(event.target.value)}
-        />
-        <button className="button" disabled={busy}>
-          {busy ? 'Salvando…' : 'Cadastrar equipamento'}
-        </button>
-      </form>
+      {view === 'new' && (
+        <form onSubmit={(event) => void save(event, false)}>
+          <h3>Cadastrar equipamento</h3>
+          <label htmlFor="equipment-name">Nome da unidade</label>
+          <input
+            id="equipment-name"
+            required
+            maxLength={80}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+          <label htmlFor="equipment-type">Tipo</label>
+          <select
+            id="equipment-type"
+            value={type}
+            onChange={(event) => setType(event.target.value)}
+          >
+            {Object.entries(labels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <label htmlFor="equipment-observation">Observação (opcional)</label>
+          <textarea
+            id="equipment-observation"
+            maxLength={250}
+            value={observation}
+            onChange={(event) => setObservation(event.target.value)}
+          />
+          <button className="button" disabled={busy}>
+            {busy ? 'Salvando…' : 'Cadastrar equipamento'}
+          </button>
+        </form>
+      )}
     </section>
   );
 }

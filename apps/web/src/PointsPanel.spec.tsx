@@ -24,6 +24,8 @@ describe('points interface', () => {
     expect(
       await screen.findByText('Nenhum ponto cadastrado.'),
     ).toBeInTheDocument();
+    expect(screen.queryByLabelText('Nome do ponto')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Novo ponto' }));
     expect(screen.getByLabelText('Grupos simultâneos')).toHaveValue(1);
     await user.type(screen.getByLabelText('Nome do ponto'), 'Test point');
     await user.type(
@@ -33,8 +35,9 @@ describe('points interface', () => {
     await user.click(screen.getByLabelText('Carrinho'));
     await user.click(screen.getByRole('button', { name: 'Cadastrar ponto' }));
     await user.click(
-      await screen.findByRole('button', { name: 'Editar Test point' }),
+      await screen.findByRole('button', { name: 'Ver detalhes de Test point' }),
     );
+    await user.click(screen.getByRole('button', { name: 'Editar Test point' }));
     await user.clear(screen.getByLabelText('Grupos simultâneos'));
     await user.type(screen.getByLabelText('Grupos simultâneos'), '2');
     await user.click(screen.getByRole('button', { name: 'Salvar ponto' }));

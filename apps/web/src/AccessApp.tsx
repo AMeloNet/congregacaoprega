@@ -1,3 +1,4 @@
+import { RegistrationPanel, ApproveCodePanel } from './RegistrationPanel.js';
 import { type FormEvent, useEffect, useState, useRef } from 'react';
 import { App } from './App.js';
 
@@ -41,6 +42,7 @@ export function AccessApp({
   const [error, setError] = useState('');
   const [active, setActive] = useState('');
   const activeSelection = useRef('');
+  const [publisherRevision, setPublisherRevision] = useState(0);
   const [publisherEmail, setPublisherEmail] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminCongregation, setAdminCongregation] = useState('');
@@ -101,6 +103,9 @@ export function AccessApp({
           <a className="button" href="/api/auth/login">
             Entrar com e-mail
           </a>
+          <a className="button outline" href="/api/auth/login">
+            Criar cadastro
+          </a>
           <a className="text-button" href="/api/auth/recover">
             Recuperar senha
           </a>
@@ -147,6 +152,10 @@ export function AccessApp({
       <main className="access-page">
         <section className="panel access-card">
           <h1>Conta sem congregação</h1>
+          <RegistrationPanel
+            csrfToken={session.csrfToken ?? ''}
+            email={session.email ?? ''}
+          />
           <p role="status">
             Você ainda não possui vínculo ativo. Abra o convite recebido ou fale
             com um administrador local.
@@ -406,30 +415,48 @@ export function AccessApp({
       <App
         key={`${active}:${selected?.role}:${session.isMaster}`}
         isMaster={session.isMaster}
+        publisherRevision={publisherRevision}
         publisherManagement={
           <>
             {selected?.role === 'LOCAL_ADMIN' && (
               <>
-                <form
-                  className="panel compact-panel"
-                  onSubmit={(event) => void invitePublisher(event)}
-                >
-                  <h2>Convidar publicador</h2>
-                  <label htmlFor="publisher-email">
-                    E-mail do novo publicador
-                  </label>
-                  <input
-                    id="publisher-email"
-                    type="email"
-                    required
-                    value={publisherEmail}
-                    onChange={(event) => setPublisherEmail(event.target.value)}
-                  />
-                  <button className="button" type="submit">
-                    Enviar convite
-                  </button>
-                </form>
-                <div className="panel compact-panel">
+                <ApproveCodePanel
+                  context={{
+                    congregationId: active,
+                    csrfToken: session.csrfToken ?? '',
+                    canManage: true,
+                  }}
+                  onApproved={() => {
+                    setPublisherRevision((value) => value + 1);
+                    void loadMemberships();
+                  }}
+                />
+                <details className="panel">
+                  <summary>Convidar publicador</summary>
+                  <form
+                    className="compact-panel"
+                    onSubmit={(event) => void invitePublisher(event)}
+                  >
+                    <h2>Convidar publicador</h2>
+                    <label htmlFor="publisher-email">
+                      E-mail do novo publicador
+                    </label>
+                    <input
+                      id="publisher-email"
+                      type="email"
+                      required
+                      value={publisherEmail}
+                      onChange={(event) =>
+                        setPublisherEmail(event.target.value)
+                      }
+                    />
+                    <button className="button" type="submit">
+                      Enviar convite
+                    </button>
+                  </form>
+                </details>
+                <details className="panel compact-panel">
+                  <summary>Vínculos da congregação</summary>
                   <h2>Vínculos da congregação</h2>
                   <button
                     className="button outline"
@@ -474,7 +501,7 @@ export function AccessApp({
                       ))}
                     </ul>
                   )}
-                </div>
+                </details>
               </>
             )}
           </>

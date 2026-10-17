@@ -28,6 +28,8 @@ está especificada, mas não configurada.
 
 ## Documentação
 
+- [Melhorias das telas, aprovação por código e fotos dos pontos](docs/requisitos/UI-004.md).
+
 - [Regras de colaboração e desenvolvimento](AGENTS.md).
 - [Escopo do MVP e próximos passos](docs/requisitos/MVP-001.md).
 - [Protótipo navegável UI-001](docs/requisitos/UI-001.md), [temas e cores pessoais UI-002](docs/requisitos/UI-002.md) e seus [cenários de teste](docs/testes/cenarios-ui-002.md).

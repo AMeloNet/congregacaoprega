@@ -84,6 +84,7 @@ export async function reservationApp(
     ],
   }).compile();
   const app = moduleRef.createNestApplication({ rawBody: true });
+  app.useBodyParser('json', { limit: '3mb' });
   app.setGlobalPrefix('api');
   await app.listen(0, '127.0.0.1');
   const base = `${await app.getUrl()}/api/congregations/${congregation}`;

@@ -10,6 +10,17 @@ A política obrigatória está no [AGENTS.md](../../AGENTS.md).
 
 ## Incrementos recentes
 
+`20261017000700_registration_point_photos` acrescenta cadastro independente de
+vínculo (nome, telefone e código único), telefone nos perfis locais, foto opcional
+no ponto e evento de aprovação. Tabela nova inicia vazia; colunas existentes
+recebem texto vazio, sem copiar dados pessoais. CHECK limita tamanho da foto e
+formato do código; código não é credencial. DDL obtém bloqueios breves nas tabelas
+de perfis/pontos e no enum de auditoria. Aplicar serializado antes do código novo.
+Falha interrompe promoção e requer inspeção de catálogo/histórico, sem reset.
+Rollback de código deve preservar tabela, colunas, aprovações e histórico; versão
+antiga não oferece cadastro por código nem fotos. Não remover dados para reverter.
+Critérios e contratos: [UI-004](../requisitos/UI-004.md).
+
 O incremento de gestão adiciona `20261017000100_reservation_management_history`:
 histórico de alterações da reserva e cópia JSON do modelo das séries existentes,
 para que ajustar uma ocorrência não modifique as próximas silenciosamente.

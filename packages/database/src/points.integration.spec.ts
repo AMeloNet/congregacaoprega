@@ -97,9 +97,9 @@ describe('preaching points', () => {
       };
       expect(
         await service.execute(actor, a, 'update', updated, point.id),
-      ).toEqual({ id: point.id, ...updated });
+      ).toEqual({ id: point.id, photo: '', ...updated });
       expect(await new PointsService(pool).execute(actor, a, 'list')).toEqual([
-        { id: point.id, ...updated },
+        { id: point.id, photo: '', ...updated },
       ]);
       const other = await service.execute(actor, a, 'create', {
         ...input,

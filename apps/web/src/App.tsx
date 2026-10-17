@@ -1,3 +1,5 @@
+import { ResourcesHub } from './ResourcesHub.js';
+import { MenuIcon } from './GroupedMenu.js';
 import { PointsPanel } from './PointsPanel.js';
 import { MonthlySchedulePanel } from './MonthlySchedulePanel.js';
 import { ReservationInboxPanel } from './ReservationInboxPanel.js';
@@ -123,11 +125,13 @@ export function App({
   publisherManagement,
   masterManagement,
   isMaster = false,
+  publisherRevision = 0,
 }: {
   equipmentContext?: EquipmentContext;
   publisherManagement?: ReactNode;
   masterManagement?: ReactNode;
   isMaster?: boolean;
+  publisherRevision?: number;
 } = {}) {
   const [requestedScreen, setScreen] = useState<Screen>(routeFromHash);
   const permitted =
@@ -503,7 +507,11 @@ export function App({
           {equipmentContext && screen === 'publicadores' && (
             <>
               {publisherManagement}
-              <PublisherProfilePanel context={equipmentContext} manage />
+              <PublisherProfilePanel
+                key={publisherRevision}
+                context={equipmentContext}
+                manage
+              />
             </>
           )}
           {equipmentContext && screen === 'administradores' && masterManagement}
@@ -544,22 +552,71 @@ export function App({
                 Consulte a agenda da congregação, reserve um ponto ou acompanhe
                 seus convites e avisos.
               </p>
-              {equipmentContext.congregationId && (
-                <>
-                  <button
-                    className="button primary"
-                    onClick={() => go('programacao')}
-                  >
-                    Abrir agenda
-                  </button>
-                  <button
-                    className="button outline"
-                    onClick={() => go('nova-reserva')}
-                  >
-                    Reservar ponto e equipamento
-                  </button>
-                </>
-              )}
+              <div className="home-categories">
+                {(
+                  [
+                    { screen: 'programacao', label: 'Programação', icon: '▦' },
+                    {
+                      screen: 'nova-reserva',
+                      label: 'Reservar ponto e equipamento',
+                      icon: '+',
+                    },
+                    {
+                      screen: 'convites',
+                      label: 'Convites e avisos',
+                      icon: '✉',
+                    },
+                    ...(equipmentContext.canManage
+                      ? [
+                          {
+                            screen: 'publicadores',
+                            label: 'Publicadores',
+                            icon: '♧',
+                          },
+                          {
+                            screen: 'recursos',
+                            label: 'Equipamentos, pontos e horários',
+                            icon: '⌖',
+                          },
+                          {
+                            screen: 'relatorio',
+                            label: 'Relatório',
+                            icon: '▥',
+                          },
+                        ]
+                      : [{ screen: 'conta', label: 'Minha conta', icon: '○' }]),
+                    ...(isMaster
+                      ? [
+                          {
+                            screen: 'administradores',
+                            label: 'Administradores',
+                            icon: '◇',
+                          },
+                        ]
+                      : []),
+                  ] as { screen: Screen; label: string; icon: string }[]
+                )
+                  .filter((item) =>
+                    canOpenScreen(
+                      item.screen,
+                      equipmentContext.canManage,
+                      !!equipmentContext.congregationId,
+                      isMaster,
+                    ),
+                  )
+                  .map((item) => (
+                    <button
+                      className="home-category"
+                      key={item.screen}
+                      onClick={() => go(item.screen)}
+                    >
+                      <span className="category-art">
+                        <MenuIcon icon={item.icon} />
+                      </span>
+                      <strong>{item.label}</strong>
+                    </button>
+                  ))}
+              </div>
             </section>
           )}
           {screen === 'inicio' && !equipmentContext && (
@@ -1362,7 +1419,23 @@ export function App({
             </>
           )}
 
-          {screen === 'recursos' && (
+          {screen === 'nova-reserva' && equipmentContext?.canManage && (
+            <ResourcesHub
+              context={equipmentContext}
+              go={(destination, create) => {
+                window.location.hash = destination + (create ? '?novo=1' : '');
+              }}
+            />
+          )}
+          {screen === 'recursos' && equipmentContext && (
+            <ResourcesHub
+              context={equipmentContext}
+              go={(destination, create) => {
+                window.location.hash = destination + (create ? '?novo=1' : '');
+              }}
+            />
+          )}
+          {screen === 'recursos' && !equipmentContext && (
             <>
               <div className="intro-row">
                 <p>
@@ -1376,13 +1449,7 @@ export function App({
                     : 'Congregação Exemplo'}
                 </span>
               </div>
-              {equipmentContext ? (
-                <PointsPanel
-                  key={equipmentContext.congregationId}
-                  context={equipmentContext}
-                  onChanged={() => setPointsRevision((value) => value + 1)}
-                />
-              ) : (
+              {
                 <>
                   <div className="section-heading">
                     <div>
@@ -1409,14 +1476,9 @@ export function App({
                     ))}
                   </div>
                 </>
-              )}
+              }
               <div className="two-column resource-bottom">
-                {equipmentContext ? (
-                  <EquipmentPanel
-                    key={equipmentContext.congregationId}
-                    context={equipmentContext}
-                  />
-                ) : (
+                {
                   <section className="panel">
                     <p className="eyebrow">INVENTÁRIO FICTÍCIO</p>
                     <h2>Equipamentos</h2>
@@ -1437,14 +1499,8 @@ export function App({
                       reservas.
                     </p>
                   </section>
-                )}
-                {equipmentContext ? (
-                  <WeeklyHoursPanel
-                    key={equipmentContext.congregationId}
-                    context={equipmentContext}
-                    pointsRevision={pointsRevision}
-                  />
-                ) : (
+                }
+                {
                   <section className="panel">
                     <p className="eyebrow">CONFIGURAÇÃO FICTÍCIA</p>
                     <h2>Horários semanais</h2>
@@ -1465,7 +1521,7 @@ export function App({
                       servem apenas para visualizar a interface.
                     </p>
                   </section>
-                )}
+                }
               </div>
             </>
           )}
