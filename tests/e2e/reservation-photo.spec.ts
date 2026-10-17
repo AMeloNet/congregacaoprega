@@ -81,28 +81,24 @@ test('shows the point photo on a publisher reservation card, while booking and i
     return route.fulfill({ json });
   });
   await page.goto('/#programacao');
-  const card = page
-    .locator('article.schedule-card')
-    .filter({
-      has: page.getByRole('heading', {
-        name: '20/10/2026 · Ponto com foto',
-        exact: true,
-      }),
-    });
+  const card = page.locator('article.schedule-card').filter({
+    has: page.getByRole('heading', {
+      name: '20/10/2026 · Ponto com foto',
+      exact: true,
+    }),
+  });
   const image = card.getByRole('img', { name: 'Foto do ponto de pregação' });
   await expect(image).toBeVisible();
   await expect(image).toHaveAttribute('src', photo);
   await expect
     .poll(() => image.evaluate((img) => (img as HTMLImageElement).naturalWidth))
     .toBe(1);
-  const empty = page
-    .locator('article.schedule-card')
-    .filter({
-      has: page.getByRole('heading', {
-        name: '20/10/2026 · Ponto sem foto',
-        exact: true,
-      }),
-    });
+  const empty = page.locator('article.schedule-card').filter({
+    has: page.getByRole('heading', {
+      name: '20/10/2026 · Ponto sem foto',
+      exact: true,
+    }),
+  });
   await expect(empty.getByRole('img')).toHaveCount(0);
   await page.screenshot({
     path: testInfo.outputPath('reservation-photo.png'),
