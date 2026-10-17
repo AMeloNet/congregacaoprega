@@ -123,7 +123,7 @@ export class MonthlyScheduleService {
       ).rows;
       const recurrences = (
         await client.query(
-          `SELECT s.id,s.source_reservation_id AS "sourceReservationId",s.stopped_at AS "stoppedAt",r.point_id AS "pointId",r.start_hour AS "startHour",r.equipment_type AS "equipmentType",extract(dow FROM r.local_date::date)::int AS weekday,(r.responsible_account_id=$2) AS "isResponsible",coalesce((SELECT jsonb_agg(jsonb_build_object('date',o.local_date,'message',o.error) ORDER BY o.local_date) FROM recurrence_occurrence o WHERE o.series_id=s.id AND o.error IS NOT NULL),'[]'::jsonb) AS conflicts FROM reservation_series s JOIN reservation r ON r.id=s.source_reservation_id WHERE r.congregation_id=$1 AND (r.responsible_account_id=$2 OR $3::boolean) ORDER BY s.created_at,s.id`,
+          `SELECT s.id,s.source_reservation_id AS "sourceReservationId",s.stopped_at AS "stoppedAt",s.configuration->>'point_id' AS "pointId",(s.configuration->>'start_hour')::int AS "startHour",s.configuration->>'equipment_type' AS "equipmentType",extract(dow FROM (s.configuration->>'local_date')::date)::int AS weekday,(s.configuration->>'responsible_account_id'=$2::text) AS "isResponsible",coalesce((SELECT jsonb_agg(jsonb_build_object('date',o.local_date,'message',o.error) ORDER BY o.local_date) FROM recurrence_occurrence o WHERE o.series_id=s.id AND o.error IS NOT NULL),'[]'::jsonb) AS conflicts FROM reservation_series s JOIN reservation r ON r.id=s.source_reservation_id WHERE r.congregation_id=$1 AND (s.configuration->>'responsible_account_id'=$2::text OR $3::boolean) ORDER BY s.created_at,s.id`,
           [congregationId, accountId, membership.role === 'LOCAL_ADMIN'],
         )
       ).rows;
@@ -172,7 +172,27 @@ export class MonthlyScheduleService {
                   (states.find((row) => row.month === month)?.state ??
                     'open') === 'open',
               );
-            return { ...reservation, confirmedCount, openPositions, canJoin };
+            const canManageReservation =
+              (reservation.isResponsible ||
+                membership.role === 'LOCAL_ADMIN') &&
+              new Date(reservation.endsAt) > now &&
+              touched.every(
+                (month) =>
+                  months.includes(month) &&
+                  ((states.find((row) => row.month === month)?.state ??
+                    'open') === 'open' ||
+                    (membership.role === 'LOCAL_ADMIN' &&
+                      states.find((row) => row.month === month)?.state ===
+                        'reopened')),
+              );
+            return {
+              ...reservation,
+              confirmedCount,
+              openPositions,
+              canJoin,
+              canManageReservation,
+              thirdPositionVacant: !occupiedPositions.includes(3),
+            };
           },
         ),
         recurrences,

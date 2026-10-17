@@ -10,6 +10,16 @@ A política obrigatória está no [AGENTS.md](../../AGENTS.md).
 
 ## Antes da primeira migration
 
+O incremento de gestão adiciona `20261017000100_reservation_management_history`:
+histórico de alterações da reserva e cópia JSON do modelo das séries existentes,
+para que ajustar uma ocorrência não modifique as próximas silenciosamente.
+O backfill copia os sete campos do modelo da reserva de origem sem gerar reservas.
+DDL e backfill obtêm bloqueio em `reservation_series`; volume é o número de séries.
+Aplicar pelo job serializado, após teste em PostgreSQL descartável; falha interrompe
+promoção e exige inspeção do histórico e catálogo. Rollback preserva dados, mas
+código antigo volta a ler o modelo da reserva mutável e não é seguro após ajustes
+na origem. Sem reset, exclusão ou edição de migrations incorporadas.
+
 1. Aprovar por ADR a ferramenta que será a autoridade do histórico, sua versão
    e a versão principal do PostgreSQL.
 2. Definir diretório, formato, identificadores únicos e nomes em inglês.

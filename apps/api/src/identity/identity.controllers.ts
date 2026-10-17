@@ -537,6 +537,23 @@ export class IdentityController {
     );
   }
 
+  @Put('congregations/:id/reservations/:reservationId/third-position')
+  async reservationThirdPosition(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('reservationId') reservationId: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new ReservationsService(this.runtime.pool).thirdPosition(
+      account.accountId,
+      id,
+      reservationId,
+      body,
+    );
+  }
+
   @Post('congregations/:id/reservations/:reservationId/recurrence')
   async recurrenceActivate(
     @Req() request: HttpRequest,

@@ -122,8 +122,25 @@ export class RecurrenceService {
           );
         seriesId = randomUUID();
         await client.query(
-          'INSERT INTO reservation_series (id,source_reservation_id,started_by_account_id) VALUES ($1,$2,$3)',
-          [seriesId, reservationId, accountId],
+          'INSERT INTO reservation_series (id,source_reservation_id,started_by_account_id,configuration) VALUES ($1,$2,$3,$4)',
+          [
+            seriesId,
+            reservationId,
+            accountId,
+            JSON.stringify(
+              Object.fromEntries(
+                [
+                  'responsible_account_id',
+                  'point_id',
+                  'local_date',
+                  'start_hour',
+                  'duration',
+                  'equipment_type',
+                  'third_position_open',
+                ].map((key) => [key, source[key]]),
+              ),
+            ),
+          ],
         );
         await client.query(
           'INSERT INTO recurrence_occurrence (id,series_id,local_date,reservation_id) VALUES ($1,$2,$3,$4)',
@@ -178,12 +195,12 @@ export class RecurrenceService {
       throw new BadRequestException('Recorrência inválida.');
     const source = (
       await client.query(
-        'SELECT r.*,s.stopped_at FROM reservation_series s JOIN reservation r ON r.id=s.source_reservation_id WHERE s.id=$1 AND r.congregation_id=$2',
+        'SELECT r.*,s.stopped_at,s.configuration FROM reservation_series s JOIN reservation r ON r.id=s.source_reservation_id WHERE s.id=$1 AND r.congregation_id=$2',
         [id, congregationId],
       )
     ).rows[0];
     if (!source) throw new NotFoundException('Recorrência não encontrada.');
-    return source;
+    return { ...source, ...source.configuration };
   }
 
   async generate(
