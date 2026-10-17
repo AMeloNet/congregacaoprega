@@ -5,13 +5,14 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
 import { validateIdentityEnvironment } from './identity/identity.runtime.js';
 import { configureWebAssets } from './web-assets.js';
+import { pointPhotoJsonLimit } from './point-photo.js';
 
 async function bootstrap(): Promise<void> {
   validateIdentityEnvironment();
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
   });
-  app.useBodyParser('json', { limit: '3mb' });
+  app.useBodyParser('json', { limit: pointPhotoJsonLimit });
   app.setGlobalPrefix('api');
   configureWebAssets(app, resolve(import.meta.dirname, 'public'));
   const port = Number.parseInt(process.env.PORT ?? '3000', 10);

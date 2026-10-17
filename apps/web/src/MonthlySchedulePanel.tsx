@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { EquipmentContext } from './EquipmentPanel.js';
 import { ReservationForm } from './ReservationForm.js';
+import { PointPhoto } from './PointPhoto.js';
 import { ReservationDetailsToggle } from './ReservationDetailsPanel.js';
 import { ReservationExitControls } from './ReservationExitControls.js';
 import {
@@ -17,6 +18,7 @@ type Schedule = {
   managedInvitations?: ManagedReservationInvitation[];
   reservations?: {
     id: string;
+    pointId: string;
     pointName: string;
     date: string;
     startHour: number;
@@ -295,6 +297,9 @@ export function MonthlySchedulePanel({
                       {item.date.split('-').reverse().join('/')} ·{' '}
                       {item.pointName}
                     </h3>
+                    {item.pointId && (
+                      <PointPhoto context={context} pointId={item.pointId} />
+                    )}
                     <p>
                       {String(item.startHour).padStart(2, '0')}:00–
                       {String((item.startHour + item.duration) % 24).padStart(

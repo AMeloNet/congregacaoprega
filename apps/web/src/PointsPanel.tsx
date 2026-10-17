@@ -253,7 +253,7 @@ export function PointsPanel({
             }
           />
           <label htmlFor="point-photo">
-            Foto do ponto (opcional, até 2 MB)
+            Foto do ponto (opcional, até 20 MB)
           </label>
           <input
             id="point-photo"
@@ -263,10 +263,10 @@ export function PointsPanel({
               const file = event.target.files?.[0];
               if (!file) return;
               if (
-                file.size > 2 * 1024 * 1024 ||
+                file.size > 20 * 1024 * 1024 ||
                 !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)
               ) {
-                setError('Use foto JPG, PNG ou WebP de até 2 MB.');
+                setError('Use foto JPG, PNG ou WebP de até 20 MB.');
                 event.target.value = '';
                 return;
               }
