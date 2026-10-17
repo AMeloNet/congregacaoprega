@@ -75,7 +75,8 @@ model IdentityAccount {
   actedAuditEvents   IdentityAuditEvent[] @relation("AuditActor")
   subjectAuditEvents IdentityAuditEvent[] @relation("AuditSubject")
   scheduleMonthHistory ScheduleMonthHistory[]
-  reservations Reservation[]
+  reservations Reservation[] @relation("ReservationResponsible")
+  createdReservations Reservation[] @relation("ReservationCreator")
   reservationParticipations ReservationParticipation[]
   startedSeries ReservationSeries[] @relation("SeriesStarter")
   stoppedSeries ReservationSeries[] @relation("SeriesStopper")
@@ -125,6 +126,7 @@ model Membership {
   account        IdentityAccount  @relation(fields: [accountId], references: [id], onDelete: Restrict)
   congregation   Congregation     @relation(fields: [congregationId], references: [id], onDelete: Restrict)
   auditEvents    IdentityAuditEvent[]
+  profile PublisherProfile?
 
   @@unique([accountId, congregationId])
   @@index([congregationId, status])
@@ -303,6 +305,7 @@ model Reservation {
   congregationId String @map("congregation_id") @db.Uuid
   pointId String @map("point_id") @db.Uuid
   responsibleAccountId String @map("responsible_account_id") @db.Uuid
+  createdByAccountId String @map("created_by_account_id") @db.Uuid
   requestKey String @map("request_key") @db.Uuid
   localDate String @map("local_date")
   startHour Int @map("start_hour")
@@ -315,7 +318,8 @@ model Reservation {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   congregation Congregation @relation(fields: [congregationId], references: [id], onDelete: Restrict)
   point PreachingPoint @relation(fields: [pointId], references: [id], onDelete: Restrict)
-  responsible IdentityAccount @relation(fields: [responsibleAccountId], references: [id], onDelete: Restrict)
+  responsible IdentityAccount @relation("ReservationResponsible",fields: [responsibleAccountId], references: [id], onDelete: Restrict)
+  creator IdentityAccount @relation("ReservationCreator",fields: [createdByAccountId], references: [id], onDelete: Restrict)
   series ReservationSeries? @relation("SeriesSource")
   occurrence RecurrenceOccurrence? @relation("OccurrenceReservation")
   participations ReservationParticipation[]
@@ -324,7 +328,7 @@ model Reservation {
   attendance ReservationAttendance[]
   commands ReservationCommand[]
   alert ReservationAlert?
-  @@unique([congregationId, responsibleAccountId, requestKey], map: "reservation_request_key")
+  @@unique([congregationId, createdByAccountId, requestKey], map: "reservation_request_key")
   @@index([congregationId, startsAt, endsAt], map: "reservation_congregation_interval_idx")
   @@index([responsibleAccountId, startsAt, endsAt], map: "reservation_responsible_interval_idx")
   @@map("reservation")
@@ -405,6 +409,16 @@ model ReservationAttendance {
   account IdentityAccount @relation(fields:[accountId],references:[id],onDelete:Restrict)
   @@index([accountId,startsAt,endsAt],map:"reservation_attendance_account_interval_idx")
   @@map("reservation_attendance")
+}
+
+model PublisherProfile {
+  accountId String @map("account_id") @db.Uuid
+  congregationId String @map("congregation_id") @db.Uuid
+  displayName String @map("display_name")
+  changes Json @default("[]")
+  membership Membership @relation(fields:[accountId,congregationId],references:[accountId,congregationId],onDelete:Restrict,map:"publisher_profile_membership_fkey")
+  @@id([accountId,congregationId])
+  @@map("publisher_profile")
 }
 
 model ReservationCommand {

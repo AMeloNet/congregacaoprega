@@ -148,6 +148,7 @@ export class ReservationInvitationsService {
         `invitation:${id}`,
         'Você recebeu um convite para uma designação. Consulte Convites e avisos.',
         now,
+        reservationId,
       );
       await client.query('COMMIT');
       return { id, state: 'pending', expiresAt, position };
@@ -257,7 +258,7 @@ export class ReservationInvitationsService {
         );
         const refused = (
           await client.query(
-            `UPDATE reservation_invitation i SET state='declined',completed_at=$2 FROM reservation other WHERE other.id=i.reservation_id AND i.recipient_account_id=$1 AND i.id<>$3 AND i.state='pending' AND i.expires_at>$2 AND other.cancelled_at IS NULL AND other.starts_at<$5 AND other.ends_at>$4 RETURNING i.id,other.congregation_id,other.responsible_account_id`,
+            `UPDATE reservation_invitation i SET state='declined',completed_at=$2 FROM reservation other WHERE other.id=i.reservation_id AND i.recipient_account_id=$1 AND i.id<>$3 AND i.state='pending' AND i.expires_at>$2 AND other.cancelled_at IS NULL AND other.starts_at<$5 AND other.ends_at>$4 RETURNING i.id,other.congregation_id,other.responsible_account_id,other.id AS reservation_id`,
             [accountId, now, i.id, confirmation.startsAt, new Date(r.ends_at)],
           )
         ).rows;
@@ -269,6 +270,7 @@ export class ReservationInvitationsService {
             `invitation-declined:${other.id}`,
             'Convite recusado automaticamente por conflito com uma participação confirmada.',
             now,
+            other.reservation_id,
           );
         await recordReservationEvent(
           client,
@@ -337,6 +339,7 @@ export class ReservationInvitationsService {
           `invitation:${id}`,
           'Seu convite foi reenviado com novo prazo. O convite anterior perdeu a validade.',
           now,
+          r.id,
         );
         await recordReservationEvent(
           client,
@@ -363,6 +366,7 @@ export class ReservationInvitationsService {
           ? 'Convite recusado. A posição foi liberada.'
           : 'Convite retirado pelo responsável ou administrador.',
         now,
+        r.id,
       );
       await recordReservationEvent(
         client,

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { EquipmentContext } from './EquipmentPanel.js';
 import { ReservationForm } from './ReservationForm.js';
+import { ReservationDetailsToggle } from './ReservationDetailsPanel.js';
 import { ReservationExitControls } from './ReservationExitControls.js';
 import {
   ReservationInvitationsForm,
@@ -283,6 +284,11 @@ export function MonthlySchedulePanel({
               .map((item) => (
                 <article className="schedule-card" key={item.id}>
                   <div>
+                    <ReservationDetailsToggle
+                      context={context}
+                      reservationId={item.id}
+                      onSaved={() => setRevision((value) => value + 1)}
+                    />
                     <h3>
                       {item.date.split('-').reverse().join('/')} ·{' '}
                       {item.pointName}

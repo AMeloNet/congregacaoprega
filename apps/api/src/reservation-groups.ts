@@ -41,7 +41,18 @@ export async function notice(
   eventKey: string,
   message: string,
   now: Date,
+  reservationId?: string,
 ) {
+  if (reservationId) {
+    const r = (
+      await client.query(
+        'SELECT r.local_date,r.start_hour,p.name FROM reservation r JOIN preaching_point p ON p.id=r.point_id WHERE r.id=$1 AND r.congregation_id=$2',
+        [reservationId, congregationId],
+      )
+    ).rows[0];
+    if (r)
+      message += ` ${r.local_date.split('-').reverse().join('/')} · ${String(r.start_hour).padStart(2, '0')}:00 · ${r.name}.`;
+  }
   for (const account of new Set(recipients))
     await client.query(
       'INSERT INTO schedule_notice (id,congregation_id,recipient_account_id,event_key,message,created_at,next_attempt_at) VALUES ($1,$2,$3,$4,$5,$6,$6) ON CONFLICT (event_key,recipient_account_id) DO NOTHING',
@@ -75,6 +86,7 @@ export async function expireInvitations(
       `invitation-expired:${invitation.id}`,
       'Um convite expirou. A posição foi liberada.',
       now,
+      reservationId,
     );
 }
 

@@ -85,7 +85,7 @@ test('navigates the monthly schedule with a stable route and no horizontal overf
   });
   await page.goto('/');
   await expect(
-    page.getByText(/programação mensal e recursos usam dados reais/i),
+    page.getByText(/Programação, Convites e avisos e Recursos usam dados reais/i),
   ).toBeVisible();
   await page.keyboard.press('Tab');
   await expect(
@@ -216,29 +216,107 @@ test('joins an open position and shows participation and the confirmed minimum',
   ).toBe(false);
 });
 
-test('walks through reservation and invitation examples', async ({ page }) => {
-  await page.goto('/#nova-reserva');
+test('accepts a real invitation flow and consults the confirmed roster without horizontal overflow', async ({
+  page,
+}) => {
+  let accepted = false;
+  await page.route(
+    '**/api/congregations/congregation-example/publisher-profile',
+    async (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ displayName: 'Publicador Teste' }),
+      }),
+  );
+  await page.route(
+    '**/api/congregations/congregation-example/reservation-inbox',
+    async (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          invitations: [
+            {
+              id: 'targeted-invitation',
+              pointName: 'Ponto real de teste',
+              date: '2026-10-20',
+              startHour: 8,
+              duration: 2,
+              state: accepted ? 'accepted' : 'pending',
+            },
+          ],
+          notices: [],
+        }),
+      }),
+  );
+  await page.route(
+    '**/api/congregations/congregation-example/reservation-invitations/targeted-invitation/accept',
+    async (route) => {
+      expect(route.request().headers()['x-csrf-token']).toBe('controlled-csrf');
+      accepted = true;
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ state: 'accepted' }),
+      });
+    },
+  );
+  await page.route(
+    '**/api/congregations/congregation-example/schedule',
+    async (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reservations: [
+            {
+              id: 'real-booking',
+              pointName: 'Ponto real de teste',
+              date: '2026-10-20',
+            },
+          ],
+        }),
+      }),
+  );
+  await page.route(
+    '**/api/congregations/congregation-example/reservations/real-booking',
+    async (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'real-booking',
+          pointName: 'Ponto real de teste',
+          date: '2026-10-20',
+          participants: [
+            { accountId: 'owner', position: 1, name: 'Responsável Teste' },
+            { accountId: 'guest', position: 2, name: 'Publicador Teste' },
+          ],
+          history: [],
+        }),
+      }),
+  );
+  await page.goto('/#convites');
   await page
-    .getByRole('combobox', { name: 'Horário' })
-    .selectOption('08:00–10:00');
-  await page.getByRole('button', { name: 'Revisar reserva' }).click();
-  await expect(page.getByRole('alert')).toContainText('indisponível');
-  await page
-    .getByRole('combobox', { name: 'Horário' })
-    .selectOption('10:00–12:00');
-  await page.getByRole('button', { name: 'Revisar reserva' }).click();
-  await page
-    .getByRole('button', { name: 'Confirmar reserva simulada' })
+    .getByRole('button', { name: 'Aceitar convite', exact: true })
     .click();
   await expect(
-    page.getByRole('heading', { name: 'Detalhe da reserva' }),
+    page.getByText(
+      'Convite aceito. Convites conflitantes foram recusados automaticamente.',
+    ),
   ).toBeVisible();
-  await expect(page.getByTestId('positions').getByRole('listitem')).toHaveCount(
-    3,
-  );
-  await page.getByRole('link', { name: 'Convites e avisos' }).click();
-  await page.getByRole('button', { name: 'Aceitar convite' }).first().click();
-  await expect(page.getByRole('status')).toContainText('Convite aceito');
+  await page.getByRole('link', { name: 'Detalhe da reserva' }).click();
+  await page
+    .getByLabel('Designação', { exact: true })
+    .selectOption('real-booking');
+  await expect(
+    page.getByText('Responsável: Responsável Teste', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText('Participante: Publicador Teste', { exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+  ).toBe(false);
 });
 
 test('activates weekly recurrence, shows unavailable dates and stops without removing bookings', async ({

@@ -31,8 +31,6 @@ exige diagnóstico, sem reset nem marcação manual. Código anterior não consi
 convites como ocupação: rollback após criar convites exige suspender alterações
 de reservas até restaurar a validação, preservando tabelas, avisos e histórico.
 
-## Antes da primeira migration
-
 `20261017000300_reservation_exits_attendance` cria períodos efetivos de participação,
 comandos idempotentes, seleção de destinatários administrativos e verificações de
 mínimo no início. O backfill copia responsável e participantes existentes, limitando
@@ -43,6 +41,18 @@ interrompe promoção e requer diagnóstico, sem reset nem conciliação automá
 Código anterior ignora períodos encerrados e não é seguro após desistências ou
 cancelamento parcial: suspender gravações antes de eventual rollback e preservar
 as novas tabelas. A comparação de schema e os testes usam bancos descartáveis.
+
+`20261017000400_reservation_creator_publisher_names` preserva o criador atual das
+reservas existentes e muda a chave de idempotência para usar esse criador, que não
+muda na troca de responsável. Backfill linear no total de reservas; ALTER TABLE,
+FK e recriação do índice exigem bloqueios e aplicação serializada antes do código.
+O novo cadastro de nomes é local por vínculo, inicialmente vazio, com histórico
+JSON e FK composta que impede nome sem associação à congregação. Não gerar nomes
+por e-mail nem copiar dados pessoais para fixtures. Falha interrompe promoção e
+requer diagnóstico; código anterior não preserva idempotência após troca, portanto
+rollback exige suspender gravações e preservar colunas/tabelas e dados.
+
+## Antes da primeira migration
 
 1. Aprovar por ADR a ferramenta que será a autoridade do histórico, sua versão
    e a versão principal do PostgreSQL.
