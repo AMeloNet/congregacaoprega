@@ -4,6 +4,8 @@ import { ReservationForm } from './ReservationForm.js';
 
 type Schedule = {
   timezone: string;
+  serverNow: string;
+  observedAt?: number;
   months: { month: string; state: string; canBook: boolean }[];
   equipment: { type: string; units: number }[];
   reservations?: {
@@ -15,6 +17,10 @@ type Schedule = {
     equipmentType: string;
     thirdPositionOpen: boolean;
     isResponsible: boolean;
+    isParticipant?: boolean;
+    confirmedCount?: number;
+    openPositions?: number;
+    canJoin?: boolean;
     seriesId?: string | null;
     seriesStoppedAt?: string | null;
   }[];
@@ -78,7 +84,7 @@ export function MonthlySchedulePanel({
           throw new Error('Não foi possível carregar a programação.');
         const result = (await response.json()) as Schedule;
         if (!controller.signal.aborted) {
-          setData(result);
+          setData({ ...result, observedAt: performance.now() });
           setSelected((previous) =>
             result.months.some((item) => item.month === previous)
               ? previous
@@ -102,7 +108,7 @@ export function MonthlySchedulePanel({
       const result = await response.json();
       if (!response.ok)
         throw new Error(result.message ?? 'Não foi possível alterar o mês.');
-      setData(result as Schedule);
+      setData({ ...result, observedAt: performance.now() } as Schedule);
     } catch (failure) {
       setError((failure as Error).message);
     } finally {
@@ -110,6 +116,26 @@ export function MonthlySchedulePanel({
     }
   }
   const month = data?.months.find((m) => m.month === selected);
+  async function join(id: string) {
+    setBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      const response = await fetch(
+        `/api/congregations/${encodeURIComponent(context.congregationId)}/reservations/${id}/join`,
+        { method: 'POST', headers: { 'x-csrf-token': context.csrfToken } },
+      );
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(result.message ?? 'Não foi possível participar.');
+      setMessage('Sua participação foi confirmada nesta designação.');
+      setRevision((value) => value + 1);
+    } catch (failure) {
+      setError((failure as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   async function recurrence(path: string) {
     setBusy(true);
     setError('');
@@ -197,6 +223,11 @@ export function MonthlySchedulePanel({
                 month={selected}
                 points={data.points}
                 onSaved={() => setRevision((value) => value + 1)}
+                timezone={data.timezone}
+                clock={{
+                  instant: data.serverNow,
+                  observedAt: data.observedAt!,
+                }}
               />
             )}
           <h2>Designações do mês</h2>
@@ -226,12 +257,33 @@ export function MonthlySchedulePanel({
                       · {labels[item.equipmentType]}
                     </p>
                     <p>
-                      {item.isResponsible ? 'Sua reserva' : 'Grupo em formação'}{' '}
-                      · 1 responsável ·{' '}
-                      {item.thirdPositionOpen
-                        ? '2 vagas abertas'
-                        : '1 vaga aberta e terceira bloqueada'}
+                      {item.isResponsible
+                        ? 'Sua reserva'
+                        : item.isParticipant
+                          ? 'Você participa'
+                          : 'Designação'}
+                      {' · '}
+                      {item.confirmedCount ?? 1} confirmado(s)
+                      {' · '}
+                      {(item.confirmedCount ?? 1) >= 2
+                        ? 'Mínimo atendido'
+                        : 'Grupo em formação'}
+                      {' · '}
+                      {item.openPositions ??
+                        (item.thirdPositionOpen ? 2 : 1)}{' '}
+                      vaga(s) aberta(s)
+                      {!item.thirdPositionOpen && ' · Terceira vaga bloqueada'}
                     </p>
+                    {item.canJoin && (
+                      <button
+                        type="button"
+                        className="button primary"
+                        disabled={busy}
+                        onClick={() => void join(item.id)}
+                      >
+                        Participar
+                      </button>
+                    )}
                     {item.seriesId ? (
                       <p>
                         {item.seriesStoppedAt

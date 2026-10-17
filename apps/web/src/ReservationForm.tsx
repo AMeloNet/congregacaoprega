@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { EquipmentContext } from './EquipmentPanel.js';
 
 export type BookingPoint = { id: string; name: string; allowedTypes: string[] };
@@ -21,12 +21,45 @@ export function ReservationForm({
   month,
   points,
   onSaved,
+  timezone,
+  clock,
 }: {
   context: EquipmentContext;
   month: string;
   points: BookingPoint[];
   onSaved: () => void;
+  timezone: string;
+  clock: { instant: string; observedAt: number };
 }) {
+  const currentInstant = () =>
+    new Date(Date.parse(clock.instant) + performance.now() - clock.observedAt);
+  const [now, setNow] = useState(currentInstant);
+  useEffect(() => {
+    const timer = setInterval(
+      () =>
+        setNow(
+          new Date(
+            Date.parse(clock.instant) + performance.now() - clock.observedAt,
+          ),
+        ),
+      30_000,
+    );
+    return () => clearInterval(timer);
+  }, [clock.instant, clock.observedAt]);
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      hourCycle: 'h23',
+    })
+      .formatToParts(now)
+      .map((part) => [part.type, part.value]),
+  );
+  const today = `${parts.year}-${parts.month}-${parts.day}`,
+    currentHour = Number(parts.hour);
   const [weekday, setWeekday] = useState('');
   const [date, setDate] = useState('');
   const [pointId, setPointId] = useState('');
@@ -46,9 +79,15 @@ export function ReservationForm({
     const instant = new Date(`${value}T12:00:00Z`);
     return (
       instant.toISOString().slice(0, 7) === month &&
-      String(instant.getUTCDay()) === weekday
+      String(instant.getUTCDay()) === weekday &&
+      (value > today || (value === today && currentHour < 23))
     );
   });
+  const selectedDate = dates.includes(date) ? date : '';
+  const hours = Array.from({ length: 24 }, (_, index) => index).filter(
+    (value) => selectedDate && (selectedDate > today || value > currentHour),
+  );
+  const selectedHour = hour !== '' && hours.includes(Number(hour)) ? hour : '';
   async function save(event: FormEvent) {
     event.preventDefault();
     setError('');
@@ -56,8 +95,8 @@ export function ReservationForm({
     setBusy(true);
     const body = {
       pointId,
-      date,
-      startHour: Number(hour),
+      date: selectedDate,
+      startHour: Number(selectedHour),
       duration: Number(duration),
       equipmentType,
       thirdPositionOpen: third === 'open',
@@ -121,8 +160,11 @@ export function ReservationForm({
         <select
           id="booking-date"
           required
-          value={date}
-          onChange={(event) => setDate(event.target.value)}
+          value={selectedDate}
+          onChange={(event) => {
+            setDate(event.target.value);
+            setHour('');
+          }}
         >
           <option value="">Selecione</option>
           {dates.map((value) => (
@@ -166,11 +208,11 @@ export function ReservationForm({
         <select
           id="booking-hour"
           required
-          value={hour}
+          value={selectedHour}
           onChange={(event) => setHour(event.target.value)}
         >
           <option value="">Selecione</option>
-          {Array.from({ length: 24 }, (_, index) => (
+          {hours.map((index) => (
             <option key={index} value={index}>
               {String(index).padStart(2, '0')}:00
             </option>

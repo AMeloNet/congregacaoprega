@@ -74,7 +74,11 @@ as demais telas de exemplos permanecem demonstrativas. Contrato em PRG-001
 e RES-001. Após criar uma reserva, “Repetir toda semana” ativa a recorrência
 somente do responsável. A API processa séries na inicialização e a cada 60 segundos;
 conflitos ficam explícitos e exigem nova tentativa manual. Encerrar preserva
-reservas existentes. Sem convites ou impressão e sem publicação em staging.
+reservas existentes. O botão “Participar” permite ocupar vaga aberta em nome
+próprio, com validação de agenda e bloqueio mensal no servidor; a consulta mostra
+confirmados, vagas e mínimo atendido. Participantes adicionais não são recorrentes.
+Datas/horas passadas são filtradas pelo relógio da API no fuso da congregação.
+Sem convites ou impressão e sem publicação automática em staging.
 
 ```sh
 pnpm docs:check
