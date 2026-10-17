@@ -54,6 +54,15 @@ rollback exige suspender gravações e preservar colunas/tabelas e dados.
 
 ## Antes da primeira migration
 
+`20261017000500_monthly_report_versions` cria snapshots imutáveis de emissão,
+com índices únicos por mês/versão e autor/chave, e FK composta ao estado mensal.
+Tabela começa vazia; meses já finalizados não recebem versões silenciosamente.
+Snapshot contém nomes e os dados mínimos de impressão, sem e-mails. DDL se limita
+à nova tabela, índices e referências. Aplicar serializado antes do código; falha
+interrompe promoção e requer diagnóstico sem reset. Rollback preserva versões,
+mas código anterior não as emite nem oferece reimpressão; não usar impressão
+demonstrativa como substituta de snapshot persistido.
+
 1. Aprovar por ADR a ferramenta que será a autoridade do histórico, sua versão
    e a versão principal do PostgreSQL.
 2. Definir diretório, formato, identificadores únicos e nomes em inglês.

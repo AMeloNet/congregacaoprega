@@ -1390,7 +1390,10 @@ body {
     display: block;
   }
   .sidebar,
+  .skip-link,
   .topbar,
+  .identity-bar,
+  .identity-actions,
   .demo-banner,
   .page-top,
   .no-print,
@@ -1512,4 +1515,75 @@ body {
 }
 .weekly-hours-panel {
   min-width: 0;
+}
+
+.schedule-report {
+  max-width: 100%;
+  min-width: 0;
+}
+.report-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.schedule-report table {
+  width: 100%;
+  min-width: 640px;
+  table-layout: fixed;
+}
+.schedule-report th:nth-child(1) {
+  width: 13%;
+}
+.schedule-report th:nth-child(2) {
+  width: 15%;
+}
+.schedule-report th:nth-child(3) {
+  width: 25%;
+}
+.schedule-report th:nth-child(4) {
+  width: 17%;
+}
+.schedule-report th:nth-child(5) {
+  width: 30%;
+}
+.schedule-report td,
+.schedule-report th {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+.schedule-report .report-top {
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: transparent;
+  color: inherit;
+}
+
+@media print {
+  html {
+    color-scheme: light !important;
+    background: #fff !important;
+  }
+  .schedule-report,
+  .schedule-report * {
+    color: #000 !important;
+  }
+  .schedule-report {
+    background: #fff !important;
+  }
+  .schedule-report .report-top {
+    background: #fff !important;
+  }
+  .report-table-wrap {
+    overflow: visible;
+  }
+  .schedule-report table {
+    min-width: 0;
+    font-size: 10pt;
+  }
+  .schedule-report thead {
+    display: table-header-group;
+  }
+  .schedule-report td,
+  .schedule-report th {
+    padding: 3mm 2mm;
+  }
 }
