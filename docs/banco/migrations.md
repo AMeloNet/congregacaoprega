@@ -92,6 +92,20 @@ arquivo de backup não comprova recuperação.
 
 ## Organização mensal PRG-001
 
+`20261016000600_create_reservation_participation` cria participações adicionais,
+com FKs para reserva/conta, posição restrita a 2 ou 3, chave primária reserva/conta,
+índice único reserva/posição e índice de agenda por conta/início. CHECK exige que
+início efetivo não anteceda ingresso. É aditiva, sem backfill: responsável continua
+na posição 1 do registro existente. Bloqueios de DDL limitados à estrutura nova e
+referências das FKs. Aplicar por `migrate deploy` no fluxo serializado; falha exige
+diagnóstico de catálogo/histórico antes de conciliação. Reverter código preserva
+participações; não apagar dados para reverter. Teste HTTP/PostgreSQL:
+`open-positions.integration.spec.ts`. Não aplicada em staging neste incremento.
+Após haver ingressos, reverter somente o código para uma versão anterior exige
+interromper alterações de reservas até restabelecer a validação de participações:
+a versão antiga não considera essas pessoas na agenda. Preservar as tabelas
+não torna esse rollback funcionalmente seguro por si só.
+
 `20261016000500_create_weekly_recurrence` acrescenta séries e ocorrências por data,
 autores de ativação/encerramento e tentativas de geração. Índices únicos por origem,
 série/data e reserva impedem duplicação; CHECKs exigem resultado coerente (reserva

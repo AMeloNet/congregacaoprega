@@ -56,6 +56,7 @@ test('navigates the monthly schedule with a stable route and no horizontal overf
         contentType: 'application/json',
         body: JSON.stringify({
           timezone: 'America/Sao_Paulo',
+          serverNow: '2026-10-16T12:00:00Z',
           months: [
             { month: '2026-10', state: 'open', canBook: true },
             { month: '2026-11', state: 'finalized', canBook: false },
@@ -143,6 +144,78 @@ test('navigates the monthly schedule with a stable route and no horizontal overf
   expect(businessRequests.some((url) => url.endsWith('/schedule'))).toBe(true);
 });
 
+test('joins an open position and shows participation and the confirmed minimum', async ({
+  page,
+}) => {
+  let joined = false;
+  await page.route(
+    '**/api/congregations/congregation-example/schedule',
+    async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          timezone: 'America/Sao_Paulo',
+          serverNow: '2026-10-16T12:00:00Z',
+          months: [{ month: '2026-10', state: 'open', canBook: true }],
+          equipment: [],
+          points: [],
+          recurrences: [],
+          reservations: [
+            {
+              id: 'open-reservation',
+              pointName: 'Ponto com vaga',
+              date: '2026-10-20',
+              startHour: 8,
+              duration: 2,
+              equipmentType: 'CART',
+              thirdPositionOpen: false,
+              isResponsible: false,
+              isParticipant: joined,
+              confirmedCount: joined ? 2 : 1,
+              openPositions: joined ? 0 : 1,
+              canJoin: !joined,
+            },
+          ],
+        }),
+      });
+    },
+  );
+  await page.route(
+    '**/api/congregations/congregation-example/reservations/open-reservation/join',
+    async (route) => {
+      expect(route.request().headers()['x-csrf-token']).toBe('controlled-csrf');
+      expect(route.request().method()).toBe('POST');
+      expect(route.request().postData()).toBeNull();
+      joined = true;
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ position: 2, confirmedCount: 2 }),
+      });
+    },
+  );
+  await page.goto('/#programacao');
+  await expect(page.getByText(/1 confirmado.*Grupo em formação/)).toBeVisible();
+  await page.getByRole('button', { name: 'Participar', exact: true }).click();
+  await expect(
+    page.getByText('Sua participação foi confirmada nesta designação.'),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Você participa.*2 confirmado.*Mínimo atendido.*0 vaga/),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Participar', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Repetir toda semana' }),
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+  ).toBe(false);
+});
+
 test('walks through reservation and invitation examples', async ({ page }) => {
   await page.goto('/#nova-reserva');
   await page
@@ -191,6 +264,7 @@ test('activates weekly recurrence, shows unavailable dates and stops without rem
         contentType: 'application/json',
         body: JSON.stringify({
           timezone: 'America/Sao_Paulo',
+          serverNow: '2026-10-16T12:00:00Z',
           months: [
             { month: '2026-10', state: 'open', canBook: true },
             { month: '2026-11', state: 'open', canBook: true },

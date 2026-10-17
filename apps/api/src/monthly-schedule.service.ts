@@ -61,7 +61,8 @@ export class MonthlyScheduleService {
           [congregationId],
         )
       ).rows[0];
-      const current = localMonth(this.now(), congregation.timezone);
+      const now = this.now();
+      const current = localMonth(now, congregation.timezone);
       const months = [current, followingMonth(current)];
       if (action !== 'get') {
         if (!month || !months.includes(month))
@@ -116,7 +117,7 @@ export class MonthlyScheduleService {
       ).rows;
       const reservations = (
         await client.query(
-          `SELECT r.id,r.point_id AS "pointId",p.name AS "pointName",r.local_date AS date,r.start_hour AS "startHour",r.duration,r.equipment_type AS "equipmentType",r.third_position_open AS "thirdPositionOpen",(r.responsible_account_id=$3) AS "isResponsible",o.series_id AS "seriesId",s.stopped_at AS "seriesStoppedAt" FROM reservation r JOIN preaching_point p ON p.id=r.point_id LEFT JOIN recurrence_occurrence o ON o.reservation_id=r.id LEFT JOIN reservation_series s ON s.id=o.series_id WHERE r.congregation_id=$1 AND substring(r.local_date,1,7)=ANY($2) AND r.cancelled_at IS NULL ORDER BY r.local_date,r.start_hour,r.id`,
+          `SELECT r.id,r.point_id AS "pointId",p.name AS "pointName",r.local_date AS date,r.start_hour AS "startHour",r.duration,r.ends_at AS "endsAt",r.equipment_type AS "equipmentType",r.third_position_open AS "thirdPositionOpen",(r.responsible_account_id=$3) AS "isResponsible",(r.responsible_account_id=$3 OR EXISTS(SELECT 1 FROM reservation_participation mine WHERE mine.reservation_id=r.id AND mine.account_id=$3)) AS "isParticipant",ARRAY(SELECT position FROM reservation_participation occupied WHERE occupied.reservation_id=r.id) AS "occupiedPositions",o.series_id AS "seriesId",s.stopped_at AS "seriesStoppedAt" FROM reservation r JOIN preaching_point p ON p.id=r.point_id LEFT JOIN recurrence_occurrence o ON o.reservation_id=r.id LEFT JOIN reservation_series s ON s.id=o.series_id WHERE r.congregation_id=$1 AND substring(r.local_date,1,7)=ANY($2) AND r.cancelled_at IS NULL ORDER BY r.local_date,r.start_hour,r.id`,
           [congregationId, months, accountId],
         )
       ).rows;
@@ -129,6 +130,7 @@ export class MonthlyScheduleService {
       await client.query('COMMIT');
       return {
         timezone: congregation.timezone,
+        serverNow: now.toISOString(),
         months: months.map((value) => {
           const state = states.find((s) => s.month === value)?.state ?? 'open';
           return { month: value, state, canBook: state === 'open' };
@@ -147,7 +149,32 @@ export class MonthlyScheduleService {
           }),
         })),
         equipment,
-        reservations,
+        reservations: reservations.map(
+          ({ occupiedPositions, ...reservation }) => {
+            const confirmedCount = 1 + occupiedPositions.length;
+            const openPositions = [
+              2,
+              ...(reservation.thirdPositionOpen ? [3] : []),
+            ].filter(
+              (position) => !occupiedPositions.includes(position),
+            ).length;
+            const touched = [
+              reservation.date.slice(0, 7),
+              localMonth(new Date(reservation.endsAt), congregation.timezone),
+            ];
+            const canJoin =
+              !reservation.isParticipant &&
+              openPositions > 0 &&
+              new Date(reservation.endsAt) > now &&
+              touched.every(
+                (month) =>
+                  months.includes(month) &&
+                  (states.find((row) => row.month === month)?.state ??
+                    'open') === 'open',
+              );
+            return { ...reservation, confirmedCount, openPositions, canJoin };
+          },
+        ),
         recurrences,
       };
     } catch (error) {

@@ -41,3 +41,13 @@ histórico de tentativas. A execução periódica usa permissão de publicador,
 inclusive quando a série foi ativada por administrador; reabertura exige ação
 administrativa explícita. Encerrar o modelo preserva todas as reservas existentes.
 Contrato, periodicidade e tratamento de pendências estão em PRG-001.
+
+O incremento posterior de vagas abertas adiciona `reservation_participation`
+somente para posições 2 e 3. O responsável continua implícito na posição 1;
+nenhum backfill o duplica. Chaves reserva/conta e reserva/posição impedem ocupações
+duplicadas. Ingresso registra conta, posição, instante e início efetivo, sem
+exclusão ou desistência neste contrato. Agenda e limite diário passam a unir
+reservas próprias e participações, dividindo o tempo efetivo por data local com
+precisão de milissegundos. O mesmo advisory lock da conta serializa criação,
+geração recorrente e ingresso, também entre congregações; o bloqueio da congregação
+serializa a última posição e a finalização. Ingresso não consome outro equipamento.

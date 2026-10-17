@@ -6,8 +6,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Pool, PoolClient } from 'pg';
-import { followingMonth, localMonth } from './monthly-schedule.service.js';
-import { localParts, reservationTimes } from './reservation-time.js';
+import { reservationTimes } from './reservation-time.js';
+import {
+  assertPublishedMonths,
+  assertReservationResources,
+  assertParticipantAgenda,
+  unavailable,
+} from './reservation-validation.js';
 
 export const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,11 +25,6 @@ export type ReservationInput = {
   equipmentType: string;
   thirdPositionOpen: boolean;
 };
-export const unavailable = (reason: string) =>
-  new ConflictException({
-    code: 'RESERVATION_UNAVAILABLE',
-    message: `Reserva indisponível: ${reason}`,
-  });
 
 export function validateReservation(input: unknown): ReservationInput {
   if (!input || typeof input !== 'object' || Array.isArray(input))
@@ -124,141 +124,29 @@ export async function createReservation(
   );
   if (times.start <= now)
     throw new BadRequestException('Escolha um horário futuro.');
-  const current = localMonth(now, timezone);
-  const allowed = [current, followingMonth(current)];
-  const touched = [
-    ...new Set([input.date.slice(0, 7), localMonth(times.end, timezone)]),
-  ];
-  if (touched.some((month) => !allowed.includes(month)))
-    throw unavailable('mês fora do período liberado.');
-  const states = (
-    await client.query(
-      'SELECT state FROM schedule_month WHERE congregation_id=$1 AND month=ANY($2)',
-      [congregationId, touched],
-    )
-  ).rows;
-  if (
-    states.some(
-      (row) =>
-        row.state === 'finalized' ||
-        (row.state === 'reopened' && role !== 'LOCAL_ADMIN'),
-    )
-  )
-    throw unavailable('mês bloqueado.');
-  const point = (
-    await client.query(
-      'SELECT capacity,allowed_types::text[] AS types FROM preaching_point WHERE id=$1 AND congregation_id=$2',
-      [input.pointId, congregationId],
-    )
-  ).rows[0];
-  if (!point) throw new NotFoundException('Ponto não encontrado.');
-  if (!point.types.includes(input.equipmentType))
-    throw unavailable('tipo de equipamento não permitido no ponto.');
-  const hours = (
-    await client.query(
-      'SELECT day,mode,intervals FROM point_weekly_hours_day WHERE point_id=$1',
-      [input.pointId],
-    )
-  ).rows;
-  for (const segment of times.segments) {
-    const day = hours.find((row) => row.day === segment.weekday);
-    const minute = segment.hour * 60;
-    const minutes = (text: string) => {
-      const [hour, part] = text.split(':').map(Number);
-      return hour! * 60 + part!;
-    };
-    let coveredUntil = minute;
-    if (day?.mode === 'intervals') {
-      const ranges = (day.intervals as { start: string; end: string }[])
-        .map(
-          (interval) =>
-            [minutes(interval.start), minutes(interval.end)] as const,
-        )
-        .sort((a, b) => a[0] - b[0]);
-      for (const [start, end] of ranges) {
-        if (start > coveredUntil) break;
-        if (end > coveredUntil) coveredUntil = end;
-      }
-    }
-    if (
-      day?.mode === 'closed' ||
-      (day?.mode === 'intervals' && coveredUntil < minute + 60)
-    )
-      throw unavailable('horário fechado no ponto.');
-  }
-  const reservations = (
-    await client.query(
-      'SELECT point_id,equipment_type,starts_at,ends_at FROM reservation WHERE congregation_id=$1 AND cancelled_at IS NULL AND starts_at<$3 AND ends_at>$2',
-      [congregationId, times.start, times.end],
-    )
-  ).rows;
-  const units = Number(
-    (
-      await client.query(
-        'SELECT count(*) FROM equipment WHERE congregation_id=$1 AND type=$2 AND active',
-        [congregationId, input.equipmentType],
-      )
-    ).rows[0].count,
+  await assertPublishedMonths(
+    client,
+    congregationId,
+    timezone,
+    times.start,
+    times.end,
+    now,
+    role === 'LOCAL_ADMIN',
   );
-  // Check the peak simultaneous use, not the total number of intersecting rows.
-  const boundaries = [
-    times.start.getTime(),
-    ...reservations.map((row) =>
-      Math.max(times.start.getTime(), new Date(row.starts_at).getTime()),
-    ),
-  ];
-  for (const instant of boundaries) {
-    const active = reservations.filter(
-      (row) =>
-        new Date(row.starts_at).getTime() <= instant &&
-        new Date(row.ends_at).getTime() > instant,
-    );
-    if (
-      active.filter((row) => row.point_id === input.pointId).length >=
-        point.capacity ||
-      active.filter((row) => row.equipment_type === input.equipmentType)
-        .length >= units
-    )
-      throw unavailable('ponto ou equipamento ocupado.');
-  }
-  const own = (
-    await client.query(
-      'SELECT starts_at,ends_at FROM reservation WHERE responsible_account_id=$1 AND cancelled_at IS NULL AND starts_at<$3 AND ends_at>$2',
-      [
-        owner,
-        new Date(times.start.getTime() - 48 * 3600000),
-        new Date(times.end.getTime() + 48 * 3600000),
-      ],
-    )
-  ).rows;
-  if (
-    own.some(
-      (row) =>
-        new Date(row.starts_at) < times.end &&
-        new Date(row.ends_at) > times.start,
-    )
-  )
-    throw unavailable('participante já designado neste horário.');
-  const totals = new Map<string, number>();
-  for (const row of own) {
-    for (
-      let instant = new Date(row.starts_at).getTime();
-      instant < new Date(row.ends_at).getTime();
-      instant += 60000
-    ) {
-      const date = localParts(new Date(instant), timezone).date;
-      totals.set(
-        date,
-        (totals.get(date) ?? 0) +
-          Math.min(60000, new Date(row.ends_at).getTime() - instant) / 60000,
-      );
-    }
-  }
-  for (const segment of times.segments) {
-    totals.set(segment.date, (totals.get(segment.date) ?? 0) + 60);
-    if (totals.get(segment.date)! > 480)
-      throw unavailable('limite de oito horas por dia excedido.');
-  }
+  await assertReservationResources(
+    client,
+    congregationId,
+    input.pointId,
+    input.equipmentType,
+    times,
+  );
+  await assertParticipantAgenda(
+    client,
+    owner,
+    times.start,
+    times.end,
+    timezone,
+  );
   return (
     await client.query(
       'INSERT INTO reservation (id,congregation_id,point_id,responsible_account_id,request_key,local_date,start_hour,duration,equipment_type,third_position_open,starts_at,ends_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *',
@@ -285,6 +173,122 @@ export class ReservationsService {
     private readonly pool: Pool,
     private readonly now = () => new Date(),
   ) {}
+  async join(
+    accountId: string,
+    congregationId: string,
+    reservationId: string,
+    input?: unknown,
+  ) {
+    if (
+      !uuidPattern.test(reservationId) ||
+      (input !== undefined &&
+        (!input ||
+          typeof input !== 'object' ||
+          Array.isArray(input) ||
+          Object.keys(input).length > 0))
+    )
+      throw new BadRequestException(
+        'O ingresso não aceita participante ou posição informados pelo cliente.',
+      );
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await reservationAccess(client, accountId, congregationId);
+      await lockReservationOwner(client, accountId);
+      const congregation = (
+        await client.query(
+          'SELECT timezone FROM congregation WHERE id=$1 FOR UPDATE',
+          [congregationId],
+        )
+      ).rows[0];
+      const reservation = (
+        await client.query(
+          'SELECT * FROM reservation WHERE id=$1 AND congregation_id=$2',
+          [reservationId, congregationId],
+        )
+      ).rows[0];
+      if (!reservation) throw new NotFoundException('Reserva não encontrada.');
+      const now = this.now(),
+        start = new Date(reservation.starts_at),
+        end = new Date(reservation.ends_at);
+      if (reservation.cancelled_at || end <= now)
+        throw unavailable('reserva cancelada ou encerrada.');
+      // This is spontaneous self-admission, including when the caller is an admin.
+      // Administrative inclusion after reopening is a separate, future operation.
+      await assertPublishedMonths(
+        client,
+        congregationId,
+        congregation.timezone,
+        start,
+        end,
+        now,
+      );
+      const participants = (
+        await client.query(
+          'SELECT account_id,position,joined_at,starts_at FROM reservation_participation WHERE reservation_id=$1 ORDER BY position',
+          [reservationId],
+        )
+      ).rows;
+      const existing = participants.find((row) => row.account_id === accountId);
+      if (reservation.responsible_account_id === accountId || existing) {
+        await client.query('COMMIT');
+        return {
+          reservationId,
+          position: existing?.position ?? 1,
+          startsAt: existing?.starts_at ?? start,
+          confirmedCount: 1 + participants.length,
+        };
+      }
+      const position = [
+        2,
+        ...(reservation.third_position_open ? [3] : []),
+      ].find((value) => !participants.some((row) => row.position === value));
+      if (!position)
+        throw unavailable(
+          reservation.third_position_open
+            ? 'grupo cheio.'
+            : 'terceira vaga bloqueada.',
+        );
+      const times = reservationTimes(
+        reservation.local_date,
+        reservation.start_hour,
+        reservation.duration,
+        congregation.timezone,
+      );
+      const effectiveStart = start > now ? start : now;
+      await assertReservationResources(
+        client,
+        congregationId,
+        reservation.point_id,
+        reservation.equipment_type,
+        { ...times, start: effectiveStart },
+        reservationId,
+      );
+      await assertParticipantAgenda(
+        client,
+        accountId,
+        effectiveStart,
+        end,
+        congregation.timezone,
+      );
+      await client.query(
+        'INSERT INTO reservation_participation (reservation_id,account_id,position,joined_at,starts_at) VALUES ($1,$2,$3,$4,$5)',
+        [reservationId, accountId, position, now, effectiveStart],
+      );
+      await client.query('COMMIT');
+      return {
+        reservationId,
+        position,
+        startsAt: effectiveStart,
+        confirmedCount: 2 + participants.length,
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
   async create(accountId: string, congregationId: string, input: unknown) {
     const body = validateReservation(input);
     const client = await this.pool.connect();
