@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module';
 import { randomUUID } from 'node:crypto';
+import { pointPhotoJsonLimit } from '../../../../apps/api/src/point-photo.js';
 import type { Pool } from 'pg';
 import { IdentityController } from '../../../../apps/api/src/identity/identity.controllers.js';
 import { IdentityRuntime } from '../../../../apps/api/src/identity/identity.runtime.js';
@@ -84,7 +85,7 @@ export async function reservationApp(
     ],
   }).compile();
   const app = moduleRef.createNestApplication({ rawBody: true });
-  app.useBodyParser('json', { limit: '3mb' });
+  app.useBodyParser('json', { limit: pointPhotoJsonLimit });
   app.setGlobalPrefix('api');
   await app.listen(0, '127.0.0.1');
   const base = `${await app.getUrl()}/api/congregations/${congregation}`;

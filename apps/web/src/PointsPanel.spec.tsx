@@ -26,6 +26,20 @@ describe('points interface', () => {
     ).toBeInTheDocument();
     expect(screen.queryByLabelText('Nome do ponto')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Novo ponto' }));
+    const upload = screen.getByLabelText('Foto do ponto (opcional, até 20 MB)');
+    const oversized = new File(['example'], 'oversized.png', {
+      type: 'image/png',
+    });
+    Object.defineProperty(oversized, 'size', { value: 20 * 1024 * 1024 + 1 });
+    await user.upload(upload, oversized);
+    expect(screen.getByRole('alert')).toHaveTextContent('até 20 MB');
+    const allowed = new File(['example'], 'allowed.png', { type: 'image/png' });
+    Object.defineProperty(allowed, 'size', { value: 20 * 1024 * 1024 });
+    await user.upload(upload, allowed);
+    expect(
+      await screen.findByRole('img', { name: 'Prévia da foto do ponto' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Grupos simultâneos')).toHaveValue(1);
     await user.type(screen.getByLabelText('Nome do ponto'), 'Test point');
     await user.type(

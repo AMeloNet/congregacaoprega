@@ -1,18 +1,24 @@
 import { BadRequestException } from '@nestjs/common';
 
+export const maxPointPhotoBytes = 20 * 1024 * 1024;
+export const pointPhotoJsonLimit = '28mb';
+const maxEncodedPhotoLength =
+  Math.ceil(maxPointPhotoBytes / 3) * 4 + 'data:image/jpeg;base64,'.length;
+
 // Read raster dimensions without allocating a decompressed bitmap.
 export function validatePointPhoto(input: unknown): string {
   if (input === undefined || input === '') return '';
   const invalid = () =>
     new BadRequestException(
-      'Use foto JPG, PNG ou WebP de até 2 MB e 4096 × 4096 pixels.',
+      'Use foto JPG, PNG ou WebP de até 20 MB e 4096 × 4096 pixels.',
     );
-  if (typeof input !== 'string' || input.length > 2796250) throw invalid();
+  if (typeof input !== 'string' || input.length > maxEncodedPhotoLength)
+    throw invalid();
   const match =
     /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(input);
   if (!match) throw invalid();
   const data = Buffer.from(match[2]!, 'base64');
-  if (data.length > 2 * 1024 * 1024 || data.toString('base64') !== match[2])
+  if (data.length > maxPointPhotoBytes || data.toString('base64') !== match[2])
     throw invalid();
   let width = 0,
     height = 0;

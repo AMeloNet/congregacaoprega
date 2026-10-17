@@ -35,6 +35,7 @@ export function PointPhoto({
       {photo && (
         <img
           className="point-photo"
+          loading="lazy"
           src={photo}
           alt="Foto do ponto de pregação"
         />

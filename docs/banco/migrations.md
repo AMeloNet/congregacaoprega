@@ -10,6 +10,17 @@ A política obrigatória está no [AGENTS.md](../../AGENTS.md).
 
 ## Incrementos recentes
 
+`20261017000800_point_photo_twenty_mb` amplia somente a restrição de tamanho da
+foto do ponto para acomodar uma data URL de até 20 MiB de conteúdo (27.962.051
+bytes com base64 e prefixo). A API valida o limite binário exato; o CHECK limita
+o armazenamento codificado. A migration anterior é preservada. O ALTER troca o
+CHECK atomicamente, valida os dados existentes e não reescreve/remove fotos.
+Exige bloqueio exclusivo breve em `preaching_point` e verificação das linhas;
+aplicar serializado antes de publicar a API com JSON de até 28 MiB. Falha
+interrompe a promoção. Rollback de código deve preservar fotos e o CHECK ampliado:
+a versão anterior não permite enviar/editar fotos acima de 2 MiB. Não reduzir o
+CHECK nem excluir imagens para reverter. Critérios em [UI-004](../requisitos/UI-004.md).
+
 `20261017000700_registration_point_photos` acrescenta cadastro independente de
 vínculo (nome, telefone e código único), telefone nos perfis locais, foto opcional
 no ponto e evento de aprovação. Tabela nova inicia vazia; colunas existentes
