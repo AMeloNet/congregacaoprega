@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { EquipmentContext } from './EquipmentPanel.js';
 import { ReservationForm } from './ReservationForm.js';
+import { ReservationExitControls } from './ReservationExitControls.js';
 import {
   ReservationInvitationsForm,
   type ManagedReservationInvitation,
@@ -26,6 +27,7 @@ type Schedule = {
     confirmedCount?: number;
     openPositions?: number;
     canJoin?: boolean;
+    canLeave?: boolean;
     canManageReservation?: boolean;
     thirdPositionVacant?: boolean;
     pendingCount?: number;
@@ -351,6 +353,19 @@ export function MonthlySchedulePanel({
                         onSaved={() => setRevision((value) => value + 1)}
                       />
                     )}
+                    <ReservationExitControls
+                      context={context}
+                      reservationId={item.id}
+                      series={!!item.seriesId}
+                      canCancel={!!item.canManageReservation}
+                      canLeave={!!item.canLeave}
+                      onSaved={() => {
+                        setMessage(
+                          'Alteração registrada. Os avisos foram disponibilizados aos envolvidos.',
+                        );
+                        setRevision((value) => value + 1);
+                      }}
+                    />
                     {item.seriesId ? (
                       <p>
                         {item.seriesStoppedAt

@@ -192,11 +192,16 @@ export async function confirmParticipant(
     'INSERT INTO reservation_participation (reservation_id,account_id,position,joined_at,starts_at) VALUES ($1,$2,$3,$4,$5)',
     [reservationId, accountId, position, now, effectiveStart],
   );
+  const attendanceId = randomUUID();
+  await client.query(
+    'INSERT INTO reservation_attendance (id,reservation_id,account_id,starts_at,ends_at) VALUES ($1,$2,$3,$4,$5)',
+    [attendanceId, reservationId, accountId, effectiveStart, end],
+  );
   await notice(
     client,
     congregationId,
     [reservation.responsible_account_id, accountId],
-    `participation:${reservationId}:${accountId}`,
+    `participation:${attendanceId}`,
     'Participação confirmada na designação.',
     now,
   );
@@ -268,7 +273,7 @@ export async function createReservation(
     times.end,
     timezone,
   );
-  return (
+  const created = (
     await client.query(
       'INSERT INTO reservation (id,congregation_id,point_id,responsible_account_id,request_key,local_date,start_hour,duration,equipment_type,third_position_open,starts_at,ends_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *',
       [
@@ -287,6 +292,11 @@ export async function createReservation(
       ],
     )
   ).rows[0];
+  await client.query(
+    'INSERT INTO reservation_attendance (id,reservation_id,account_id,starts_at,ends_at) VALUES ($1,$2,$3,$4,$5)',
+    [randomUUID(), created.id, owner, times.start, times.end],
+  );
+  return created;
 }
 
 export class ReservationsService {

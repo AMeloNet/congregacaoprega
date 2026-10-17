@@ -4,6 +4,8 @@ import { ReservationsService } from '../reservations.service.js';
 import { RecurrenceService } from '../recurrence.service.js';
 import { ReservationInvitationsService } from '../reservation-invitations.service.js';
 import { ScheduleNoticesService } from '../schedule-notices.service.js';
+import { ReservationChangesService } from '../reservation-changes.service.js';
+import { ScheduleAlertsService } from '../schedule-alerts.service.js';
 import { PointsService } from '../points.service.js';
 import { WeeklyHoursService } from '../weekly-hours.service.js';
 import {
@@ -552,6 +554,64 @@ export class IdentityController {
       account.accountId,
       id,
       reservationId,
+      body,
+    );
+  }
+
+  @Get('congregations/:id/schedule-alerts')
+  async scheduleAlerts(@Req() request: HttpRequest, @Param('id') id: string) {
+    const { account } = await this.requireIdentity(request, undefined, false);
+    return new ScheduleAlertsService(this.runtime.pool).settings(
+      account.accountId,
+      id,
+    );
+  }
+  @Put('congregations/:id/schedule-alerts')
+  async scheduleAlertsSave(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new ScheduleAlertsService(this.runtime.pool).settings(
+      account.accountId,
+      id,
+      body,
+    );
+  }
+
+  @Post('congregations/:id/reservations/:reservationId/cancel')
+  async reservationCancel(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('reservationId') reservationId: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new ReservationChangesService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      reservationId,
+      'cancel',
+      body,
+    );
+  }
+  @Post('congregations/:id/reservations/:reservationId/leave')
+  async reservationLeave(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('reservationId') reservationId: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new ReservationChangesService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      reservationId,
+      'leave',
       body,
     );
   }
