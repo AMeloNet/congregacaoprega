@@ -1547,6 +1547,39 @@ body {
   gap: 1rem;
   margin-top: 1.5rem;
 }
+
+.publisher-home {
+  display: grid;
+  gap: 2rem;
+}
+
+.compact-heading {
+  margin-bottom: 0.75rem;
+}
+
+.publisher-assignment {
+  align-items: start;
+}
+
+.assignment-people {
+  margin: 0.85rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.assignment-people li + li {
+  margin-top: 0.25rem;
+}
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-self: center;
+}
+
+.publisher-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 .home-categories:has(> :nth-child(4):last-child) {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

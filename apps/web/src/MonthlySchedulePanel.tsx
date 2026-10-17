@@ -254,9 +254,8 @@ export function MonthlySchedulePanel({
             </a>
           )}
           <p>
-            As quantidades abaixo representam o inventário ativo. A
-            disponibilidade do intervalo será verificada ao confirmar sua
-            reserva.
+            A reserva mostra apenas pontos e horários com capacidade disponível.
+            A confirmação ainda revalida a disponibilidade no servidor.
           </p>
           {!data.points.length && <p>Nenhum ponto cadastrado.</p>}
           {(month?.canBook ||
@@ -269,6 +268,8 @@ export function MonthlySchedulePanel({
                   context={context}
                   month={selected}
                   points={data.points}
+                  reservations={data.reservations ?? []}
+                  equipment={data.equipment}
                   onSaved={() => setRevision((value) => value + 1)}
                   timezone={data.timezone}
                   clock={{
