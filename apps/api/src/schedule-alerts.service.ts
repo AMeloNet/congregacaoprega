@@ -68,7 +68,7 @@ export class ScheduleAlertsService {
       ).rows;
       const mailIssues = (
         await client.query(
-          'SELECT id,mail_state AS "mailState",created_at AS "createdAt",mail_attempts AS attempts,delivered_at AS "deliveredAt",(created_at<=$2::timestamptz-interval \'1 hour\' AND delivered_at IS NULL) AS overdue FROM schedule_notice WHERE congregation_id=$1 AND (mail_state=\'failed\' OR (created_at<=$2::timestamptz-interval \'1 hour\' AND delivered_at IS NULL)) ORDER BY created_at,id',
+          'SELECT id,mail_state AS "mailState",created_at AS "createdAt",mail_attempts AS attempts,delivered_at AS "deliveredAt",last_error AS "lastError",next_attempt_at AS "nextAttemptAt",(created_at<=$2::timestamptz-interval \'1 hour\' AND delivered_at IS NULL) AS overdue FROM schedule_notice WHERE congregation_id=$1 AND (mail_state=\'failed\' OR (created_at<=$2::timestamptz-interval \'1 hour\' AND delivered_at IS NULL)) ORDER BY created_at,id',
           [congregationId, this.now()],
         )
       ).rows;

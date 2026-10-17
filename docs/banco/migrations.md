@@ -54,6 +54,15 @@ rollback exige suspender gravações e preservar colunas/tabelas e dados.
 
 ## Antes da primeira migration
 
+`20261017000600_schedule_email_delivery` acrescenta transporte, envelope privado
+e primeiro instante de tentativa à fila, permite suspender reenvios com próxima
+tentativa nula, torna único o ID do provedor e registra eventos mínimos de entrega.
+Tentativas anteriores são identificadas como captura; não migrar para envio real.
+DDL requer breve bloqueio da fila e criação de índice; aplicar serializado antes
+do código. A tabela de eventos começa vazia. Retentativas e revisão de rollback
+estão em [avisos Resend](../operacao/avisos-resend.md). Não remover a fila ou seus
+eventos para recuperar uma tentativa incerta.
+
 `20261017000500_monthly_report_versions` cria snapshots imutáveis de emissão,
 com índices únicos por mês/versão e autor/chave, e FK composta ao estado mensal.
 Tabela começa vazia; meses já finalizados não recebem versões silenciosamente.

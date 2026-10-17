@@ -17,6 +17,7 @@ type Inbox = {
     message: string;
     readAt: string | null;
     mailState: string;
+    deliveredAt?: string | null;
   }[];
 };
 const states: Record<string, string> = {
@@ -131,9 +132,11 @@ export function ReservationInboxPanel({
             {n.mailState === 'captured'
               ? 'E-mail em captura de teste; sem entrega externa.'
               : n.mailState === 'failed'
-                ? 'E-mail com falha; nova tentativa pendente.'
+                ? 'E-mail com falha. Consulte os avisos administrativos.'
                 : n.mailState === 'sent'
-                  ? 'E-mail enviado.'
+                  ? n.deliveredAt
+                    ? 'Entrega ao servidor de e-mail confirmada.'
+                    : 'E-mail aceito pelo provedor; entrega ainda não confirmada.'
                   : 'E-mail aguardando processamento.'}
           </p>
           {!n.readAt && (
