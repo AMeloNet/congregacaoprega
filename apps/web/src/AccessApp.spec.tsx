@@ -97,7 +97,11 @@ describe('IDN-001C access interface', () => {
         headers: { 'x-csrf-token': 'csrf' },
       },
     );
-    expect(await screen.findByText('Administrador master')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Administrador master', {
+        selector: '.identity-bar strong',
+      }),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Aceitar convite' }),
     ).not.toBeInTheDocument();
@@ -177,7 +181,11 @@ describe('IDN-001C access interface', () => {
       headers: { 'content-type': 'application/json', 'x-csrf-token': 'csrf' },
       body: JSON.stringify({ congregationId: 'cong-b' }),
     });
-    expect(screen.getByText('Administrador local')).toBeInTheDocument();
+    expect(
+      screen.getByText('Administrador local', {
+        selector: '.identity-bar strong',
+      }),
+    ).toBeInTheDocument();
   });
 
   it('accepts an invitation and sends a publisher invitation through the backend', async () => {
@@ -216,6 +224,9 @@ describe('IDN-001C access interface', () => {
         headers: { 'x-csrf-token': 'csrf' },
       },
     );
+    await user.click(screen.getByRole('button', { name: 'Menu' }));
+    await user.click(screen.getByText('Cadastros', { selector: 'summary' }));
+    await user.click(screen.getByRole('link', { name: 'Publicadores' }));
     await user.type(
       screen.getByRole('textbox', { name: 'E-mail do novo publicador' }),
       'novo@example.test',
@@ -255,6 +266,9 @@ describe('IDN-001C access interface', () => {
     vi.stubGlobal('fetch', fetchMock);
     render(<AccessApp />);
 
+    await user.click(await screen.findByRole('button', { name: 'Menu' }));
+    await user.click(screen.getByText('Sistema', { selector: 'summary' }));
+    await user.click(screen.getByRole('link', { name: 'Administradores' }));
     await user.selectOptions(
       await screen.findByRole('combobox', {
         name: 'Congregação para administrar',
@@ -300,6 +314,7 @@ describe('IDN-001C access interface', () => {
           { status: 200 },
         ),
       )
+      .mockResolvedValueOnce(new Response('[]', { status: 200 }))
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify([
@@ -317,6 +332,9 @@ describe('IDN-001C access interface', () => {
     vi.stubGlobal('fetch', fetchMock);
     render(<AccessApp />);
 
+    await user.click(await screen.findByRole('button', { name: 'Menu' }));
+    await user.click(screen.getByText('Cadastros', { selector: 'summary' }));
+    await user.click(screen.getByRole('link', { name: 'Publicadores' }));
     await user.click(
       await screen.findByRole('button', { name: 'Consultar vínculos' }),
     );

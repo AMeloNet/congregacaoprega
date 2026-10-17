@@ -100,6 +100,13 @@ test('navigates the monthly schedule with a stable route and no horizontal overf
     page.getByRole('link', { name: 'Pular para o conteúdo' }),
   ).toBeFocused();
   await page.keyboard.press('Tab');
+  await expect(
+    page.getByRole('button', { name: 'Menu', exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('button', { name: 'Fechar menu' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: 'Programação' })).toBeFocused();
   await page.keyboard.press('Enter');
@@ -125,12 +132,16 @@ test('navigates the monthly schedule with a stable route and no horizontal overf
   await expect(
     page.getByRole('heading', { name: 'Programação' }),
   ).toBeVisible();
-  await page.getByRole('link', { name: 'Recursos' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await page.getByRole('link', { name: 'Início', exact: true }).click();
   await page.goBack();
   await expect(
     page.getByRole('heading', { name: 'Programação' }),
   ).toBeVisible();
-  await page.getByRole('link', { name: 'Relatório' }).click();
+  await page.goto('/#relatorio');
+  await expect(page.getByRole('alert')).toContainText(
+    'não está disponível para seu perfil',
+  );
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth > innerWidth,
@@ -304,6 +315,7 @@ test('accepts a real invitation flow and consults the confirmed roster without h
       'Convite aceito. Convites conflitantes foram recusados automaticamente.',
     ),
   ).toBeVisible();
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await page.getByRole('link', { name: 'Detalhe da reserva' }).click();
   await page
     .getByLabel('Designação', { exact: true })
