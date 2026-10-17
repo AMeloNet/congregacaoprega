@@ -137,13 +137,23 @@ export async function confirmParticipant(
     )
   ).rows;
   const existing = participants.find((p) => p.account_id === accountId);
-  if (reservation.responsible_account_id === accountId || existing)
+  if (reservation.responsible_account_id === accountId || existing) {
+    const ownerAttendance =
+      reservation.responsible_account_id === accountId
+        ? (
+            await client.query(
+              'SELECT starts_at FROM reservation_attendance WHERE reservation_id=$1 AND account_id=$2 AND ends_at>starts_at ORDER BY starts_at DESC LIMIT 1',
+              [reservationId, accountId],
+            )
+          ).rows[0]
+        : undefined;
     return {
       reservationId,
       position: existing?.position ?? 1,
-      startsAt: existing?.starts_at ?? start,
+      startsAt: existing?.starts_at ?? ownerAttendance?.starts_at ?? start,
       confirmedCount: participants.length + 1,
     };
+  }
   const positions = await groupPositions(client, reservationId, now);
   if (
     !invitation &&
@@ -204,6 +214,7 @@ export async function confirmParticipant(
     `participation:${attendanceId}`,
     'Participação confirmada na designação.',
     now,
+    reservationId,
   );
   return {
     reservationId,
@@ -224,7 +235,7 @@ export async function createReservation(
 ) {
   const previous = (
     await client.query(
-      'SELECT * FROM reservation WHERE congregation_id=$1 AND responsible_account_id=$2 AND request_key=$3',
+      'SELECT * FROM reservation WHERE congregation_id=$1 AND created_by_account_id=$2 AND request_key=$3',
       [congregationId, owner, input.requestKey],
     )
   ).rows[0];
@@ -275,7 +286,7 @@ export async function createReservation(
   );
   const created = (
     await client.query(
-      'INSERT INTO reservation (id,congregation_id,point_id,responsible_account_id,request_key,local_date,start_hour,duration,equipment_type,third_position_open,starts_at,ends_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *',
+      'INSERT INTO reservation (id,congregation_id,point_id,responsible_account_id,request_key,local_date,start_hour,duration,equipment_type,third_position_open,starts_at,ends_at,created_by_account_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$4) RETURNING *',
       [
         randomUUID(),
         congregationId,

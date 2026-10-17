@@ -6,6 +6,8 @@ import { ReservationInvitationsService } from '../reservation-invitations.servic
 import { ScheduleNoticesService } from '../schedule-notices.service.js';
 import { ReservationChangesService } from '../reservation-changes.service.js';
 import { ScheduleAlertsService } from '../schedule-alerts.service.js';
+import { PublisherProfilesService } from '../publisher-profiles.service.js';
+import { ReservationAdministrationService } from '../reservation-administration.service.js';
 import { PointsService } from '../points.service.js';
 import { WeeklyHoursService } from '../weekly-hours.service.js';
 import {
@@ -551,6 +553,86 @@ export class IdentityController {
   ) {
     const { account } = await this.requireIdentity(request, csrf);
     return new ReservationsService(this.runtime.pool).thirdPosition(
+      account.accountId,
+      id,
+      reservationId,
+      body,
+    );
+  }
+
+  @Get('congregations/:id/publisher-profile')
+  async publisherProfile(@Req() request: HttpRequest, @Param('id') id: string) {
+    const { account } = await this.requireIdentity(request, undefined, false);
+    return new PublisherProfilesService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+    );
+  }
+  @Put('congregations/:id/publisher-profile')
+  async publisherProfileSave(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new PublisherProfilesService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      account.accountId,
+      body,
+    );
+  }
+  @Put('congregations/:id/publishers/:accountId/name')
+  async publisherNameSave(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('accountId') target: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new PublisherProfilesService(this.runtime.pool).execute(
+      account.accountId,
+      id,
+      target,
+      body,
+    );
+  }
+  @Get('congregations/:id/reservation-publishers')
+  async reservationPublishers(
+    @Req() request: HttpRequest,
+    @Param('id') id: string,
+  ) {
+    const { account } = await this.requireIdentity(request, undefined, false);
+    return new PublisherProfilesService(this.runtime.pool).directory(
+      account.accountId,
+      id,
+    );
+  }
+  @Get('congregations/:id/reservations/:reservationId')
+  async reservationDetail(
+    @Req() request: HttpRequest,
+    @Param('id') id: string,
+    @Param('reservationId') reservationId: string,
+  ) {
+    const { account } = await this.requireIdentity(request, undefined, false);
+    return new ReservationAdministrationService(this.runtime.pool).detail(
+      account.accountId,
+      id,
+      reservationId,
+    );
+  }
+  @Post('congregations/:id/reservations/:reservationId/administration')
+  async reservationAdministration(
+    @Req() request: HttpRequest,
+    @Headers('x-csrf-token') csrf: string | undefined,
+    @Param('id') id: string,
+    @Param('reservationId') reservationId: string,
+    @Body() body: unknown,
+  ) {
+    const { account } = await this.requireIdentity(request, csrf);
+    return new ReservationAdministrationService(this.runtime.pool).execute(
       account.accountId,
       id,
       reservationId,

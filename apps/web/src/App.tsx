@@ -1,6 +1,8 @@
 import { PointsPanel } from './PointsPanel.js';
 import { MonthlySchedulePanel } from './MonthlySchedulePanel.js';
 import { ReservationInboxPanel } from './ReservationInboxPanel.js';
+import { ReservationDetailPage } from './ReservationDetailsPanel.js';
+import { PublisherProfilePanel } from './PublisherProfilePanel.js';
 import { WeeklyHoursPanel } from './WeeklyHoursPanel.js';
 import { EquipmentPanel, type EquipmentContext } from './EquipmentPanel.js';
 import { useEffect, useLayoutEffect, useState } from 'react';
@@ -693,7 +695,10 @@ export function App({
             </>
           )}
 
-          {screen === 'nova-reserva' && (
+          {screen === 'nova-reserva' && equipmentContext && (
+            <MonthlySchedulePanel context={equipmentContext} />
+          )}
+          {screen === 'nova-reserva' && !equipmentContext && (
             <>
               <div className="intro-row">
                 <p>
@@ -825,7 +830,10 @@ export function App({
             </>
           )}
 
-          {screen === 'detalhe' && (
+          {screen === 'detalhe' && equipmentContext && (
+            <ReservationDetailPage context={equipmentContext} />
+          )}
+          {screen === 'detalhe' && !equipmentContext && (
             <>
               <div className="intro-row">
                 <p>
@@ -1092,7 +1100,20 @@ export function App({
             </>
           )}
 
-          {screen === 'administracao' && (
+          {screen === 'administracao' &&
+            equipmentContext &&
+            (equipmentContext.canManage ? (
+              <>
+                <PublisherProfilePanel context={equipmentContext} manage />
+                <p>
+                  Os ajustes administrativos de designações ficam em Programação
+                  ou Detalhe da reserva.
+                </p>
+              </>
+            ) : (
+              <p>Acesso restrito ao administrador local.</p>
+            ))}
+          {screen === 'administracao' && !equipmentContext && (
             <>
               <div className="intro-row">
                 <p>

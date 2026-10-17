@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { EquipmentContext } from './EquipmentPanel.js';
 import { ScheduleAlertsPanel } from './ScheduleAlertsPanel.js';
+import { PublisherProfilePanel } from './PublisherProfilePanel.js';
 type Inbox = {
   invitations: {
     id: string;
@@ -147,6 +148,7 @@ export function ReservationInboxPanel({
         </article>
       ))}
       {context.canManage && <ScheduleAlertsPanel context={context} />}
+      <PublisherProfilePanel context={context} />
     </section>
   );
 }

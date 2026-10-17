@@ -101,6 +101,7 @@ export class ScheduleAlertsService {
         `minimum-at-start:${r.id}`,
         'Uma designação iniciou com menos de duas pessoas confirmadas. A reserva foi mantida para decisão administrativa.',
         now,
+        r.id,
       );
   }
   async process() {

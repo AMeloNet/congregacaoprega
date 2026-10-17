@@ -128,6 +128,7 @@ export class ReservationChangesService {
           `leave:${congregationId}:${accountId}:${body.requestKey}`,
           'Um participante desistiu da designação. A posição foi liberada; o tempo já decorrido foi preservado.',
           now,
+          reservationId,
         );
         result = { reservationId, left: true, leftAt: now.toISOString() };
       } else {
@@ -241,6 +242,7 @@ export class ReservationChangesService {
             `reservation-cancelled:${target.id}`,
             'Uma designação foi cancelada. Participações e convites foram encerrados; recursos e posições foram liberados.',
             now,
+            target.id,
           );
           cancelledIds.push(target.id);
         }
