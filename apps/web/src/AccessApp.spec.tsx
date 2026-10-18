@@ -173,10 +173,14 @@ describe('IDN-001C access interface', () => {
         return new Response(null, { status: 204 });
       }
       if (url.endsWith('/reservation-inbox')) {
-        return new Response(JSON.stringify({ invitations: [] }), { status: 200 });
+        return new Response(JSON.stringify({ invitations: [] }), {
+          status: 200,
+        });
       }
       if (url.endsWith('/schedule')) {
-        return new Response(JSON.stringify({ reservations: [] }), { status: 200 });
+        return new Response(JSON.stringify({ reservations: [] }), {
+          status: 200,
+        });
       }
       throw new Error(`Unexpected request: ${url}`);
     });
