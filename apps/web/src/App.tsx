@@ -546,9 +546,97 @@ export function App({
             </p>
           )}
 
-          {screen === 'inicio' && equipmentContext && (
-            <PublisherHomePanel context={equipmentContext} onNavigate={go} />
-          )}
+          {screen === 'inicio' &&
+            equipmentContext &&
+            !equipmentContext.canManage &&
+            !isMaster && (
+              <PublisherHomePanel context={equipmentContext} onNavigate={go} />
+            )}
+          {screen === 'inicio' &&
+            equipmentContext &&
+            (equipmentContext.canManage || isMaster) && (
+              <section className="panel">
+                <h2>Organize as designações da congregação</h2>
+                <p>
+                  Acesse a programação, os cadastros e a gestão da congregação.
+                </p>
+                <div className="home-categories">
+                  {(
+                    [
+                      {
+                        screen: 'programacao',
+                        label: 'Programação',
+                        icon: '▦',
+                      },
+                      {
+                        screen: 'nova-reserva',
+                        label: 'Reservar ponto e equipamento',
+                        icon: '+',
+                      },
+                      {
+                        screen: 'convites',
+                        label: 'Convites e avisos',
+                        icon: '✉',
+                      },
+                      ...(equipmentContext.canManage
+                        ? [
+                            {
+                              screen: 'publicadores',
+                              label: 'Publicadores',
+                              icon: '♧',
+                            },
+                            {
+                              screen: 'recursos',
+                              label: 'Equipamentos, pontos e horários',
+                              icon: '⌖',
+                            },
+                            {
+                              screen: 'relatorio',
+                              label: 'Relatório',
+                              icon: '▥',
+                            },
+                          ]
+                        : [
+                            {
+                              screen: 'conta',
+                              label: 'Minha conta',
+                              icon: '○',
+                            },
+                          ]),
+                      ...(isMaster
+                        ? [
+                            {
+                              screen: 'administradores',
+                              label: 'Administradores',
+                              icon: '◇',
+                            },
+                          ]
+                        : []),
+                    ] as { screen: Screen; label: string; icon: string }[]
+                  )
+                    .filter((item) =>
+                      canOpenScreen(
+                        item.screen,
+                        equipmentContext.canManage,
+                        !!equipmentContext.congregationId,
+                        isMaster,
+                      ),
+                    )
+                    .map((item) => (
+                      <button
+                        className="home-category"
+                        key={item.screen}
+                        onClick={() => go(item.screen)}
+                      >
+                        <span className="category-art">
+                          <MenuIcon icon={item.icon} />
+                        </span>
+                        <strong>{item.label}</strong>
+                      </button>
+                    ))}
+                </div>
+              </section>
+            )}
           {screen === 'inicio' && !equipmentContext && (
             <>
               <div className="hero-panel">

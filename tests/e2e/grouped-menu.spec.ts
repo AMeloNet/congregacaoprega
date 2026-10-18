@@ -36,12 +36,17 @@ test('groups authorized functions in a keyboard accessible drawer and resets the
     await route.fulfill({ status: 204 });
   });
   await page.route('**/api/congregations/**', async (route) => {
-    requests.push(new URL(route.request().url()).pathname);
+    const path = new URL(route.request().url()).pathname;
+    requests.push(path);
     await route.fulfill({
       contentType: 'application/json',
-      body: route.request().url().endsWith('/publisher-profile')
+      body: path.endsWith('/publisher-profile')
         ? JSON.stringify({ displayName: 'Publicador de Teste' })
-        : '[]',
+        : path.endsWith('/reservation-inbox')
+          ? JSON.stringify({ invitations: [] })
+          : path.endsWith('/schedule')
+            ? JSON.stringify({ reservations: [] })
+            : '[]',
     });
   });
   await page.goto('/#inicio');
@@ -141,7 +146,9 @@ test('groups authorized functions in a keyboard accessible drawer and resets the
     requests.filter(
       (path) =>
         path.startsWith('/api/congregations/publisher-congregation/') &&
-        !path.endsWith('/publisher-profile'),
+        !path.endsWith('/publisher-profile') &&
+        !path.endsWith('/reservation-inbox') &&
+        !path.endsWith('/schedule'),
     ),
   ).toEqual([]);
   expect(

@@ -50,6 +50,14 @@ test('navigates the monthly schedule with a stable route and no horizontal overf
   page,
 }) => {
   await page.route(
+    '**/api/congregations/congregation-example/reservation-inbox',
+    async (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ invitations: [] }),
+      }),
+  );
+  await page.route(
     '**/api/congregations/congregation-example/schedule',
     async (route) => {
       await route.fulfill({
@@ -152,7 +160,10 @@ test('navigates the monthly schedule with a stable route and no horizontal overf
     businessRequests.filter(
       (url) =>
         !url.endsWith('/api/session') &&
-        !url.endsWith('/api/congregations/congregation-example/schedule'),
+        !url.endsWith('/api/congregations/congregation-example/schedule') &&
+        !url.endsWith(
+          '/api/congregations/congregation-example/reservation-inbox',
+        ),
     ),
   ).toEqual([]);
   expect(businessRequests.some((url) => url.endsWith('/schedule'))).toBe(true);
