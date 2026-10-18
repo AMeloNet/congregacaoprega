@@ -144,10 +144,10 @@ describe('IDN-001C access interface', () => {
 
   it('selects only an authorized active congregation through the API', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        new Response(
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === '/api/session') {
+        return new Response(
           JSON.stringify({
             authenticated: true,
             emailVerified: true,
@@ -167,9 +167,19 @@ describe('IDN-001C access interface', () => {
             ],
           }),
           { status: 200 },
-        ),
-      )
-      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+        );
+      }
+      if (url === '/api/session/congregation') {
+        return new Response(null, { status: 204 });
+      }
+      if (url.endsWith('/reservation-inbox')) {
+        return new Response(JSON.stringify({ invitations: [] }), { status: 200 });
+      }
+      if (url.endsWith('/schedule')) {
+        return new Response(JSON.stringify({ reservations: [] }), { status: 200 });
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    });
     vi.stubGlobal('fetch', fetchMock);
     render(<AccessApp />);
 
