@@ -764,6 +764,37 @@ select:focus-visible {
   color: #82978a;
   font-size: 10px;
 }
+.account-profile-form {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 36rem;
+}
+.account-profile-form > label {
+  font-size: 11px;
+  font-weight: 800;
+}
+.account-profile-form > input {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 8px 10px;
+  background: var(--surface);
+  color: var(--text);
+}
+.account-profile-form > input[readonly] {
+  background: var(--surface-muted);
+}
+.account-profile-form > small {
+  color: var(--text-muted);
+}
+.profile-face-photo {
+  width: min(100%, 12rem);
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
 .summary-panel {
   background: #fafcf9;
 }

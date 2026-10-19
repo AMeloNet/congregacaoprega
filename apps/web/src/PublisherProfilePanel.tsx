@@ -14,13 +14,18 @@ function NameEditor({
   initialName,
   target,
   initialPhone = '',
+  email,
+  initialFacePhoto = '',
 }: {
   context: EquipmentContext;
   initialName: string;
   initialPhone?: string;
   target?: PublisherOption;
+  email?: string;
+  initialFacePhoto?: string;
 }) {
   const [phone, setPhone] = useState(initialPhone);
+  const [facePhoto, setFacePhoto] = useState(initialFacePhoto);
   const [name, setName] = useState(initialName),
     [message, setMessage] = useState(''),
     [error, setError] = useState(''),
@@ -39,14 +44,19 @@ function NameEditor({
             'x-csrf-token': context.csrfToken,
             'content-type': 'application/json',
           },
-          body: JSON.stringify({ displayName: name, phone }),
+          body: JSON.stringify({
+            displayName: name,
+            phone,
+            ...(target ? {} : { facePhoto }),
+          }),
         },
       );
       const result = await response.json();
       if (!response.ok)
-        throw new Error(result.message ?? 'Não foi possível salvar o nome.');
+        throw new Error(result.message ?? 'Não foi possível salvar o perfil.');
       setName(result.displayName);
-      setMessage('Nome salvo nesta congregação.');
+      setFacePhoto(result.facePhoto ?? '');
+      setMessage('Perfil salvo nesta congregação.');
     } catch (failure) {
       setError((failure as Error).message);
     } finally {
@@ -54,7 +64,10 @@ function NameEditor({
     }
   }
   return (
-    <form className="panel" onSubmit={(event) => void save(event)}>
+    <form
+      className={target ? 'panel' : 'panel account-profile-form'}
+      onSubmit={(event) => void save(event)}
+    >
       {target && (
         <p>
           {target.email} ·{' '}
@@ -62,7 +75,7 @@ function NameEditor({
         </p>
       )}
       <label htmlFor={`publisher-name-${target?.id ?? 'self'}`}>
-        {target ? 'Nome do publicador' : 'Seu nome na programação'}
+        {target ? 'Nome do publicador' : 'Seu nome'}
       </label>
       <input
         id={`publisher-name-${target?.id ?? 'self'}`}
@@ -73,7 +86,7 @@ function NameEditor({
         disabled={busy}
       />
       <label htmlFor={`publisher-phone-${target?.id ?? 'self'}`}>
-        Telefone do publicador
+        {target ? 'Telefone do publicador' : 'Telefone'}
       </label>
       <input
         id={`publisher-phone-${target?.id ?? 'self'}`}
@@ -81,9 +94,69 @@ function NameEditor({
         maxLength={30}
         value={phone}
         onChange={(event) => setPhone(event.target.value)}
+        disabled={busy}
       />
+      {!target && (
+        <>
+          <label htmlFor="publisher-email-self">Email</label>
+          <input
+            id="publisher-email-self"
+            type="email"
+            value={email ?? ''}
+            readOnly
+            aria-describedby="publisher-email-help"
+          />
+          <small id="publisher-email-help">
+            O email é gerenciado pela sua identidade verificada.
+          </small>
+          <label htmlFor="publisher-face-photo-self">Foto Rosto</label>
+          <input
+            id="publisher-face-photo-self"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            disabled={busy}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              if (
+                file.size > 20 * 1024 * 1024 ||
+                !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)
+              ) {
+                setError('Use foto JPG, PNG ou WebP de até 20 MB.');
+                event.target.value = '';
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = () => {
+                setFacePhoto(String(reader.result));
+                setError('');
+              };
+              reader.onerror = () => setError('Não foi possível ler a foto.');
+              reader.readAsDataURL(file);
+            }}
+          />
+          {facePhoto && (
+            <>
+              <img
+                className="profile-face-photo"
+                src={facePhoto}
+                alt="Prévia da foto de rosto"
+              />
+              <button
+                className="text-button"
+                type="button"
+                disabled={busy}
+                onClick={() => setFacePhoto('')}
+              >
+                Remover foto
+              </button>
+            </>
+          )}
+          <small>Opcional: JPG, PNG ou WebP de até 20 MB.</small>
+        </>
+      )}
       <button className="button outline" disabled={busy}>
-        Salvar nome
+        Salvar perfil
       </button>
       {message && <p role="status">{message}</p>}
       {error && <p role="alert">{error}</p>}
@@ -100,6 +173,8 @@ export function PublisherProfilePanel({
   const [self, setSelf] = useState<{
       displayName: string;
       phone?: string;
+      email: string;
+      facePhoto?: string;
     } | null>(null),
     [people, setPeople] = useState<PublisherOption[]>([]),
     [error, setError] = useState('');
@@ -128,13 +203,12 @@ export function PublisherProfilePanel({
     return () => controller.abort();
   }, [base, context.canManage, manage]);
   return (
-    <section
-      aria-label={manage ? 'Nomes dos publicadores' : 'Seu nome na programação'}
-    >
-      <h2>{manage ? 'Nomes dos publicadores' : 'Seu nome na programação'}</h2>
+    <section aria-label={manage ? 'Nomes dos publicadores' : 'Minha conta'}>
+      <h2>{manage ? 'Nomes dos publicadores' : 'Minha conta'}</h2>
       <p>
-        Use o nome que deve aparecer no relatório desta congregação. E-mails não
-        serão impressos.
+        {manage
+          ? 'Use o nome que deve aparecer no relatório desta congregação. E-mails não serão impressos.'
+          : 'Atualize seus dados desta congregação. O e-mail é gerenciado pela sua identidade verificada.'}
       </p>
       {error && <p role="alert">{error}</p>}
       {self && (
@@ -142,6 +216,8 @@ export function PublisherProfilePanel({
           context={context}
           initialName={self.displayName}
           initialPhone={self.phone}
+          email={self.email}
+          initialFacePhoto={self.facePhoto}
         />
       )}{' '}
       <div className="resource-grid">

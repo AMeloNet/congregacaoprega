@@ -421,6 +421,7 @@ model PublisherProfile {
   congregationId String @map("congregation_id") @db.Uuid
   displayName String @map("display_name")
   phone String @default("") @db.VarChar(30)
+  facePhoto String @default("") @map("face_photo")
   changes Json @default("[]")
   membership Membership @relation(fields:[accountId,congregationId],references:[accountId,congregationId],onDelete:Restrict,map:"publisher_profile_membership_fkey")
   @@id([accountId,congregationId])
