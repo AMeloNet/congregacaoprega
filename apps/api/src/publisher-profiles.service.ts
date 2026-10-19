@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Pool } from 'pg';
+import { validatePointPhoto } from './point-photo.js';
 import { reservationAccess, uuidPattern } from './reservations.service.js';
 export class PublisherProfilesService {
   constructor(private readonly pool: Pool) {}
@@ -16,13 +17,21 @@ export class PublisherProfilesService {
     if (!uuidPattern.test(target))
       throw new BadRequestException('Publicador inválido.');
     let name: string | undefined;
+    let phoneInput: string | undefined;
+    let facePhoto: string | undefined;
     if (input !== undefined) {
-      const body = input as { displayName: string; phone?: unknown };
+      const body = input as {
+        displayName: string;
+        phone?: unknown;
+        facePhoto?: unknown;
+      };
       if (
         !body ||
         typeof body !== 'object' ||
         Array.isArray(body) ||
-        Object.keys(body).some((k) => !['displayName', 'phone'].includes(k)) ||
+        Object.keys(body).some(
+          (k) => !['displayName', 'phone', 'facePhoto'].includes(k),
+        ) ||
         (body.phone !== undefined &&
           (typeof body.phone !== 'string' ||
             (body.phone !== '' &&
@@ -37,6 +46,10 @@ export class PublisherProfilesService {
           'Informe nome de 1 a 120 caracteres e telefone válido.',
         );
       name = body.displayName.trim();
+      phoneInput =
+        body.phone === undefined ? undefined : (body.phone as string).trim();
+      if (body.facePhoto !== undefined)
+        facePhoto = validatePointPhoto(body.facePhoto);
     }
     const client = await this.pool.connect();
     try {
@@ -45,6 +58,10 @@ export class PublisherProfilesService {
       if (target !== accountId && member.role !== 'LOCAL_ADMIN')
         throw new ForbiddenException(
           'Acesso negado ao nome de outro publicador.',
+        );
+      if (target !== accountId && facePhoto !== undefined)
+        throw new ForbiddenException(
+          'A foto de rosto só pode ser alterada pela própria pessoa.',
         );
       const targetMember = await client.query(
         'SELECT id FROM membership WHERE account_id=$1 AND congregation_id=$2 FOR SHARE',
@@ -79,11 +96,8 @@ export class PublisherProfilesService {
             ]),
           ],
         );
-      if (
-        input !== undefined &&
-        (input as { phone?: unknown }).phone !== undefined
-      ) {
-        const phone = (input as { phone: string }).phone.trim();
+      if (input !== undefined && phoneInput !== undefined) {
+        const phone = phoneInput;
         const old =
           (
             await client.query(
@@ -109,15 +123,52 @@ export class PublisherProfilesService {
             ],
           );
       }
-      const phone =
-        (
+      if (facePhoto !== undefined) {
+        const old =
+          (
+            await client.query(
+              'SELECT face_photo FROM publisher_profile WHERE account_id=$1 AND congregation_id=$2',
+              [target, congregationId],
+            )
+          ).rows[0]?.face_photo ?? '';
+        if (facePhoto !== old)
           await client.query(
-            'SELECT phone FROM publisher_profile WHERE account_id=$1 AND congregation_id=$2',
-            [target, congregationId],
-          )
-        ).rows[0]?.phone ?? '';
+            'UPDATE publisher_profile SET face_photo=$3,changes=changes||$4::jsonb WHERE account_id=$1 AND congregation_id=$2',
+            [
+              target,
+              congregationId,
+              facePhoto,
+              JSON.stringify([
+                {
+                  actorAccountId: accountId,
+                  at: new Date().toISOString(),
+                  previousFacePhoto: Boolean(old),
+                  hasFacePhoto: Boolean(facePhoto),
+                },
+              ]),
+            ],
+          );
+      }
+      const profile = (
+        await client.query(
+          'SELECT phone,face_photo AS "facePhoto" FROM publisher_profile WHERE account_id=$1 AND congregation_id=$2',
+          [target, congregationId],
+        )
+      ).rows[0] ?? { phone: '', facePhoto: '' };
+      const email =
+        (
+          await client.query('SELECT email FROM identity_account WHERE id=$1', [
+            target,
+          ])
+        ).rows[0]?.email ?? '';
       await client.query('COMMIT');
-      return { accountId: target, displayName: name ?? previous, phone };
+      return {
+        accountId: target,
+        displayName: name ?? previous,
+        phone: profile.phone,
+        facePhoto: profile.facePhoto,
+        email,
+      };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;

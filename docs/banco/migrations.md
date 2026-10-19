@@ -10,6 +10,13 @@ A política obrigatória está no [AGENTS.md](../../AGENTS.md).
 
 ## Incrementos recentes
 
+`20261019000100_publisher_profile_face_photo` acrescenta foto de rosto
+opcional ao perfil local. A coluna começa vazia, não copia dados pessoais e o
+CHECK limita a data URL ao mesmo tamanho da foto de ponto (20 MiB codificados).
+O DDL obtém bloqueio breve em `publisher_profile`; aplicar serializado antes do
+novo código. O rollback de código preserva as fotos e a coluna, sem remoção de
+dados. Critérios e permissões em [UI-004](../requisitos/UI-004.md).
+
 `20261017000800_point_photo_twenty_mb` amplia somente a restrição de tamanho da
 foto do ponto para acomodar uma data URL de até 20 MiB de conteúdo (27.962.051
 bytes com base64 e prefixo). A API valida o limite binário exato; o CHECK limita
