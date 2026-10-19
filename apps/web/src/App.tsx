@@ -10,6 +10,7 @@ import { ScheduleReportPanel } from './ScheduleReportPanel.js';
 import { WeeklyHoursPanel } from './WeeklyHoursPanel.js';
 import { EquipmentPanel, type EquipmentContext } from './EquipmentPanel.js';
 import {
+  DesktopNavigation,
   GroupedMenu,
   canOpenScreen,
   screenLabels,
@@ -349,6 +350,22 @@ export function App({
         </aside>
       )}
 
+      {equipmentContext && (
+        <DesktopNavigation
+          key={`${equipmentContext.congregationId}:${equipmentContext.canManage}:${isMaster}`}
+          screen={screen}
+          onNavigate={go}
+          onAppearance={() => {
+            go('conta');
+            setAppearanceOpen(true);
+          }}
+          congregationName={equipmentContext.congregationName}
+          canManage={equipmentContext.canManage}
+          hasMembership={!!equipmentContext.congregationId}
+          isMaster={isMaster}
+        />
+      )}
+
       <div className="workspace">
         <header className="topbar">
           {equipmentContext && (
@@ -365,6 +382,11 @@ export function App({
               hasMembership={!!equipmentContext.congregationId}
               isMaster={isMaster}
             />
+          )}
+          {equipmentContext && (
+            <div className="product-name" aria-label="congregacaoprega">
+              congregacaoprega
+            </div>
           )}
           <div className="breadcrumbs">
             {equipmentContext?.congregationName ??
@@ -438,7 +460,14 @@ export function App({
                 </section>
               )}
             </div>
-            <span className="avatar">A</span>
+            <button
+              type="button"
+              className="account-trigger"
+              aria-label="Abrir minha conta"
+              onClick={() => go('conta')}
+            >
+              A
+            </button>
           </div>
         </header>
         <div className="demo-banner">
@@ -497,9 +526,7 @@ export function App({
               {!!equipmentContext.congregationId && (
                 <PublisherProfilePanel context={equipmentContext} />
               )}
-              <p>
-                Use Aparência na barra superior para escolher seu tema e cor.
-              </p>
+              <p>Use Aparência no menu para escolher seu tema e cor.</p>
               <a className="button outline" href="/api/auth/logout">
                 Sair da conta
               </a>
