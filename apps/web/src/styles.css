@@ -1891,3 +1891,307 @@ details > summary {
     padding: 3mm 2mm;
   }
 }
+
+/* UI-005: compact operational layout for authenticated screens. */
+.desktop-navigation {
+  display: none;
+}
+
+.product-name {
+  display: none;
+}
+
+.account-trigger {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ffffff80;
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.account-trigger:hover {
+  background: #ffffff1f;
+}
+
+.authenticated-shell .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  min-height: 54px;
+  height: auto;
+  padding: 0.45rem clamp(20px, 3vw, 38px);
+  background: #302f2e;
+  border: 0;
+  color: #fff;
+}
+
+.authenticated-shell .breadcrumbs,
+.authenticated-shell .breadcrumbs strong,
+.authenticated-shell .date-note {
+  color: #fff;
+}
+
+.authenticated-shell .breadcrumbs {
+  font-size: 13px;
+}
+
+.authenticated-shell .breadcrumbs span {
+  color: #bdbdbd;
+}
+
+.authenticated-shell .appearance-trigger {
+  border-color: #ffffff75;
+  border-radius: 4px;
+  background: transparent;
+  color: #fff;
+}
+
+.authenticated-shell .appearance-panel {
+  color: var(--text);
+}
+
+.authenticated-shell .content {
+  max-width: 1180px;
+  padding-top: 28px;
+}
+
+.authenticated-shell .page-top {
+  margin-bottom: 24px;
+}
+
+.authenticated-shell .page-top h1 {
+  font-size: clamp(28px, 2.8vw, 34px);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+
+.authenticated-shell .eyebrow {
+  color: var(--text-muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.authenticated-shell .panel,
+.authenticated-shell .schedule-card,
+.authenticated-shell .home-category,
+.authenticated-shell .equipment-list li,
+.authenticated-shell .print-sheet {
+  border-radius: 4px;
+  box-shadow: none;
+}
+
+.authenticated-shell .home-categories {
+  gap: 0.75rem;
+}
+
+.authenticated-shell .home-category {
+  align-items: flex-start;
+  min-height: 112px;
+  padding: 1.25rem;
+  text-align: left;
+}
+
+.authenticated-shell .home-category:hover,
+.authenticated-shell .home-category:focus-visible {
+  outline-offset: 1px;
+}
+
+@media (min-width: 960px) {
+  .authenticated-shell {
+    display: grid;
+    grid-template-columns: 238px minmax(0, 1fr);
+  }
+
+  .desktop-navigation {
+    position: sticky;
+    top: 0;
+    display: block;
+    height: 100dvh;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--surface-muted);
+    color: var(--text);
+  }
+
+  .desktop-menu-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 54px;
+    padding: 0.75rem 1rem;
+    background: #302f2e;
+    color: #fff;
+    font-size: 0.84rem;
+  }
+
+  .desktop-menu-brand > span {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    background: var(--accent);
+    color: var(--accent-on);
+    font-size: 0.8rem;
+  }
+
+  .desktop-menu-congregation {
+    margin: 0;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .desktop-navigation nav {
+    padding-block: 0.7rem 1.25rem;
+  }
+
+  .desktop-menu-group {
+    margin-top: 0.85rem;
+  }
+
+  .desktop-menu-group h2 {
+    margin: 0 0 0.3rem;
+    padding-inline: 1rem;
+    color: var(--text-muted);
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .desktop-menu-group a,
+  .desktop-menu-group button {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    width: 100%;
+    min-height: 38px;
+    border: 0;
+    border-left: 3px solid transparent;
+    padding: 0.45rem 1rem 0.45rem 0.8rem;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.8rem;
+    text-align: left;
+    text-decoration: none;
+  }
+
+  .desktop-menu-group a:hover,
+  .desktop-menu-group button:hover {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    color: var(--text);
+  }
+
+  .desktop-menu-group a[aria-current='page'] {
+    border-left-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--text);
+    font-weight: 800;
+  }
+
+  .desktop-menu-group svg {
+    width: 18px;
+    height: 18px;
+    flex: none;
+  }
+
+  .authenticated-shell .menu-trigger {
+    display: none;
+  }
+
+  .authenticated-shell .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+  }
+
+  .authenticated-shell .topbar-right {
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 959px) {
+  .authenticated-shell {
+    display: block;
+  }
+
+  .authenticated-shell .topbar {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.6rem;
+    padding-inline: 0.8rem;
+  }
+
+  .authenticated-shell .menu-trigger {
+    min-height: 36px;
+    border-color: #ffffff80;
+    border-radius: 3px;
+    padding: 0.3rem 0.55rem;
+    background: transparent;
+    color: #fff;
+    font-size: 0;
+  }
+
+  .authenticated-shell .menu-trigger span {
+    font-size: 1.25rem;
+  }
+
+  .product-name {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    color: var(--accent-on);
+    font-size: 0;
+    font-weight: 800;
+  }
+
+  .product-name::after {
+    content: 'C';
+    font-size: 0.78rem;
+  }
+
+  .authenticated-shell .breadcrumbs {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .authenticated-shell .topbar-right {
+    display: block;
+  }
+
+  .authenticated-shell .date-note,
+  .authenticated-shell .appearance-control {
+    display: none;
+  }
+
+  .authenticated-shell .content {
+    padding-top: 22px;
+  }
+
+  .authenticated-shell .demo-banner {
+    padding-inline: 1rem;
+  }
+}
+
+@media print {
+  .desktop-navigation,
+  .account-trigger {
+    display: none !important;
+  }
+}

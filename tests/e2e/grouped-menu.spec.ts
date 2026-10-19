@@ -50,6 +50,18 @@ test('groups authorized functions in a keyboard accessible drawer and resets the
     });
   });
   await page.goto('/#inicio');
+  const desktopMenu = page.getByRole('complementary', {
+    name: 'Menu principal',
+  });
+  await expect(desktopMenu).toBeVisible();
+  await expect(
+    desktopMenu.getByRole('link', { name: 'Início', exact: true }),
+  ).toHaveAttribute('aria-current', 'page');
+  await expect(
+    page.getByRole('button', { name: 'Menu', exact: true }),
+  ).toBeHidden();
+
+  await page.setViewportSize({ width: 390, height: 844 });
   const trigger = page.getByRole('button', { name: 'Menu', exact: true });
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await trigger.focus();

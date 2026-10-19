@@ -194,3 +194,35 @@ describe('UI-002 appearance preferences', () => {
     });
   });
 });
+
+describe('UI-005 authenticated layout', () => {
+  it('provides an authorized desktop navigation with the current page identified', () => {
+    render(
+      <App
+        equipmentContext={{
+          congregationId: 'congregacao-teste',
+          congregationName: 'Congregação de Teste',
+          csrfToken: 'csrf-test',
+          canManage: true,
+        }}
+      />,
+    );
+
+    const menu = screen.getByRole('complementary', {
+      name: 'Menu principal',
+    });
+    expect(menu).toHaveTextContent('Congregação de Teste');
+    expect(within(menu).getByRole('link', { name: 'Início' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(
+      within(menu).getByRole('link', { name: 'Equipamentos' }),
+    ).toBeInTheDocument();
+    expect(within(menu).getByRole('link', { name: 'Sair' })).toHaveAttribute(
+      'href',
+      '/api/auth/logout',
+    );
+    expect(within(menu).queryByText('Administradores')).not.toBeInTheDocument();
+  });
+});

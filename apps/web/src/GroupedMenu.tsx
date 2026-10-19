@@ -17,6 +17,7 @@ export type MenuScreen =
   | 'conta'
   | 'administradores';
 type MenuEntry = { screen: MenuScreen; label: string; icon: string };
+type MenuGroup = { label: string; entries: MenuEntry[] };
 export function MenuIcon({ icon }: { icon: string }) {
   const paths: Record<string, string> = {
     '⌂': 'M3 10 12 3l9 7M5 9v12h5v-7h4v7h5V9',
@@ -92,30 +93,13 @@ export function canOpenScreen(
     return hasMembership && canManage;
   return hasMembership;
 }
-export function GroupedMenu({
-  screen,
-  onNavigate,
-  onAppearance,
-  congregationName,
-  canManage,
-  hasMembership,
-  isMaster = false,
-}: {
-  screen: MenuScreen;
-  onNavigate: (screen: MenuScreen) => void;
-  onAppearance: () => void;
-  congregationName?: string;
-  canManage: boolean;
-  hasMembership: boolean;
-  isMaster?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({
-    Programação: true,
-  });
-  const dialog = useRef<HTMLDialogElement>(null),
-    trigger = useRef<HTMLButtonElement>(null);
-  const entries: { label: string; entries: MenuEntry[] }[] = [
+
+function navigationGroups(
+  canManage: boolean,
+  hasMembership: boolean,
+  isMaster: boolean,
+): MenuGroup[] {
+  const entries: MenuGroup[] = [
     {
       label: 'Programação',
       entries: [
@@ -160,7 +144,7 @@ export function GroupedMenu({
       entries: [{ screen: 'conta', label: 'Meu perfil', icon: '○' }],
     },
   ];
-  const groups = entries
+  return entries
     .map((group) => ({
       ...group,
       entries: group.entries.filter((entry) =>
@@ -168,6 +152,90 @@ export function GroupedMenu({
       ),
     }))
     .filter((group) => group.entries.length);
+}
+
+type NavigationProps = {
+  screen: MenuScreen;
+  onNavigate: (screen: MenuScreen) => void;
+  onAppearance: () => void;
+  congregationName?: string;
+  canManage: boolean;
+  hasMembership: boolean;
+  isMaster?: boolean;
+};
+
+export function DesktopNavigation({
+  screen,
+  onNavigate,
+  onAppearance,
+  congregationName,
+  canManage,
+  hasMembership,
+  isMaster = false,
+}: NavigationProps) {
+  const groups = navigationGroups(canManage, hasMembership, isMaster);
+  return (
+    <aside className="desktop-navigation" aria-label="Menu principal">
+      <div className="desktop-menu-brand">
+        <span aria-hidden="true">▦</span>
+        <strong>congregacaoprega</strong>
+      </div>
+      <p className="desktop-menu-congregation">
+        {congregationName ?? 'Selecione uma congregação'}
+      </p>
+      <nav aria-label="Navegação principal">
+        {groups.map((group) => (
+          <section className="desktop-menu-group" key={group.label}>
+            <h2>{group.label}</h2>
+            {group.entries.map((entry) => (
+              <a
+                key={entry.screen}
+                href={`#${entry.screen}`}
+                aria-current={screen === entry.screen ? 'page' : undefined}
+                onClick={(event) => {
+                  event.preventDefault();
+                  onNavigate(entry.screen);
+                }}
+              >
+                <MenuIcon icon={entry.icon} />
+                {entry.label}
+              </a>
+            ))}
+            {group.label === 'Minha conta' && (
+              <>
+                <button type="button" onClick={onAppearance}>
+                  <MenuIcon icon="◐" />
+                  Aparência
+                </button>
+                <a href="/api/auth/logout">
+                  <MenuIcon icon="↪" />
+                  Sair
+                </a>
+              </>
+            )}
+          </section>
+        ))}
+      </nav>
+    </aside>
+  );
+}
+
+export function GroupedMenu({
+  screen,
+  onNavigate,
+  onAppearance,
+  congregationName,
+  canManage,
+  hasMembership,
+  isMaster = false,
+}: NavigationProps) {
+  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({
+    Programação: true,
+  });
+  const dialog = useRef<HTMLDialogElement>(null),
+    trigger = useRef<HTMLButtonElement>(null);
+  const groups = navigationGroups(canManage, hasMembership, isMaster);
   const activeGroup = groups.find((group) =>
     group.entries.some((entry) => entry.screen === screen),
   )?.label;
