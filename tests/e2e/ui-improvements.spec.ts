@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 test('UI-004 uses category cards and focused registers while keeping congregation navigation visible when scrolling', async ({
   page,
 }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.route('**/api/session', (route) =>
     route.fulfill({
       json: {
