@@ -148,9 +148,9 @@ test('groups authorized functions in a keyboard accessible drawer and resets the
   await drawer.getByRole('button', { name: 'Aparência', exact: true }).click();
   await page.getByRole('button', { name: 'Tema escuro' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(
-    page.getByRole('textbox', { name: 'Seu nome na programação' }),
-  ).toHaveValue('Publicador de Teste');
+  await expect(page.getByRole('textbox', { name: 'Seu nome' })).toHaveValue(
+    'Publicador de Teste',
+  );
   await page.goto('/#relatorio');
   await expect(page.getByRole('alert')).toContainText(
     'não está disponível para seu perfil',
