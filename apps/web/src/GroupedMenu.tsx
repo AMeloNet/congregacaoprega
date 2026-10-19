@@ -167,12 +167,11 @@ type NavigationProps = {
 export function DesktopNavigation({
   screen,
   onNavigate,
-  onAppearance,
   congregationName,
   canManage,
   hasMembership,
   isMaster = false,
-}: NavigationProps) {
+}: Omit<NavigationProps, 'onAppearance'>) {
   const groups = navigationGroups(canManage, hasMembership, isMaster);
   return (
     <aside className="desktop-navigation" aria-label="Menu principal">
@@ -201,18 +200,6 @@ export function DesktopNavigation({
                 {entry.label}
               </a>
             ))}
-            {group.label === 'Minha conta' && (
-              <>
-                <button type="button" onClick={onAppearance}>
-                  <MenuIcon icon="◐" />
-                  Aparência
-                </button>
-                <a href="/api/auth/logout">
-                  <MenuIcon icon="↪" />
-                  Sair
-                </a>
-              </>
-            )}
           </section>
         ))}
       </nav>

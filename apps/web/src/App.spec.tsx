@@ -219,9 +219,9 @@ describe('UI-005 authenticated layout', () => {
     expect(
       within(menu).getByRole('link', { name: 'Equipamentos' }),
     ).toBeInTheDocument();
-    expect(within(menu).getByRole('link', { name: 'Sair' })).toHaveAttribute(
-      'href',
-      '/api/auth/logout',
+    expect(within(menu).queryByText('Aparência')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Aparência' })).toHaveLength(
+      1,
     );
     expect(within(menu).queryByText('Administradores')).not.toBeInTheDocument();
   });

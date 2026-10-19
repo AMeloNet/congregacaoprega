@@ -2172,12 +2172,27 @@ details > summary {
   }
 
   .authenticated-shell .topbar-right {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
   }
 
-  .authenticated-shell .date-note,
-  .authenticated-shell .appearance-control {
+  .authenticated-shell .date-note {
     display: none;
+  }
+
+  .authenticated-shell .appearance-trigger {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    min-height: 32px;
+    padding: 0;
+    font-size: 0;
+  }
+
+  .authenticated-shell .appearance-trigger::after {
+    content: '◐';
+    font-size: 1rem;
   }
 
   .authenticated-shell .content {

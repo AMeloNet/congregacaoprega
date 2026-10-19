@@ -9,6 +9,7 @@ export default defineConfig({
   ],
   webServer: {
     command:
+      process.env.PLAYWRIGHT_WEB_SERVER_COMMAND ??
       'pnpm --filter @congregacaoprega/web dev --host 127.0.0.1 --port 4173 --strictPort',
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: !process.env.CI,

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import { AccessApp } from './AccessApp.js';
@@ -239,9 +239,10 @@ describe('IDN-001C access interface', () => {
         headers: { 'x-csrf-token': 'csrf' },
       },
     );
-    await user.click(screen.getByRole('button', { name: 'Menu' }));
-    await user.click(screen.getByText('Cadastros', { selector: 'summary' }));
-    await user.click(screen.getByRole('link', { name: 'Publicadores' }));
+    const menu = await screen.findByRole('complementary', {
+      name: 'Menu principal',
+    });
+    await user.click(within(menu).getByRole('link', { name: 'Publicadores' }));
     await user.click(
       screen.getByText('Convidar publicador', { selector: 'summary' }),
     );
@@ -284,9 +285,12 @@ describe('IDN-001C access interface', () => {
     vi.stubGlobal('fetch', fetchMock);
     render(<AccessApp />);
 
-    await user.click(await screen.findByRole('button', { name: 'Menu' }));
-    await user.click(screen.getByText('Sistema', { selector: 'summary' }));
-    await user.click(screen.getByRole('link', { name: 'Administradores' }));
+    const menu = await screen.findByRole('complementary', {
+      name: 'Menu principal',
+    });
+    await user.click(
+      within(menu).getByRole('link', { name: 'Administradores' }),
+    );
     await user.selectOptions(
       await screen.findByRole('combobox', {
         name: 'Congregação para administrar',
@@ -350,9 +354,10 @@ describe('IDN-001C access interface', () => {
     vi.stubGlobal('fetch', fetchMock);
     render(<AccessApp />);
 
-    await user.click(await screen.findByRole('button', { name: 'Menu' }));
-    await user.click(screen.getByText('Cadastros', { selector: 'summary' }));
-    await user.click(screen.getByRole('link', { name: 'Publicadores' }));
+    const menu = await screen.findByRole('complementary', {
+      name: 'Menu principal',
+    });
+    await user.click(within(menu).getByRole('link', { name: 'Publicadores' }));
     await user.click(
       await screen.findByRole('button', { name: 'Consultar vínculos' }),
     );

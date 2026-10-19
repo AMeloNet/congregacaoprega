@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.route('**/api/session', async (route) => {
     await route.fulfill({
       contentType: 'application/json',

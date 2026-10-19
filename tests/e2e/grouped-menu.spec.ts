@@ -49,6 +49,7 @@ test('groups authorized functions in a keyboard accessible drawer and resets the
             : '[]',
     });
   });
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/#inicio');
   const desktopMenu = page.getByRole('complementary', {
     name: 'Menu principal',

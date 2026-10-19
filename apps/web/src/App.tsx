@@ -71,6 +71,24 @@ function systemPrefersDark(): boolean {
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
 }
 
+function useDesktopNavigation(): boolean {
+  const query = '(min-width: 960px)';
+  const [isDesktop, setIsDesktop] = useState(
+    () => window.matchMedia?.(query).matches ?? true,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia?.(query);
+    if (!media) return;
+    const update = () => setIsDesktop(media.matches);
+    update();
+    media.addEventListener?.('change', update);
+    return () => media.removeEventListener?.('change', update);
+  }, []);
+
+  return isDesktop;
+}
+
 const navigation: { id: Screen; label: string; marker: string }[] = [
   { id: 'inicio', label: 'Início', marker: '⌂' },
   { id: 'programacao', label: 'Programação', marker: '▦' },
@@ -166,6 +184,7 @@ export function App({
   const [appearance, setAppearance] = useState<Appearance>(readAppearance);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [systemDark, setSystemDark] = useState(systemPrefersDark);
+  const isDesktop = useDesktopNavigation();
 
   useLayoutEffect(() => {
     const theme =
@@ -350,15 +369,11 @@ export function App({
         </aside>
       )}
 
-      {equipmentContext && (
+      {equipmentContext && isDesktop && (
         <DesktopNavigation
           key={`${equipmentContext.congregationId}:${equipmentContext.canManage}:${isMaster}`}
           screen={screen}
           onNavigate={go}
-          onAppearance={() => {
-            go('conta');
-            setAppearanceOpen(true);
-          }}
           congregationName={equipmentContext.congregationName}
           canManage={equipmentContext.canManage}
           hasMembership={!!equipmentContext.congregationId}
@@ -368,7 +383,7 @@ export function App({
 
       <div className="workspace">
         <header className="topbar">
-          {equipmentContext && (
+          {equipmentContext && !isDesktop && (
             <GroupedMenu
               key={`${equipmentContext.congregationId}:${equipmentContext.canManage}:${isMaster}`}
               screen={screen}
