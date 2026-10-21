@@ -381,6 +381,22 @@ export class IdentityController {
     }
   }
 
+  @Get('congregations/:id/invitations')
+  async invitationDeliveries(
+    @Req() request: HttpRequest,
+    @Param('id') congregationId: string,
+  ) {
+    const { account } = await this.requireIdentity(request, undefined, false);
+    try {
+      return await this.runtime.identity.listInvitationDeliveries(
+        account,
+        congregationId,
+      );
+    } catch (error) {
+      fail(error);
+    }
+  }
+
   @Post('congregations/:id/invitations/:role')
   async invite(
     @Req() request: HttpRequest,
@@ -401,7 +417,11 @@ export class IdentityController {
         email: body.email,
         role,
       });
-      return { invitationId: issued.invitationId, expiresAt: issued.expiresAt };
+      return {
+        invitationId: issued.invitationId,
+        expiresAt: issued.expiresAt,
+        mailState: 'pending',
+      };
     } catch (error) {
       fail(error);
     }

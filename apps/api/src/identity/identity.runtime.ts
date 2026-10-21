@@ -16,6 +16,11 @@ import { AuthService, type AuthConfig } from '../auth/auth.service.js';
 import { MemorySessionStore } from '../auth/session.store.js';
 import { CaptureAccessService } from './capture-access.service.js';
 import { CaptureEmailService } from './email.service.js';
+import {
+  invitationEmailConfiguration,
+  ResendInvitationTransport,
+} from './invitation-email.transport.js';
+import { InvitationEmailService } from './invitation-email.service.js';
 import { IdentityService } from './identity.service.js';
 import { PgIdentityRepository } from './pg-identity.repository.js';
 
@@ -38,6 +43,7 @@ function authConfig(): AuthConfig & { clientSecret: string } {
 
 export function validateIdentityEnvironment(): void {
   scheduleEmailConfiguration();
+  invitationEmailConfiguration();
   const required = [
     'DATABASE_URL',
     'AUTH0_ISSUER',
@@ -139,11 +145,19 @@ export class IdentityRuntime implements OnModuleDestroy, OnModuleInit {
   readonly repository = new PgIdentityRepository(this.pool);
   readonly email = new CaptureEmailService();
   readonly scheduleEmailConfig = scheduleEmailConfiguration();
+  readonly invitationEmailConfig = invitationEmailConfiguration();
   readonly scheduleEmail =
     this.scheduleEmailConfig.transport === 'resend'
       ? new ResendScheduleTransport(
           this.scheduleEmailConfig.apiKey,
           this.scheduleEmailConfig.from,
+        )
+      : this.email;
+  readonly invitationEmail =
+    this.invitationEmailConfig.transport === 'resend'
+      ? new ResendInvitationTransport(
+          this.invitationEmailConfig.apiKey,
+          this.invitationEmailConfig.from,
         )
       : this.email;
   readonly captureAccess = new CaptureAccessService(
@@ -160,11 +174,14 @@ export class IdentityRuntime implements OnModuleDestroy, OnModuleInit {
   readonly identity = new IdentityService(this.repository, this.email, {
     appBaseUrl: process.env.APP_BASE_URL ?? 'http://127.0.0.1:5173',
     bootstrapSecret: process.env.BOOTSTRAP_SECRET ?? 'test-bootstrap-secret',
+    queueOnly: true,
   });
   private recurrenceTimer?: ReturnType<typeof setInterval>;
   private recurrenceTask?: Promise<void>;
   private noticesTimer?: ReturnType<typeof setInterval>;
   private noticesTask?: Promise<void>;
+  private invitationEmailTimer?: ReturnType<typeof setInterval>;
+  private invitationEmailTask?: Promise<void>;
 
   onModuleInit() {
     const tick = () => {
@@ -204,13 +221,35 @@ export class IdentityRuntime implements OnModuleDestroy, OnModuleInit {
     this.noticesTimer = setInterval(noticesTick, 30_000);
     this.noticesTimer.unref();
     noticesTick();
+    const invitationsTick = () => {
+      if (this.invitationEmailTask) return;
+      this.invitationEmailTask = new InvitationEmailService(
+        this.pool,
+        this.invitationEmail,
+      )
+        .deliver()
+        .catch(() =>
+          Logger.warn(
+            'Falha no processamento de e-mails de convite. Nova tentativa no próximo ciclo.',
+            'InvitationEmail',
+          ),
+        )
+        .finally(() => {
+          this.invitationEmailTask = undefined;
+        });
+    };
+    this.invitationEmailTimer = setInterval(invitationsTick, 30_000);
+    this.invitationEmailTimer.unref();
+    invitationsTick();
   }
 
   async onModuleDestroy(): Promise<void> {
     if (this.recurrenceTimer) clearInterval(this.recurrenceTimer);
     if (this.noticesTimer) clearInterval(this.noticesTimer);
+    if (this.invitationEmailTimer) clearInterval(this.invitationEmailTimer);
     await this.recurrenceTask;
     await this.noticesTask;
+    await this.invitationEmailTask;
     await this.pool.end();
   }
 }

@@ -2,9 +2,12 @@
 
 Status: implementação e testes locais, sem habilitar entrega real nem publicar
 em staging. O mantenedor autorizou preparar Resend e manter captura até
-configuração e liberação específicas. Os e-mails de identidade continuam usando
-`EMAIL_TRANSPORT=capture`; esta integração abrange somente avisos de reservas e
-programação. A caixa de avisos interna persiste independentemente do transporte.
+configuração e liberação específicas. `EMAIL_TRANSPORT=capture` continua para a
+captura interna e os e-mails de identidade hospedados no Auth0; os convites de
+administrador local e publicador têm fila Resend separada, documentada em
+[`convites-resend.md`](convites-resend.md). Esta integração abrange somente
+avisos de reservas e programação. A caixa de avisos interna persiste
+independentemente do transporte.
 
 ## Critérios de aceitação
 

@@ -153,9 +153,28 @@ model AccessInvitation {
   congregation             Congregation?    @relation(fields: [congregationId], references: [id], onDelete: Restrict)
   createdByAccount         IdentityAccount? @relation("InvitationCreator", fields: [createdByAccountId], references: [id], onDelete: Restrict)
   auditEvents              IdentityAuditEvent[]
+  mail                     AccessInvitationMail?
 
   @@index([congregationId, recipientEmailNormalized], map: "access_invitation_congregation_id_recipient_email_normalized_id")
   @@map("access_invitation")
+}
+
+model AccessInvitationMail {
+  invitationId   String            @id @map("invitation_id") @db.Uuid
+  mailState      String            @default("pending") @map("mail_state")
+  mailTransport  String?           @map("mail_transport")
+  mailEnvelope   Json              @map("mail_envelope")
+  mailPayload    Json?             @map("mail_payload")
+  mailAttempts   Int               @default(0) @map("mail_attempts")
+  nextAttemptAt  DateTime?         @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  firstAttemptAt DateTime?         @map("first_attempt_at") @db.Timestamptz(6)
+  lastError      String?           @map("last_error")
+  providerId     String?           @unique @map("provider_id")
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  invitation     AccessInvitation  @relation(fields: [invitationId], references: [id], onDelete: Restrict)
+
+  @@index([mailState,nextAttemptAt], map: "access_invitation_mail_delivery_idx")
+  @@map("access_invitation_mail")
 }
 
 model IdentityAuditEvent {
