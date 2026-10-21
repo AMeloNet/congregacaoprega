@@ -13,6 +13,17 @@ type ManagedMembership = {
   role: 'PUBLISHER' | 'LOCAL_ADMIN';
   status: 'ACTIVE' | 'REVOKED';
 };
+type InvitationDelivery = {
+  invitationId: string;
+  recipientEmail: string;
+  targetRole: 'PUBLISHER' | 'LOCAL_ADMIN' | null;
+  invitationStatus: string;
+  expiresAt: string;
+  mailState: 'pending' | 'captured' | 'sent' | 'failed' | 'superseded';
+  mailAttempts: number;
+  nextAttemptAt: string | null;
+  lastError: string | null;
+};
 type Session = {
   authenticated: boolean;
   email?: string;
@@ -50,6 +61,9 @@ export function AccessApp({
   const [invitationHandled, setInvitationHandled] = useState(false);
   const [managedMemberships, setManagedMemberships] = useState<
     ManagedMembership[]
+  >([]);
+  const [invitationDeliveries, setInvitationDeliveries] = useState<
+    InvitationDelivery[]
   >([]);
 
   useEffect(() => {
@@ -262,7 +276,7 @@ export function AccessApp({
       return;
     }
     setPublisherEmail('');
-    setMessage('Convite de publicador registrado na captura controlada.');
+    setMessage('Convite de publicador registrado para envio.');
   }
 
   async function inviteAdministrator(
@@ -286,9 +300,7 @@ export function AccessApp({
       return;
     }
     setAdminEmail('');
-    setMessage(
-      'Convite de administrador local registrado na captura controlada.',
-    );
+    setMessage('Convite de administrador local registrado para envio.');
   }
 
   async function loadMemberships(): Promise<void> {
@@ -305,6 +317,28 @@ export function AccessApp({
     const result = (await response.json()) as ManagedMembership[];
     if (activeSelection.current === requestedCongregation)
       setManagedMemberships(result);
+  }
+
+  async function loadInvitationDeliveries(
+    congregationId: string,
+  ): Promise<void> {
+    setError('');
+    const response = await fetch(
+      `/api/congregations/${encodeURIComponent(congregationId)}/invitations`,
+    );
+    if (!response.ok) {
+      setError('Não foi possível consultar os envios de convite.');
+      return;
+    }
+    setInvitationDeliveries((await response.json()) as InvitationDelivery[]);
+  }
+
+  function deliveryLabel(delivery: InvitationDelivery): string {
+    if (delivery.mailState === 'captured') return 'Capturado';
+    if (delivery.mailState === 'sent') return 'Enviado ao provedor';
+    if (delivery.mailState === 'failed') return 'Falha no envio';
+    if (delivery.mailState === 'superseded') return 'Substituído';
+    return 'Aguardando envio';
   }
 
   async function changeManagedMembership(
@@ -502,6 +536,32 @@ export function AccessApp({
                     </ul>
                   )}
                 </details>
+                <details className="panel compact-panel">
+                  <summary>Envios de convite</summary>
+                  <h2>Envios de convite</h2>
+                  <button
+                    className="button outline"
+                    type="button"
+                    onClick={() => void loadInvitationDeliveries(active)}
+                  >
+                    Consultar envios
+                  </button>
+                  {invitationDeliveries.length > 0 && (
+                    <ul className="membership-list">
+                      {invitationDeliveries.map((delivery) => (
+                        <li key={delivery.invitationId}>
+                          <span>
+                            <strong>{delivery.recipientEmail}</strong>{' '}
+                            <span>{deliveryLabel(delivery)}</span>
+                            {delivery.lastError && (
+                              <span> — {delivery.lastError}</span>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </details>
               </>
             )}
           </>
@@ -542,6 +602,30 @@ export function AccessApp({
                 <button className="button" type="submit">
                   Enviar convite de administrador
                 </button>
+                <button
+                  className="button outline"
+                  type="button"
+                  onClick={() =>
+                    void loadInvitationDeliveries(adminCongregation)
+                  }
+                >
+                  Consultar envios
+                </button>
+                {invitationDeliveries.length > 0 && (
+                  <ul className="membership-list">
+                    {invitationDeliveries.map((delivery) => (
+                      <li key={delivery.invitationId}>
+                        <span>
+                          <strong>{delivery.recipientEmail}</strong>{' '}
+                          <span>{deliveryLabel(delivery)}</span>
+                          {delivery.lastError && (
+                            <span> — {delivery.lastError}</span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </form>
             )}{' '}
           </>

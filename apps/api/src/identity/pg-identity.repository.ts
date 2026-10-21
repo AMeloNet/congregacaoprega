@@ -7,6 +7,7 @@ import type {
   Congregation,
   IdentityRepository,
   Invitation,
+  InvitationDelivery,
   InvitationStatus,
   LocalRole,
   Membership,
@@ -173,7 +174,10 @@ export class PgIdentityRepository implements IdentityRepository {
   }
 
   async createInvitation(
-    input: Omit<Invitation, 'id' | 'status'> & { createdAt: Date },
+    input: Omit<Invitation, 'id' | 'status'> & {
+      createdAt: Date;
+      mail?: import('./identity.repository.js').InvitationMail;
+    },
   ): Promise<Invitation> {
     return this.transaction(async (client) => {
       if (input.kind === 'MASTER_BOOTSTRAP') {
@@ -189,6 +193,11 @@ export class PgIdentityRepository implements IdentityRepository {
           [input.congregationId, input.recipientEmail],
         );
       }
+      await client.query(
+        `UPDATE access_invitation_mail m SET mail_state='superseded',next_attempt_at=NULL,last_error=NULL
+         FROM access_invitation i
+         WHERE i.id=m.invitation_id AND i.status='SUPERSEDED' AND m.mail_state IN ('pending','failed')`,
+      );
       const result = await client.query<InvitationRow>(
         `INSERT INTO access_invitation
            (id, kind, congregation_id, recipient_email, recipient_email_normalized,
@@ -207,7 +216,16 @@ export class PgIdentityRepository implements IdentityRepository {
           input.createdAt,
         ],
       );
-      return invitation(result.rows[0]!);
+      const created = invitation(result.rows[0]!);
+      if (input.mail) {
+        await client.query(
+          `INSERT INTO access_invitation_mail
+             (invitation_id,mail_envelope,next_attempt_at,created_at)
+           VALUES ($1,$2,$3,$3)`,
+          [created.id, JSON.stringify(input.mail), input.createdAt],
+        );
+      }
+      return created;
     });
   }
   async invitationByDigest(digest: string): Promise<Invitation | undefined> {
@@ -224,6 +242,41 @@ export class PgIdentityRepository implements IdentityRepository {
     );
     return result.rows[0] ? invitation(result.rows[0]) : undefined;
   }
+  async invitationDeliveries(
+    congregationId: string,
+    role?: LocalRole,
+  ): Promise<InvitationDelivery[]> {
+    const result = await this.pool.query<{
+      invitation_id: string;
+      recipient_email: string;
+      target_role: LocalRole | null;
+      status: InvitationStatus;
+      expires_at: Date;
+      mail_state: InvitationDelivery['mailState'];
+      mail_attempts: number;
+      next_attempt_at: Date | null;
+      last_error: string | null;
+    }>(
+      `SELECT i.id AS invitation_id,i.recipient_email,i.target_role,i.status,i.expires_at,
+              m.mail_state,m.mail_attempts,m.next_attempt_at,m.last_error
+       FROM access_invitation i JOIN access_invitation_mail m ON m.invitation_id=i.id
+       WHERE i.kind='MEMBERSHIP' AND i.congregation_id=$1
+         AND ($2::membership_role IS NULL OR i.target_role=$2)
+       ORDER BY i.created_at DESC,i.id`,
+      [congregationId, role ?? null],
+    );
+    return result.rows.map((row) => ({
+      invitationId: row.invitation_id,
+      recipientEmail: row.recipient_email,
+      targetRole: row.target_role,
+      invitationStatus: row.status,
+      expiresAt: row.expires_at,
+      mailState: row.mail_state,
+      mailAttempts: row.mail_attempts,
+      nextAttemptAt: row.next_attempt_at,
+      lastError: row.last_error,
+    }));
+  }
   async updateInvitation(
     id: string,
     status: InvitationStatus,
@@ -232,8 +285,8 @@ export class PgIdentityRepository implements IdentityRepository {
     const completed = status === 'ACCEPTED' || status === 'DECLINED';
     await this.pool.query(
       `UPDATE access_invitation SET status = $2,
-         completed_at = CASE WHEN $3 THEN $4 ELSE NULL END,
-         invalidated_at = CASE WHEN $3 THEN NULL ELSE $4 END
+         completed_at = CASE WHEN $3 THEN $4::timestamptz ELSE NULL END,
+         invalidated_at = CASE WHEN $3 THEN NULL ELSE $4::timestamptz END
        WHERE id = $1`,
       [id, status, completed, at],
     );

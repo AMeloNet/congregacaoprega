@@ -15,6 +15,10 @@ export class MemoryIdentityRepository implements IdentityRepository {
   private readonly congregationRows = new Map<string, Congregation>();
   private readonly membershipRows = new Map<string, Membership>();
   private readonly invitationRows = new Map<string, Invitation>();
+  private readonly invitationMail = new Map<
+    string,
+    import('./identity.repository.js').InvitationDelivery
+  >();
   private readonly audits: AuditEvent[] = [];
 
   addAccount(account: Account): void {
@@ -79,7 +83,10 @@ export class MemoryIdentityRepository implements IdentityRepository {
     ).length;
   }
   createInvitation(
-    input: Omit<Invitation, 'id' | 'status'> & { createdAt: Date },
+    input: Omit<Invitation, 'id' | 'status'> & {
+      createdAt: Date;
+      mail?: import('./identity.repository.js').InvitationMail;
+    },
   ): Promise<Invitation> {
     for (const item of this.invitationRows.values()) {
       const sameScope =
@@ -88,14 +95,36 @@ export class MemoryIdentityRepository implements IdentityRepository {
         (input.kind === 'MASTER_BOOTSTRAP' ||
           (item.congregationId === input.congregationId &&
             item.recipientEmail === input.recipientEmail));
-      if (sameScope) item.status = 'SUPERSEDED';
+      if (sameScope) {
+        item.status = 'SUPERSEDED';
+        const delivery = this.invitationMail.get(item.id);
+        if (delivery && ['pending', 'failed'].includes(delivery.mailState)) {
+          delivery.mailState = 'superseded';
+          delivery.nextAttemptAt = null;
+          delivery.lastError = null;
+        }
+      }
     }
+    const { mail: _mail, ...fields } = input;
     const invitation: Invitation = {
-      ...input,
+      ...fields,
       id: randomUUID(),
       status: 'PENDING',
     };
     this.invitationRows.set(invitation.id, invitation);
+    if (input.mail) {
+      this.invitationMail.set(invitation.id, {
+        invitationId: invitation.id,
+        recipientEmail: invitation.recipientEmail,
+        targetRole: invitation.targetRole,
+        invitationStatus: invitation.status,
+        expiresAt: invitation.expiresAt,
+        mailState: 'pending',
+        mailAttempts: 0,
+        nextAttemptAt: input.createdAt,
+        lastError: null,
+      });
+    }
     return Promise.resolve(invitation);
   }
   invitationByDigest(digest: string): Promise<Invitation | undefined> {
@@ -107,6 +136,18 @@ export class MemoryIdentityRepository implements IdentityRepository {
   }
   invitationById(id: string): Invitation | undefined {
     return this.invitationRows.get(id);
+  }
+  invitationDeliveries(
+    congregationId: string,
+    role?: import('./identity.repository.js').LocalRole,
+  ) {
+    return [...this.invitationMail.values()].filter((delivery) => {
+      const invitation = this.invitationRows.get(delivery.invitationId);
+      return (
+        invitation?.congregationId === congregationId &&
+        (!role || invitation.targetRole === role)
+      );
+    });
   }
   updateInvitation(id: string, status: InvitationStatus): Promise<void> {
     const invitation = this.invitationRows.get(id);

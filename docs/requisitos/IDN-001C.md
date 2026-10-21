@@ -67,11 +67,12 @@ demonstrativos e não devem ser apresentados como dados persistidos.
 
 ### E-mail controlado
 
-`EMAIL_TRANSPORT=capture` é o único transporte permitido em teste e
-desenvolvimento local. Ele mantém mensagens em memória, expostas apenas em
-testes por uma interface interna, sem rede e sem destinatários reais. Um
-transporte externo não faz parte desta entrega e a API recusa iniciá-lo sem
-implementação explícita.
+`EMAIL_TRANSPORT=capture` continua sendo o transporte da captura interna em
+teste e desenvolvimento local. Convites de administrador local e publicador
+podem usar uma fila Resend separada e explicitamente configurada; ela não
+altera e-mails de verificação ou recuperação hospedados no Auth0. Consulte
+`docs/operacao/convites-resend.md` para configuração, idempotência e limites
+operacionais.
 
 ## Respostas e segurança
 

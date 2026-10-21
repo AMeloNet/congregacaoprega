@@ -13,6 +13,7 @@ export type AuthenticatedIdentity = Account;
 type IdentityOptions = {
   appBaseUrl: string;
   bootstrapSecret: string;
+  queueOnly?: boolean;
   now?: () => Date;
 };
 
@@ -75,10 +76,16 @@ export class IdentityService {
     input: { congregationId: string; email: string; role: LocalRole },
   ) {
     await this.assertCanInvite(actor, input.congregationId, input.role);
-    this.email.assertAllowedRecipient(normalized(input.email));
+    if (!this.options.queueOnly)
+      this.email.assertAllowedRecipient(normalized(input.email));
     const token = secretToken();
     const createdAt = this.now();
     const expiresAt = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const message = {
+      to: normalized(input.email),
+      template: 'membership-invitation' as const,
+      parameters: { link: `${this.options.appBaseUrl}/convites/${token}` },
+    };
     const invitation = await this.repository.createInvitation({
       kind: 'MEMBERSHIP',
       congregationId: input.congregationId,
@@ -88,6 +95,7 @@ export class IdentityService {
       expiresAt,
       createdByAccountId: actor.accountId,
       createdAt,
+      mail: message,
     });
     await this.repository.addAudit({
       type: 'MEMBERSHIP_INVITED',
@@ -95,11 +103,7 @@ export class IdentityService {
       congregationId: input.congregationId,
       invitationId: invitation.id,
     });
-    await this.email.send({
-      to: normalized(input.email),
-      template: 'membership-invitation',
-      parameters: { link: `${this.options.appBaseUrl}/convites/${token}` },
-    });
+    if (!this.options.queueOnly) await this.email.send(message);
     return { token, expiresAt, invitationId: invitation.id };
   }
 
@@ -188,6 +192,17 @@ export class IdentityService {
       throw new Error('Recurso não encontrado.');
     }
     return this.repository.congregationMemberships(congregationId);
+  }
+
+  async listInvitationDeliveries(
+    actor: AuthenticatedIdentity,
+    congregationId: string,
+  ) {
+    await this.assertCanInvite(actor, congregationId, 'PUBLISHER');
+    return this.repository.invitationDeliveries(
+      congregationId,
+      actor.isMaster ? undefined : 'PUBLISHER',
+    );
   }
 
   async changeMembershipStatus(

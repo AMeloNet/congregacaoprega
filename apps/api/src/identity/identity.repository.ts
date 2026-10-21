@@ -32,6 +32,22 @@ export type Invitation = {
   expiresAt: Date;
   createdByAccountId: string | null;
 };
+export type InvitationMail = {
+  to: string;
+  template: 'master-bootstrap' | 'membership-invitation';
+  parameters: { link: string };
+};
+export type InvitationDelivery = {
+  invitationId: string;
+  recipientEmail: string;
+  targetRole: LocalRole | null;
+  invitationStatus: InvitationStatus;
+  expiresAt: Date;
+  mailState: 'pending' | 'captured' | 'sent' | 'failed' | 'superseded';
+  mailAttempts: number;
+  nextAttemptAt: Date | null;
+  lastError: string | null;
+};
 export type AuditEvent = {
   type:
     | 'MEMBERSHIP_INVITED'
@@ -69,12 +85,19 @@ export interface IdentityRepository {
     | Array<Membership & { congregationName: string }>;
   activeLocalAdminCount(congregationId: string): Promise<number> | number;
   createInvitation(
-    input: Omit<Invitation, 'id' | 'status'> & { createdAt: Date },
+    input: Omit<Invitation, 'id' | 'status'> & {
+      createdAt: Date;
+      mail?: InvitationMail;
+    },
   ): Promise<Invitation>;
   invitationByDigest(digest: string): Promise<Invitation | undefined>;
   invitationById(
     id: string,
   ): Promise<Invitation | undefined> | Invitation | undefined;
+  invitationDeliveries(
+    congregationId: string,
+    role?: LocalRole,
+  ): Promise<InvitationDelivery[]> | InvitationDelivery[];
   updateInvitation(
     id: string,
     status: InvitationStatus,
