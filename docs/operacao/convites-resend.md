@@ -31,10 +31,17 @@ domínio e o remetente no Resend e configurar:
 | `INVITATION_EMAIL_TRANSPORT` | `resend` (padrão `capture`) |
 | `RESEND_API_KEY` | chave com permissão de envio no domínio verificado |
 | `INVITATION_EMAIL_FROM` | remetente simples no domínio verificado |
+| `INVITATION_EMAIL_ALLOWED_RECIPIENTS` | lista separada por vírgulas dos destinatários autorizados |
 
 `EMAIL_TRANSPORT` deve continuar `capture`: ele cobre a captura interna e não
 altera Auth0. Os avisos de programação continuam controlados separadamente por
 `SCHEDULE_EMAIL_TRANSPORT` e não são ativados por essa configuração.
+
+Enquanto não houver domínio próprio, o teste pode usar o remetente sandbox
+fornecido pelo Resend e um único Gmail na allowlist. O servidor recusa antes de
+persistir convites cujo destinatário não conste nessa lista. Não habilitar o
+transporte para convites reais até verificar um domínio e substituir o remetente
+de teste.
 
 No Render, o worker só avança a fila enquanto o processo da API está ativo. Se
 o serviço estiver suspenso, os e-mails pendentes aguardam até o próximo

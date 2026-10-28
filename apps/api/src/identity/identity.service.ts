@@ -14,6 +14,7 @@ type IdentityOptions = {
   appBaseUrl: string;
   bootstrapSecret: string;
   queueOnly?: boolean;
+  allowedInvitationRecipients?: readonly string[];
   now?: () => Date;
 };
 
@@ -76,20 +77,26 @@ export class IdentityService {
     input: { congregationId: string; email: string; role: LocalRole },
   ) {
     await this.assertCanInvite(actor, input.congregationId, input.role);
-    if (!this.options.queueOnly)
-      this.email.assertAllowedRecipient(normalized(input.email));
+    const recipient = normalized(input.email);
+    if (!this.options.queueOnly) this.email.assertAllowedRecipient(recipient);
+    if (
+      this.options.allowedInvitationRecipients &&
+      !this.options.allowedInvitationRecipients.includes(recipient)
+    ) {
+      throw new Error('Destinatário não autorizado para envio de convite.');
+    }
     const token = secretToken();
     const createdAt = this.now();
     const expiresAt = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
     const message = {
-      to: normalized(input.email),
+      to: recipient,
       template: 'membership-invitation' as const,
       parameters: { link: `${this.options.appBaseUrl}/convites/${token}` },
     };
     const invitation = await this.repository.createInvitation({
       kind: 'MEMBERSHIP',
       congregationId: input.congregationId,
-      recipientEmail: normalized(input.email),
+      recipientEmail: recipient,
       tokenDigest: digest(token),
       targetRole: input.role,
       expiresAt,
