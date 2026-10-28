@@ -26,17 +26,22 @@ export class CaptureInvitationTransport implements InvitationMailTransport {
 const address = /^[^\s<>@,;]+@[^\s<>@,;]+\.[^\s<>@,;]+$/;
 export class ResendInvitationTransport implements InvitationMailTransport {
   readonly name = 'resend';
+  private readonly allowedRecipients: ReadonlySet<string>;
   constructor(
     private readonly apiKey: string,
     private readonly from: string,
+    allowedRecipients: readonly string[],
     private readonly request: typeof fetch = fetch,
-  ) {}
+  ) {
+    this.allowedRecipients = new Set(allowedRecipients);
+  }
   prepare(message: CapturedEmail): InvitationMailPayload {
     if (
       !['master-bootstrap', 'membership-invitation'].includes(
         message.template,
       ) ||
       !address.test(message.to) ||
+      !this.allowedRecipients.has(normalized(message.to)) ||
       typeof message.parameters.link !== 'string'
     ) {
       throw new Error('Convite ou destinatário inválido.');
@@ -77,6 +82,26 @@ export class ResendInvitationTransport implements InvitationMailTransport {
   }
 }
 
+function normalized(email: string): string {
+  return email.trim().toLocaleLowerCase('en-US');
+}
+
+function allowedRecipients(value: string | undefined): string[] {
+  const recipients = (value ?? '')
+    .split(',')
+    .map(normalized)
+    .filter((email) => email.length > 0);
+  if (
+    recipients.length === 0 ||
+    recipients.some((email) => !address.test(email))
+  ) {
+    throw new Error(
+      'Resend invitations require INVITATION_EMAIL_ALLOWED_RECIPIENTS with valid addresses.',
+    );
+  }
+  return [...new Set(recipients)];
+}
+
 export function invitationEmailConfiguration(env = process.env) {
   const transport = env.INVITATION_EMAIL_TRANSPORT ?? 'capture';
   if (transport === 'capture') return { transport } as const;
@@ -90,5 +115,12 @@ export function invitationEmailConfiguration(env = process.env) {
     );
   if (!address.test(from))
     throw new Error('Invalid invitation sender configuration.');
-  return { transport, apiKey, from } as const;
+  return {
+    transport,
+    apiKey,
+    from,
+    allowedRecipients: allowedRecipients(
+      env.INVITATION_EMAIL_ALLOWED_RECIPIENTS,
+    ),
+  } as const;
 }

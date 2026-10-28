@@ -158,6 +158,7 @@ export class IdentityRuntime implements OnModuleDestroy, OnModuleInit {
       ? new ResendInvitationTransport(
           this.invitationEmailConfig.apiKey,
           this.invitationEmailConfig.from,
+          this.invitationEmailConfig.allowedRecipients,
         )
       : this.email;
   readonly captureAccess = new CaptureAccessService(
@@ -175,6 +176,10 @@ export class IdentityRuntime implements OnModuleDestroy, OnModuleInit {
     appBaseUrl: process.env.APP_BASE_URL ?? 'http://127.0.0.1:5173',
     bootstrapSecret: process.env.BOOTSTRAP_SECRET ?? 'test-bootstrap-secret',
     queueOnly: true,
+    allowedInvitationRecipients:
+      this.invitationEmailConfig.transport === 'resend'
+        ? this.invitationEmailConfig.allowedRecipients
+        : undefined,
   });
   private recurrenceTimer?: ReturnType<typeof setInterval>;
   private recurrenceTask?: Promise<void>;

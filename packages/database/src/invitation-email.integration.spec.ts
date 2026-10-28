@@ -17,6 +17,7 @@ describe('access invitation Resend delivery', () => {
         appBaseUrl: 'https://app.example.test',
         bootstrapSecret: 'bootstrap-secret',
         queueOnly: true,
+        allowedInvitationRecipients: ['publisher@example.test'],
         now: () => now,
       });
       const congregationId = randomUUID();
@@ -82,6 +83,7 @@ describe('access invitation Resend delivery', () => {
         new ResendInvitationTransport(
           'fake-provider-key',
           'invites@example.test',
+          [publisher.email],
           provider,
         ),
         () => now,
@@ -130,6 +132,19 @@ describe('access invitation Resend delivery', () => {
         mail_transport: 'capture',
       });
       expect(capture.messages).toHaveLength(1);
+
+      await expect(
+        service.inviteMember(local, {
+          congregationId,
+          email: 'outside@example.test',
+          role: 'PUBLISHER',
+        }),
+      ).rejects.toThrow('Destinatário não autorizado para envio de convite.');
+      expect(
+        await pool.query(
+          "SELECT count(*)::integer AS total FROM access_invitation WHERE recipient_email='outside@example.test'",
+        ),
+      ).toMatchObject({ rows: [{ total: 0 }] });
 
       now = new Date(now.getTime() + 7 * 24 * 60 * 60_000);
       await expect(
